@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>角色管理</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f2f2f2;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .search-bar, .table-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .search-bar { margin-bottom: 15px; }
+        .layui-table th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 500;
+        }
+        .layui-btn-group { margin-bottom: 15px; }
+        .status-tag, .system-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .status-on { background: #e6f7e6; color: #52c41a; }
+        .status-off { background: #fff1f0; color: #ff4d4f; }
+        .system-tag { background: #fff7e6; color: #fa8c16; }
+        .permission-wrap {
+            background: #fafafa;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 0 0 15px;
+        }
+        .permission-children {
+            margin-top: 12px;
+            min-height: 80px;
+        }
+        .permission-children .layui-form-checkbox,
+        .permission-children .layui-form-checked {
+            margin: 0 10px 10px 0;
+        }
+        .selected-box {
+            margin-top: 12px;
+            padding: 10px;
+            background: #fff;
+            border: 1px dashed #d9d9d9;
+            border-radius: 6px;
+            min-height: 44px;
+            color: #666;
+            line-height: 24px;
+        }
+        .selected-box .layui-badge-rim {
+            margin: 0 8px 8px 0;
+        }
+        .tip-text {
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+</head>
+<body>
+    <div class="search-bar">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-inline" style="width: 240px;">
+                        <input type="text" name="keyword" placeholder="角色名称 / 编码 / 描述" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" class="layui-btn layui-btn-normal" id="searchBtn">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="resetBtn">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="layui-btn-group">
+            <button type="button" class="layui-btn layui-btn-normal" id="addBtn">
+                <i class="layui-icon layui-icon-add-1"></i> 新增角色
+            </button>
+        </div>
+
+        <table class="layui-hide" id="roleTable" lay-filter="roleTable"></table>
+
+        <script type="text/html" id="statusTpl">
+            {{!# if(d.status === 1) { }}
+                <span class="status-tag status-on">启用</span>
+            {{!# } else { }}
+                <span class="status-tag status-off">停用</span>
+            {{!# } }}
+        </script>
+
+        <script type="text/html" id="systemTpl">
+            {{!# if(d.is_system === 1) { }}
+                <span class="system-tag">系统角色</span>
+            {{!# } else { }}
+                <span>-</span>
+            {{!# } }}
+        </script>
+
+        <script type="text/html" id="toolbar">
+            <div class="layui-btn-container">
+                {{!# if(d.is_system !== 1) { }}
+                <button class="layui-btn layui-btn-sm" lay-event="edit">
+                    <i class="layui-icon layui-icon-edit"></i> 编辑
+                </button>
+                <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">
+                    <i class="layui-icon layui-icon-delete"></i> 删除
+                </button>
+                {{!# } else { }}
+                <span class="tip-text">超级管理员不可修改/删除</span>
+                {{!# } }}
+            </div>
+        </script>
+    </div>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'layer', 'form', 'jquery'], function(){
+            var table = layui.table;
+            var layer = layui.layer;
+            var form = layui.form;
+            var $ = layui.jquery;
+
+            var functionTree = [];
+            var functionNameMap = {};
+            var selectedFunctionIds = [];
+            var currentRoleLayero = null;
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.post(url, data, callback, 'json');
+            }
+
+            function buildFunctionMap() {
+                functionNameMap = {};
+                for (var i = 0; i < functionTree.length; i++) {
+                    var parent = functionTree[i];
+                    functionNameMap[parent.id] = parent.name;
+                    var children = parent.children || [];
+                    for (var j = 0; j < children.length; j++) {
+                        functionNameMap[children[j].id] = parent.name + ' / ' + children[j].name;
+                    }
+                }
+            }
+
+            function loadFunctionTree(callback) {
+                $.get('/admin/api/function', {action: 'tree'}, function(res){
+                    if (res.code !== 0) {
+                        layer.msg(res.msg || '加载功能树失败', {icon: 2});
+                        return;
+                    }
+                    functionTree = res.data || [];
+                    buildFunctionMap();
+                    if (callback) {
+                        callback();
+                    }
+                }, 'json');
+            }
+
+            function buildRoleFormHtml(data) {
+                data = data || {
+                    id: '',
+                    name: '',
+                    code: '',
+                    description: '',
+                    sort: 0,
+                    status: 1,
+                    function_ids: []
+                };
+
+                var parentOptions = '';
+                for (var i = 0; i < functionTree.length; i++) {
+                    var selected = i === 0 ? ' selected' : '';
+                    parentOptions += '<option value="' + functionTree[i].id + '"' + selected + '>' + functionTree[i].name + '</option>';
+                }
+
+                return '' +
+                    '<form class="layui-form" id="roleForm" lay-filter="roleForm" style="padding:20px;">' +
+                    '  <input type="hidden" name="id" value="' + (data.id || '') + '">' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">角色名称</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="text" name="name" value="' + (data.name || '') + '" placeholder="请输入角色名称" autocomplete="off" class="layui-input">' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">角色编码</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="text" name="code" value="' + (data.code || '') + '" placeholder="如：ops_manager" autocomplete="off" class="layui-input">' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">角色描述</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <textarea name="description" placeholder="请输入角色描述" class="layui-textarea">' + (data.description || '') + '</textarea>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">排序值</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="number" name="sort" value="' + (data.sort || 0) + '" placeholder="请输入排序值" autocomplete="off" class="layui-input">' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">状态</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" ' + (data.status === 1 ? 'checked' : '') + '>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="permission-wrap">' +
+                    '    <div class="layui-form-item">' +
+                    '      <label class="layui-form-label">一级模块</label>' +
+                    '      <div class="layui-input-block">' +
+                    '        <select name="permission_parent" lay-filter="roleParentSelect">' + parentOptions + '</select>' +
+                    '      </div>' +
+                    '    </div>' +
+                    '    <div class="tip-text">二级联动：先选择一级模块，再勾选当前模块或其下属二级功能。</div>' +
+                    '    <div class="permission-children" id="permissionChildrenBox"></div>' +
+                    '    <div class="selected-box" id="selectedFunctionBox"></div>' +
+                    '  </div>' +
+                    '  <input type="hidden" name="function_ids" value="' + (data.function_ids || []).join(',') + '">' +
+                    '</form>';
+            }
+
+            function renderSelectedFunctions(layero) {
+                var box = layero.find('#selectedFunctionBox');
+                if (!selectedFunctionIds.length) {
+                    box.html('<span class="tip-text">当前未选择任何功能权限</span>');
+                    return;
+                }
+
+                var html = '';
+                for (var i = 0; i < selectedFunctionIds.length; i++) {
+                    var functionId = selectedFunctionIds[i];
+                    if (functionNameMap[functionId]) {
+                        html += '<span class="layui-badge-rim">' + functionNameMap[functionId] + '</span>';
+                    }
+                }
+                box.html(html || '<span class="tip-text">当前未选择任何功能权限</span>');
+            }
+
+            function renderFunctionChildren(layero, parentId) {
+                var box = layero.find('#permissionChildrenBox');
+                var parent = null;
+                for (var i = 0; i < functionTree.length; i++) {
+                    if (String(functionTree[i].id) === String(parentId)) {
+                        parent = functionTree[i];
+                        break;
+                    }
+                }
+
+                if (!parent) {
+                    box.html('<span class="tip-text">暂无可选功能</span>');
+                    form.render();
+                    return;
+                }
+
+                var html = '';
+                var parentChecked = selectedFunctionIds.indexOf(parent.id) > -1 ? ' checked' : '';
+                html += '<input type="checkbox" lay-filter="roleFunctionCheck" value="' + parent.id + '" title="访问一级模块：' + parent.name + '"' + parentChecked + '>';
+
+                var children = parent.children || [];
+                if (children.length) {
+                    for (var j = 0; j < children.length; j++) {
+                        var child = children[j];
+                        var checked = selectedFunctionIds.indexOf(child.id) > -1 ? ' checked' : '';
+                        html += '<input type="checkbox" lay-filter="roleFunctionCheck" value="' + child.id + '" title="' + child.name + '"' + checked + '>';
+                    }
+                } else {
+                    html += '<div class="tip-text" style="padding-top: 10px;">当前一级模块下暂无二级功能，可只勾选一级模块。</div>';
+                }
+
+                box.html(html);
+                renderSelectedFunctions(layero);
+                form.render('checkbox');
+            }
+
+            function collectRoleFormData(layero, action) {
+                var formData = {
+                    action: action,
+                    id: layero.find('input[name="id"]').val(),
+                    name: $.trim(layero.find('input[name="name"]').val()),
+                    code: $.trim(layero.find('input[name="code"]').val()),
+                    description: $.trim(layero.find('textarea[name="description"]').val()),
+                    sort: layero.find('input[name="sort"]').val() || '0',
+                    status: layero.find('input[name="status"]').is(':checked') ? 1 : 0,
+                    function_ids: selectedFunctionIds.join(',')
+                };
+
+                if (!formData.name || !formData.code) {
+                    layer.msg('角色名称和编码不能为空', {icon: 2});
+                    return null;
+                }
+                return formData;
+            }
+
+            form.on('select(roleParentSelect)', function(data){
+                if (currentRoleLayero) {
+                    renderFunctionChildren(currentRoleLayero, data.value);
+                }
+            });
+
+            form.on('checkbox(roleFunctionCheck)', function(data){
+                var value = Number(data.value);
+                if (data.elem.checked) {
+                    if (selectedFunctionIds.indexOf(value) === -1) {
+                        selectedFunctionIds.push(value);
+                    }
+                } else {
+                    selectedFunctionIds = selectedFunctionIds.filter(function(item){
+                        return item !== value;
+                    });
+                }
+                selectedFunctionIds.sort(function(a, b){ return a - b; });
+                if (currentRoleLayero) {
+                    renderSelectedFunctions(currentRoleLayero);
+                }
+            });
+
+            var tableIns = table.render({
+                elem: '#roleTable',
+                url: '/admin/api/role',
+                method: 'get',
+                page: {limit: 20, limits: [10, 20, 50, 100]},
+                cols: [[
+                    {field: 'id', title: 'ID', width: 70, sort: true, fixed: 'left'},
+                    {field: 'name', title: '角色名称', width: 160},
+                    {field: 'code', title: '角色编码', width: 160},
+                    {field: 'description', title: '角色描述', minWidth: 220},
+                    {field: 'function_count', title: '权限数量', width: 100},
+                    {field: 'sort', title: '排序', width: 90},
+                    {field: 'status', title: '状态', width: 100, templet: '#statusTpl'},
+                    {field: 'is_system', title: '系统角色', width: 110, templet: '#systemTpl'},
+                    {field: 'update_at', title: '更新时间', width: 180},
+                    {title: '操作', width: 230, toolbar: '#toolbar', fixed: 'right'}
+                ]]
+            });
+
+            $('#searchBtn').on('click', function(){
+                tableIns.reload({
+                    where: {keyword: $('input[name="keyword"]').val()},
+                    page: {curr: 1}
+                });
+            });
+
+            $('#resetBtn').on('click', function(){
+                $('input[name="keyword"]').val('');
+                tableIns.reload({where: {}, page: {curr: 1}});
+            });
+
+            $('#addBtn').on('click', function(){
+                selectedFunctionIds = [];
+                currentRoleLayero = null;
+
+                layer.open({
+                    type: 1,
+                        closeBtn: 1,
+                    title: '新增角色',
+                    area: ['720px', '700px'],
+                    content: buildRoleFormHtml(),
+                    btn: ['确定', '取消'],
+                    success: function(layero){
+                        currentRoleLayero = layero;
+                        form.render();
+                        if (functionTree.length) {
+                            renderFunctionChildren(layero, functionTree[0].id);
+                        } else {
+                            renderSelectedFunctions(layero);
+                        }
+                    },
+                    yes: function(index, layero){
+                        var formData = collectRoleFormData(layero, 'add');
+                        if (!formData) {
+                            return;
+                        }
+                        postData('/admin/api/role', formData, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '新增成功', {icon: 1});
+                                layer.close(index);
+                                tableIns.reload({page: {curr: 1}});
+                            } else {
+                                layer.msg(res.msg || '新增失败', {icon: 2});
+                            }
+                        });
+                    },
+                    end: function(){
+                        currentRoleLayero = null;
+                    }
+                });
+            });
+
+            table.on('tool(roleTable)', function(obj){
+                var data = obj.data;
+
+                if (obj.event === 'edit') {
+                    $.get('/admin/api/role', {action: 'detail', id: data.id}, function(res){
+                        if (res.code !== 0) {
+                            layer.msg(res.msg || '加载角色详情失败', {icon: 2});
+                            return;
+                        }
+
+                        var detail = res.data || {};
+                        selectedFunctionIds = (detail.function_ids || []).slice().sort(function(a, b){ return a - b; });
+                        layer.open({
+                            type: 1,
+                        closeBtn: 1,
+                            title: '编辑角色',
+                            area: ['720px', '700px'],
+                            content: buildRoleFormHtml(detail),
+                            btn: ['确定', '取消'],
+                            success: function(layero){
+                                currentRoleLayero = layero;
+                                form.render();
+
+                                var defaultParentId = functionTree.length ? functionTree[0].id : '';
+                                if (selectedFunctionIds.length) {
+                                    for (var i = 0; i < functionTree.length; i++) {
+                                        var parent = functionTree[i];
+                                        if (selectedFunctionIds.indexOf(parent.id) > -1) {
+                                            defaultParentId = parent.id;
+                                            break;
+                                        }
+                                        var children = parent.children || [];
+                                        for (var j = 0; j < children.length; j++) {
+                                            if (selectedFunctionIds.indexOf(children[j].id) > -1) {
+                                                defaultParentId = parent.id;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                layero.find('select[name="permission_parent"]').val(String(defaultParentId));
+                                form.render('select');
+                                renderFunctionChildren(layero, defaultParentId);
+                            },
+                            yes: function(index, layero){
+                                var formData = collectRoleFormData(layero, 'update');
+                                if (!formData) {
+                                    return;
+                                }
+                                postData('/admin/api/role', formData, function(updateRes){
+                                    if (updateRes.code === 0) {
+                                        layer.msg(updateRes.msg || '修改成功', {icon: 1});
+                                        layer.close(index);
+                                        tableIns.reload();
+                                    } else {
+                                        layer.msg(updateRes.msg || '修改失败', {icon: 2});
+                                    }
+                                });
+                            },
+                            end: function(){
+                                currentRoleLayero = null;
+                            }
+                        });
+                    }, 'json');
+                }
+
+                if (obj.event === 'delete') {
+                    layer.confirm('确定要删除该角色吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/role', {action: 'delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                tableIns.reload({page: {curr: 1}});
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+
+            loadFunctionTree();
+        });
+    </script>
+</body>
+</html>

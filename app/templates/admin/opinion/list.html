@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+    <script src="{{ static_url('echarts/echarts.min.js') }}"></script>
+    <style>
+        body { padding: 15px; background: transparent; }
+        .page-header {
+            background: linear-gradient(135deg, rgba(7, 50, 72, 0.98), rgba(6, 34, 54, 0.96));
+            border: 1px solid rgba(0, 247, 255, 0.32);
+            box-shadow: 0 18px 48px rgba(0, 7, 15, 0.42), inset 0 0 18px rgba(0, 247, 255, 0.12);
+            color: #ecfcff;
+            padding: 25px 30px;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(14px);
+        }
+        .page-header h2 { font-size: 22px; color: #ecfcff; }
+        .page-header p { color: #b7dbe5; font-size: 14px; margin-top: 5px; }
+        .btn-analyze {
+            background: linear-gradient(135deg, #043247, #0b7599 46%, #00f7ff);
+            border: none;
+            color: #eaffff;
+            padding: 10px 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            box-shadow: 0 0 0 1px rgba(0, 247, 255, 0.16), 0 10px 24px rgba(0, 95, 128, 0.3);
+        }
+        .btn-analyze:hover { opacity: 0.96; transform: translateY(-2px); }
+        .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: rgba(6, 24, 38, 0.82);
+            border: 1px solid rgba(30, 228, 255, 0.2);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 18px 48px rgba(0, 7, 15, 0.42);
+            text-align: center;
+            backdrop-filter: blur(14px);
+        }
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #ffffff;
+        }
+        .stat-card .stat-label {
+            font-size: 13px;
+            color: #b7dbe5;
+        }
+        .stat-positive .stat-value { color: #32d296; }
+        .stat-negative .stat-value { color: #ff6b7a; }
+        .stat-neutral .stat-value { color: #ffbc5e; }
+        .stat-total .stat-value { color: #5b6dff; }
+        .stat-score .stat-value { color: #2fb9ff; }
+        .content-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .panel {
+            background: rgba(6, 24, 38, 0.82);
+            border: 1px solid rgba(30, 228, 255, 0.2);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 18px 48px rgba(0, 7, 15, 0.42);
+            backdrop-filter: blur(14px);
+        }
+        .panel-title {
+            font-size: 14px;
+            color: #e6efff;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(30, 228, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+        }
+        .latest-analysis {
+            background: rgba(6, 24, 38, 0.82);
+            border: 1px solid rgba(30, 228, 255, 0.2);
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 18px 48px rgba(0, 7, 15, 0.42);
+            margin-bottom: 20px;
+            backdrop-filter: blur(14px);
+        }
+        .latest-analysis .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .latest-analysis .analysis-title {
+            font-size: 18px;
+            color: #ecfcff;
+            font-weight: 600;
+        }
+        .sentiment-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #fff;
+        }
+        .sentiment-positive { background: #32d296; }
+        .sentiment-negative { background: #ff6b7a; }
+        .sentiment-neutral { background: #ffbc5e; color: #041321; }
+        .analysis-content {
+            color: #b7dbe5;
+            line-height: 1.8;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .analysis-keywords {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .analysis-keyword {
+            background: rgba(88, 142, 255, 0.14);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            color: #a7c4ff;
+        }
+        .score-bar {
+            margin-top: 15px;
+            height: 8px;
+            background: rgba(22, 32, 58, 0.9);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+        .table-panel {
+            background: rgba(6, 24, 38, 0.82);
+            border: 1px solid rgba(30, 228, 255, 0.2);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 18px 48px rgba(0, 7, 15, 0.42);
+            backdrop-filter: blur(14px);
+        }
+        .progress-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(2, 16, 29, 0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .progress-box {
+            background: rgba(4, 18, 30, 0.97);
+            border: 1px solid rgba(30, 228, 255, 0.14);
+            border-radius: 18px;
+            padding: 30px 40px;
+            text-align: center;
+            min-width: 350px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.48);
+        }
+        .progress-box h3 {
+            color: #ecfcff;
+            margin-bottom: 15px;
+        }
+        .progress-message {
+            color: #b7dbe5;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        @media (max-width: 1400px) {
+            .stats-row { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 1000px) {
+            .content-row { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div>
+            <h2><i class="fas fa-brain"></i> 智能舆情分析</h2>
+            <p>AI模型自主分析智能聊天和瞭望子系统数据，生成舆情报告</p>
+        </div>
+        <button class="btn-analyze" id="btnAnalyze">
+            <i class="fas fa-play"></i> 启动AI分析
+        </button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card stat-total">
+            <div class="stat-value" id="statTotal">--</div>
+            <div class="stat-label">分析总数</div>
+        </div>
+        <div class="stat-card stat-positive">
+            <div class="stat-value" id="statPositive">--</div>
+            <div class="stat-label">正向舆情</div>
+        </div>
+        <div class="stat-card stat-negative">
+            <div class="stat-value" id="statNegative">--</div>
+            <div class="stat-label">负向舆情</div>
+        </div>
+        <div class="stat-card stat-neutral">
+            <div class="stat-value" id="statNeutral">--</div>
+            <div class="stat-label">中性舆情</div>
+        </div>
+        <div class="stat-card stat-score">
+            <div class="stat-value" id="statScore">--</div>
+            <div class="stat-label">平均健康度</div>
+        </div>
+    </div>
+
+    <div id="latestAnalysisContainer"></div>
+
+    <div class="table-panel">
+        <div class="panel-title"><i class="fas fa-list"></i> 历史分析记录</div>
+        <table class="layui-table" lay-skin="line" id="opinionTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>标题</th>
+                    <th>情感倾向</th>
+                    <th>健康度</th>
+                    <th>关键词</th>
+                    <th>分析时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="opinionTableBody">
+            </tbody>
+        </table>
+        <div id="opinionPage"></div>
+    </div>
+
+    <div class="progress-overlay" id="progressOverlay">
+        <div class="progress-box">
+            <h3><i class="fas fa-cog fa-spin"></i> AI 正在分析中...</h3>
+            <div class="layui-progress layui-progress-big" lay-filter="analyzeProgress" lay-showPercent="true">
+                <div class="layui-progress-bar layui-bg-blue" lay-percent="0%"></div>
+            </div>
+            <div class="progress-message" id="progressMessage">正在初始化...</div>
+        </div>
+    </div>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+    layui.use(['jquery', 'layer', 'element', 'laypage', 'util'], function(){
+        var $ = layui.jquery;
+        var layer = layui.layer;
+        var element = layui.element;
+        var laypage = layui.laypage;
+        var util = layui.util;
+
+        var sentimentChart = null;
+        var trendChart = null;
+
+        function loadStats() {
+            $.get('/admin/api/opinion?action=stats', function(res){
+                if(res.code === 0) {
+                    var d = res.data;
+                    $('#statTotal').text(d.total);
+                    $('#statPositive').text(d.positive);
+                    $('#statNegative').text(d.negative);
+                    $('#statNeutral').text(d.neutral);
+                    $('#statScore').text(d.avg_score);
+                }
+            });
+        }
+
+        function loadTable(page) {
+            page = page || 1;
+            $.get('/admin/api/opinion?action=list&page=' + page + '&limit=10', function(res){
+                if(res.code === 0) {
+                    var html = '';
+                    if(res.data && res.data.length > 0) {
+                        res.data.forEach(function(d){
+                            var sentimentClass = 'sentiment-neutral';
+                            if(d.sentiment === '正向') sentimentClass = 'sentiment-positive';
+                            if(d.sentiment === '负向') sentimentClass = 'sentiment-negative';
+                            var keywords = (d.keywords || []).slice(0, 3).join(', ');
+                            html += '<tr>';
+                            html += '<td>' + d.id + '</td>';
+                            html += '<td style="text-align:left;">' + (d.title || '') + '</td>';
+                            html += '<td><span class="sentiment-badge ' + sentimentClass + '">' + d.sentiment + '</span></td>';
+                            html += '<td>' + d.score + '</td>';
+                            html += '<td>' + keywords + '</td>';
+                            html += '<td>' + (d.create_at || '').substring(0, 19) + '</td>';
+                            html += '<td><a href="javascript:;" class="view-detail" data-id="' + d.id + '">查看</a></td>';
+                            html += '</tr>';
+                        });
+                    } else {
+                        html = '<tr><td colspan="7" style="text-align:center;color:#79aebb;padding:40px;">暂无分析记录，请点击"启动AI分析"开始分析</td></tr>';
+                    }
+                    $('#opinionTableBody').html(html);
+
+                    laypage.render({
+                        elem: 'opinionPage',
+                        count: res.count || 0,
+                        limit: 10,
+                        curr: page,
+                        jump: function(obj, first){
+                            if(!first) loadTable(obj.curr);
+                        }
+                    });
+                }
+            });
+        }
+
+        function loadLatestAnalysis() {
+            $.get('/admin/api/opinion?action=list&page=1&limit=1', function(res){
+                if(res.code === 0 && res.data.length > 0) {
+                    var d = res.data[0];
+                    var sentimentClass = 'sentiment-neutral';
+                    if(d.sentiment === '正向') sentimentClass = 'sentiment-positive';
+                    if(d.sentiment === '负向') sentimentClass = 'sentiment-negative';
+                    var scoreColor = d.score >= 70 ? '#32d296' : (d.score >= 40 ? '#ffbc5e' : '#ff6b7a');
+                    var keywordsHtml = '';
+                    (d.keywords || []).forEach(function(k){
+                        keywordsHtml += '<span class="analysis-keyword">' + k + '</span>';
+                    });
+
+                    var html = '<div class="latest-analysis">';
+                    html += '<div class="analysis-header">';
+                    html += '<span class="analysis-title"><i class="fas fa-file-alt"></i> 最新分析报告</span>';
+                    html += '<span class="sentiment-badge ' + sentimentClass + '">' + d.sentiment + '</span>';
+                    html += '</div>';
+                    html += '<div class="analysis-content">' + (d.content || '暂无内容') + '</div>';
+                    html += '<div class="analysis-keywords">' + keywordsHtml + '</div>';
+                    html += '<div style="margin-top:10px;color:#79aebb;font-size:12px;">健康度评分: ' + d.score + '/100</div>';
+                    html += '<div class="score-bar"><div class="score-bar-fill" style="width:' + d.score + '%;background:' + scoreColor + ';"></div></div>';
+                    html += '<div style="margin-top:10px;color:#79aebb;font-size:12px;">分析时间: ' + (d.create_at || '').substring(0, 19) + '</div>';
+                    html += '</div>';
+                    $('#latestAnalysisContainer').html(html);
+                }
+            });
+        }
+
+        function startAnalyze() {
+            $('#btnAnalyze').prop('disabled', true);
+            $('#progressOverlay').css('display', 'flex');
+            $('#progressMessage').text('正在初始化...');
+            element.progress('analyzeProgress', '0%');
+
+            var step = 0;
+            var progressTimer = setInterval(function(){
+                step = Math.min(step + 5, 90);
+                element.progress('analyzeProgress', step + '%');
+            }, 1000);
+
+            var source = new EventSource('/admin/api/opinion/analyze/stream');
+            source.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                if(data.type === 'status') {
+                    $('#progressMessage').text(data.message);
+                } else if(data.type === 'done') {
+                    clearInterval(progressTimer);
+                    element.progress('analyzeProgress', '100%');
+                    $('#progressMessage').text('分析完成！');
+                    source.close();
+                    setTimeout(function(){
+                        $('#progressOverlay').fadeOut(300);
+                        $('#btnAnalyze').prop('disabled', false);
+                        loadAll();
+                        layer.msg('舆情分析完成', {icon: 1});
+                    }, 800);
+                } else if(data.type === 'error') {
+                    clearInterval(progressTimer);
+                    source.close();
+                    $('#progressOverlay').fadeOut(300);
+                    $('#btnAnalyze').prop('disabled', false);
+                    layer.msg('分析失败: ' + data.message, {icon: 2, time: 5000});
+                    console.error('分析错误:', data.message);
+                }
+            };
+            source.onerror = function(err) {
+                clearInterval(progressTimer);
+                source.close();
+                $('#progressOverlay').fadeOut(300);
+                $('#btnAnalyze').prop('disabled', false);
+                layer.msg('分析失败: 连接中断或服务器错误', {icon: 2, time: 5000});
+                console.error('EventSource 错误:', err);
+            };
+        }
+
+        function loadAll() {
+            loadStats();
+            loadTable(1);
+            loadLatestAnalysis();
+        }
+
+        loadAll();
+
+        $('#btnAnalyze').on('click', function(){
+            startAnalyze();
+        });
+
+        $(document).on('click', '.view-detail', function(){
+            var id = $(this).data('id');
+            $.get('/admin/api/opinion?action=detail&id=' + id, function(res){
+                if(res.code === 0) {
+                    var d = res.data;
+                    var sentimentClass = 'sentiment-neutral';
+                    if(d.sentiment === '正向') sentimentClass = 'sentiment-positive';
+                    if(d.sentiment === '负向') sentimentClass = 'sentiment-negative';
+                    var scoreColor = d.score >= 70 ? '#32d296' : (d.score >= 40 ? '#ffbc5e' : '#ff6b7a');
+                    var keywordsHtml = '';
+                    (d.keywords || []).forEach(function(k){
+                        keywordsHtml += '<span class="analysis-keyword">' + k + '</span>';
+                    });
+                    var content = '<div style="padding:10px;">';
+                    content += '<h3 style="margin-bottom:10px;color:#ecfcff;">' + d.title + ' <span class="sentiment-badge ' + sentimentClass + '">' + d.sentiment + '</span></h3>';
+                    content += '<div style="color:#b7dbe5;line-height:1.8;white-space:pre-wrap;">' + (d.content || '') + '</div>';
+                    content += '<div class="analysis-keywords" style="margin-top:15px;">' + keywordsHtml + '</div>';
+                    content += '<div style="margin-top:15px;color:#b7dbe5;">健康度: <b style="color:' + scoreColor + '">' + d.score + '</b>/100</div>';
+                    content += '<div class="score-bar" style="margin-top:5px;"><div class="score-bar-fill" style="width:' + d.score + '%;background:' + scoreColor + ';"></div></div>';
+                    content += '<div style="margin-top:10px;color:#79aebb;font-size:12px;">模型: ' + (d.model_name || '未知') + ' | 时间: ' + (d.create_at || '').substring(0, 19) + '</div>';
+                    content += '</div>';
+                    layer.open({
+                        type: 1,
+                        title: '舆情分析详情',
+                        area: ['600px', '500px'],
+                        content: content
+                    });
+                }
+            });
+        });
+
+        $(window).on('resize', function(){
+            sentimentChart.resize();
+            trendChart.resize();
+        });
+    });
+    </script>
+</body>
+</html>

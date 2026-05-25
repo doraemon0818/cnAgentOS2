@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能聊天管理</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+    <style>
+        body {
+            padding: 15px;
+            background: transparent;
+        }
+        .search-bar, .panel-wrap {
+            padding: 15px;
+            border-radius: 18px;
+        }
+        .toolbar-line {
+            margin-bottom: 14px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .status-tag, .type-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+        .status-on {
+            background: rgba(87, 218, 149, 0.16);
+            color: #6ee6a8;
+        }
+        .status-off {
+            background: rgba(255, 107, 107, 0.16);
+            color: #ff9898;
+        }
+        .status-ban {
+            background: rgba(255, 174, 66, 0.16);
+            color: #ffc56f;
+        }
+        .type-endpoint {
+            background: rgba(88, 142, 255, 0.16);
+            color: #8eb9ff;
+        }
+        .type-prompt {
+            background: rgba(61, 208, 174, 0.16);
+            color: #6ce3c9;
+        }
+        .detail-box {
+            padding: 20px;
+            line-height: 1.9;
+        }
+        .detail-card {
+            border: 1px solid rgba(111, 132, 255, 0.12);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 14px;
+            background: rgba(17, 28, 56, 0.45);
+        }
+        .detail-title {
+            color: #dbe7ff;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .member-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .member-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(34, 55, 110, 0.55);
+            color: #dbe7ff;
+            font-size: 12px;
+        }
+        .hint-line {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #8ea6d1;
+            line-height: 1.8;
+        }
+        .im-form {
+            padding: 20px 18px 6px;
+        }
+        .im-form .section-box {
+            border: 1px solid rgba(111, 132, 255, 0.12);
+            border-radius: 16px;
+            padding: 16px 16px 2px;
+            margin-bottom: 14px;
+            background: rgba(17, 28, 56, 0.45);
+        }
+        .im-form .section-title {
+            margin-bottom: 12px;
+            color: #dbe7ff;
+            font-weight: 600;
+        }
+        .json-tip {
+            font-size: 12px;
+            color: #9ab0db;
+            line-height: 1.8;
+            margin-top: 6px;
+        }
+        .employee-check-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .employee-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            background: rgba(15, 30, 60, 0.48);
+            border: 1px solid rgba(111, 132, 255, 0.12);
+        }
+        .file-link {
+            color: #8eb9ff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-inline" style="width: 320px;">
+                        <input type="text" name="keyword" placeholder="群名 / 文件名 / 服务器 / 工具编码" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" class="layui-btn layui-btn-normal" id="searchBtn">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="resetBtn">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel-wrap">
+        <div class="layui-tab layui-tab-brief" lay-filter="imTabs">
+            <ul class="layui-tab-title">
+                <li class="layui-this">群管理</li>
+                <li>文件管理</li>
+                <li>聊天服务器</li>
+                <li>AI工具绑定</li>
+            </ul>
+            <div class="layui-tab-content" style="padding: 16px 0 0;">
+                <div class="layui-tab-item layui-show">
+                    <div class="toolbar-line">
+                        <button type="button" class="layui-btn layui-btn-primary" id="reloadGroupBtn">
+                            <i class="layui-icon layui-icon-refresh"></i> 刷新群列表
+                        </button>
+                    </div>
+                    <table class="layui-hide" id="groupTable" lay-filter="groupTable"></table>
+                </div>
+                <div class="layui-tab-item">
+                    <div class="toolbar-line">
+                        <button type="button" class="layui-btn layui-btn-danger" id="batchDeleteFileBtn">
+                            <i class="layui-icon layui-icon-delete"></i> 批量删除文件
+                        </button>
+                    </div>
+                    <table class="layui-hide" id="fileTable" lay-filter="fileTable"></table>
+                </div>
+                <div class="layui-tab-item">
+                    <div class="toolbar-line">
+                        <button type="button" class="layui-btn layui-btn-normal" id="addServerBtn">
+                            <i class="layui-icon layui-icon-add-1"></i> 新增聊天服务器
+                        </button>
+                    </div>
+                    <table class="layui-hide" id="serverTable" lay-filter="serverTable"></table>
+                </div>
+                <div class="layui-tab-item">
+                    <div class="toolbar-line">
+                        <button type="button" class="layui-btn layui-btn-normal" id="addToolBtn">
+                            <i class="layui-icon layui-icon-add-1"></i> 新增AI工具
+                        </button>
+                    </div>
+                    <table class="layui-hide" id="toolTable" lay-filter="toolTable"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/html" id="statusTpl">
+        {{!# if(d.status === 1) { }}
+        <span class="status-tag status-on">启用</span>
+        {{!# } else if(d.status === 0) { }}
+        <span class="status-tag status-ban">封禁</span>
+        {{!# } else { }}
+        <span class="status-tag status-off">停用</span>
+        {{!# } }}
+    </script>
+
+    <script type="text/html" id="toolTypeTpl">
+        {{!# if(d.tool_type === 'prompt') { }}
+        <span class="type-tag type-prompt">Prompt</span>
+        {{!# } else { }}
+        <span class="type-tag type-endpoint">Endpoint</span>
+        {{!# } }}
+    </script>
+
+    <script type="text/html" id="groupToolbarTpl">
+        <button type="button" class="layui-btn layui-btn-sm" lay-event="detail">详情</button>
+        <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" lay-event="notice">公告</button>
+        <button type="button" class="layui-btn layui-btn-sm {{!d.status === 1 ? 'layui-btn-warm' : 'layui-btn-primary'}}" lay-event="toggle">
+            {{!d.status === 1 ? '封禁' : '启用'}}
+        </button>
+    </script>
+
+    <script type="text/html" id="fileToolbarTpl">
+        <a class="layui-btn layui-btn-sm layui-btn-normal" href="{{!d.file_url}}" target="_blank">查看</a>
+        <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">删除</button>
+    </script>
+
+    <script type="text/html" id="serverToolbarTpl">
+        <button type="button" class="layui-btn layui-btn-sm" lay-event="edit">编辑</button>
+        <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">删除</button>
+    </script>
+
+    <script type="text/html" id="toolToolbarTpl">
+        <button type="button" class="layui-btn layui-btn-sm" lay-event="edit">编辑</button>
+        <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">删除</button>
+    </script>
+
+    <script type="text/html" id="serverFormTpl">
+        <form class="layui-form im-form" id="serverForm">
+            <input type="hidden" name="id" value="{{!d.id || ''}}">
+            <div class="section-box">
+                <div class="section-title">基础配置</div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">服务器名称</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="name" value="{{!d.name || ''}}" placeholder="例如：本地轮询聊天服务" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">服务器编码</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="code" value="{{!d.code || ''}}" placeholder="例如：local_im_polling" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">协议</label>
+                            <div class="layui-input-block">
+                                <select name="protocol">
+                                    <option value="polling" {{!d.protocol === 'polling' || !d.protocol ? 'selected' : ''}}>polling</option>
+                                    <option value="sse" {{!d.protocol === 'sse' ? 'selected' : ''}}>sse</option>
+                                    <option value="websocket" {{!d.protocol === 'websocket' ? 'selected' : ''}}>websocket</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">权重</label>
+                            <div class="layui-input-block">
+                                <input type="number" name="weight" value="{{!d.weight || 100}}" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">优先级</label>
+                            <div class="layui-input-block">
+                                <input type="number" name="priority" value="{{!d.priority || 1}}" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">服务地址</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="base_url" value="{{!d.base_url || ''}}" placeholder="例如：http://localhost:10086" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">健康检查</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="health_url" value="{{!d.health_url || ''}}" placeholder="例如：/admin/welcome" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-block">
+                        <textarea name="remark" class="layui-textarea" placeholder="记录路由策略、可用性说明等">{{!d.remark || ''}}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" {{!d.status === 1 || !d.id ? 'checked' : ''}}>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </script>
+
+    <script type="text/html" id="toolFormTpl">
+        <form class="layui-form im-form" id="toolForm">
+            <input type="hidden" name="id" value="{{!d.id || ''}}">
+            <div class="section-box">
+                <div class="section-title">工具基础信息</div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">工具名称</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="name" value="{{!d.name || ''}}" placeholder="例如：天气接口工具" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">工具编码</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="code" value="{{!d.code || ''}}" placeholder="例如：tool_weather_endpoint" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">工具类型</label>
+                            <div class="layui-input-block">
+                                <select name="tool_type" id="toolTypeSelect">
+                                    <option value="endpoint" {{!d.tool_type === 'endpoint' || !d.tool_type ? 'selected' : ''}}>endpoint</option>
+                                    <option value="prompt" {{!d.tool_type === 'prompt' ? 'selected' : ''}}>prompt</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md8">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">绑定接口</label>
+                            <div class="layui-input-block">
+                                <select name="endpoint_id" id="toolEndpointSelect"></select>
+                                <div class="json-tip">仅 `endpoint` 类型必填，用于绑定现有接口管理中的服务。</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">工具描述</label>
+                    <div class="layui-input-block">
+                        <textarea name="description" class="layui-textarea" placeholder="描述该工具的能力、用途和适用员工">{{!d.description || ''}}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">配置JSON</label>
+                    <div class="layui-input-block">
+                        <textarea name="config_json" class="layui-textarea" placeholder='{"scene":"weather"}'>{{!d.config_json || '{}'}}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" {{!d.status === 1 || !d.id ? 'checked' : ''}}>
+                    </div>
+                </div>
+            </div>
+            <div class="section-box">
+                <div class="section-title">绑定数字员工</div>
+                <div class="employee-check-grid" id="toolEmployeeChecks"></div>
+                <div class="hint-line">支持将同一个工具绑定给多个数字员工，供不同角色按需复用。</div>
+            </div>
+        </form>
+    </script>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'layer', 'jquery', 'form', 'laytpl', 'element'], function(){
+            var table = layui.table;
+            var layer = layui.layer;
+            var $ = layui.jquery;
+            var form = layui.form;
+            var laytpl = layui.laytpl;
+            var element = layui.element;
+
+            var activeTab = 'group';
+            var metaCache = { employees: [], endpoints: [] };
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.post(url, data, callback, 'json');
+            }
+
+            function formatSize(size) {
+                var value = Number(size || 0);
+                if (!value) { return '0 B'; }
+                if (value < 1024) { return value + ' B'; }
+                if (value < 1024 * 1024) { return (value / 1024).toFixed(1) + ' KB'; }
+                return (value / (1024 * 1024)).toFixed(2) + ' MB';
+            }
+
+            function getKeyword() {
+                return $.trim($('input[name="keyword"]').val());
+            }
+
+            function buildUrl(action) {
+                return '/admin/api/im?action=' + encodeURIComponent(action);
+            }
+
+            function loadMeta(callback) {
+                if (metaCache.employees.length || metaCache.endpoints.length) {
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                    return;
+                }
+                $.get(buildUrl('meta'), function(res){
+                    if (res.code === 0 && res.data) {
+                        metaCache = res.data;
+                    }
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                }, 'json');
+            }
+
+            function renderEndpointOptions(selectedId) {
+                var html = '<option value="">请选择接口</option>';
+                (metaCache.endpoints || []).forEach(function(item){
+                    var selected = String(item.id) === String(selectedId || '') ? ' selected' : '';
+                    html += '<option value="' + item.id + '"' + selected + '>' + item.name + ' [' + item.code + ']</option>';
+                });
+                $('#toolEndpointSelect').html(html);
+            }
+
+            function renderEmployeeChecks(selectedIds) {
+                selectedIds = selectedIds || [];
+                var html = (metaCache.employees || []).map(function(item){
+                    var checked = selectedIds.indexOf(Number(item.id)) >= 0 || selectedIds.indexOf(String(item.id)) >= 0 ? ' checked' : '';
+                    return '<label class="employee-check"><input type="checkbox" class="tool-employee-check" value="' + item.id + '"' + checked + '><span>' + item.name + ' (@' + item.alias + ')</span></label>';
+                }).join('');
+                $('#toolEmployeeChecks').html(html || '<div class="hint-line">暂无可绑定数字员工</div>');
+            }
+
+            function collectServerForm(layero, action) {
+                var data = {
+                    action: action,
+                    id: layero.find('input[name="id"]').val(),
+                    name: $.trim(layero.find('input[name="name"]').val()),
+                    code: $.trim(layero.find('input[name="code"]').val()),
+                    protocol: layero.find('select[name="protocol"]').val(),
+                    base_url: $.trim(layero.find('input[name="base_url"]').val()),
+                    health_url: $.trim(layero.find('input[name="health_url"]').val()),
+                    weight: $.trim(layero.find('input[name="weight"]').val()) || '100',
+                    priority: $.trim(layero.find('input[name="priority"]').val()) || '1',
+                    remark: $.trim(layero.find('textarea[name="remark"]').val()),
+                    status: layero.find('input[name="status"]').is(':checked') ? 1 : 0
+                };
+                if (!data.name || !data.code) {
+                    layer.msg('服务器名称和编码不能为空', {icon: 2});
+                    return null;
+                }
+                return data;
+            }
+
+            function collectToolForm(layero, action) {
+                var employeeIds = Array.prototype.slice.call(layero.find('.tool-employee-check:checked')).map(function(node){
+                    return node.value;
+                }).join(',');
+                var data = {
+                    action: action,
+                    id: layero.find('input[name="id"]').val(),
+                    name: $.trim(layero.find('input[name="name"]').val()),
+                    code: $.trim(layero.find('input[name="code"]').val()),
+                    tool_type: layero.find('select[name="tool_type"]').val(),
+                    endpoint_id: layero.find('select[name="endpoint_id"]').val(),
+                    description: $.trim(layero.find('textarea[name="description"]').val()),
+                    config_json: $.trim(layero.find('textarea[name="config_json"]').val()) || '{}',
+                    status: layero.find('input[name="status"]').is(':checked') ? 1 : 0,
+                    employee_ids: employeeIds
+                };
+                if (!data.name || !data.code) {
+                    layer.msg('工具名称和编码不能为空', {icon: 2});
+                    return null;
+                }
+                if (data.tool_type === 'endpoint' && !data.endpoint_id) {
+                    layer.msg('endpoint 类型工具必须绑定接口', {icon: 2});
+                    return null;
+                }
+                return data;
+            }
+
+            function openServerForm(data) {
+                data = data || {protocol: 'polling', weight: 100, priority: 1, status: 1};
+                layer.open({
+                    type: 1,
+                    title: data.id ? '编辑聊天服务器' : '新增聊天服务器',
+                    area: ['880px', '640px'],
+                    content: laytpl($('#serverFormTpl').html()).render(data),
+                    btn: ['保存', '取消'],
+                    success: function() {
+                        form.render();
+                    },
+                    yes: function(index, layero) {
+                        var formData = collectServerForm(layero, 'server_save');
+                        if (!formData) { return; }
+                        postData('/admin/api/im', formData, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '保存成功', {icon: 1});
+                                layer.close(index);
+                                serverTable.reload();
+                            } else {
+                                layer.msg(res.msg || '保存失败', {icon: 2});
+                            }
+                        });
+                    }
+                });
+            }
+
+            function openToolForm(data) {
+                data = data || {tool_type: 'endpoint', status: 1, config_json: '{}', employee_ids: []};
+                loadMeta(function(){
+                    layer.open({
+                        type: 1,
+                        title: data.id ? '编辑AI工具' : '新增AI工具',
+                        area: ['980px', '760px'],
+                        content: laytpl($('#toolFormTpl').html()).render(data),
+                        btn: ['保存', '取消'],
+                        success: function(layero) {
+                            renderEndpointOptions(data.endpoint_id);
+                            renderEmployeeChecks(data.employee_ids || []);
+                            form.render();
+                            layero.find('#toolTypeSelect').on('change', function(){
+                                if ($(this).val() === 'prompt') {
+                                    $('#toolEndpointSelect').val('');
+                                    form.render('select');
+                                }
+                            });
+                        },
+                        yes: function(index, layero) {
+                            var formData = collectToolForm(layero, 'tool_save');
+                            if (!formData) { return; }
+                            postData('/admin/api/im', formData, function(res){
+                                if (res.code === 0) {
+                                    layer.msg(res.msg || '保存成功', {icon: 1});
+                                    layer.close(index);
+                                    toolTable.reload();
+                                } else {
+                                    layer.msg(res.msg || '保存失败', {icon: 2});
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+
+            function openGroupDetail(groupId) {
+                $.get(buildUrl('group_detail'), {id: groupId}, function(res){
+                    if (res.code !== 0) {
+                        layer.msg(res.msg || '详情加载失败', {icon: 2});
+                        return;
+                    }
+                    var data = res.data || {};
+                    var members = data.members || [];
+                    var memberHtml = members.map(function(item){
+                        var suffix = item.member_type === 'employee' ? ' · 数字员工' : '';
+                        return '<span class="member-chip">' + (item.name || '成员') + suffix + '</span>';
+                    }).join('');
+                    var html = '' +
+                        '<div class="detail-box">' +
+                            '<div class="detail-card">' +
+                                '<div class="detail-title">群基础信息</div>' +
+                                '<div>群名称：' + (data.name || '-') + '</div>' +
+                                '<div>群主：' + (data.owner_name || '-') + '</div>' +
+                                '<div>群状态：' + (data.status === 1 ? '启用' : '封禁') + '</div>' +
+                                '<div>创建时间：' + (data.create_at || '-') + '</div>' +
+                                '<div>群公告：' + (data.notice || '暂无公告') + '</div>' +
+                            '</div>' +
+                            '<div class="detail-card">' +
+                                '<div class="detail-title">群成员列表</div>' +
+                                '<div class="member-list">' + (memberHtml || '<span class="hint-line">暂无成员</span>') + '</div>' +
+                            '</div>' +
+                        '</div>';
+                    layer.open({
+                        type: 1,
+                        closeBtn: 1,
+                        title: '群详情',
+                        area: ['820px', '620px'],
+                        content: html,
+                        btn: ['关闭'],
+                        yes: function(index) {
+                            layer.close(index);
+                        }
+                    });
+                }, 'json');
+            }
+
+            function openGroupNotice(groupData) {
+                var html = '' +
+                    '<div class="im-form">' +
+                        '<div class="section-box">' +
+                            '<div class="section-title">发布系统群公告</div>' +
+                            '<div class="layui-form-item">' +
+                                '<label class="layui-form-label">公告标题</label>' +
+                                '<div class="layui-input-block">' +
+                                    '<input type="text" id="noticeTitle" class="layui-input" placeholder="例如：群活动通知">' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="layui-form-item">' +
+                                '<label class="layui-form-label">公告内容</label>' +
+                                '<div class="layui-input-block">' +
+                                    '<textarea id="noticeContent" class="layui-textarea" placeholder="请输入公告内容">' + (groupData.notice || '') + '</textarea>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                layer.open({
+                    type: 1,
+                    title: '发布群公告 - ' + (groupData.name || ''),
+                    area: ['760px', '460px'],
+                    content: html,
+                    btn: ['发布', '取消'],
+                    yes: function(index) {
+                        postData('/admin/api/im', {
+                            action: 'group_notice',
+                            group_id: groupData.id,
+                            title: $.trim($('#noticeTitle').val()),
+                            content: $.trim($('#noticeContent').val())
+                        }, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '发布成功', {icon: 1});
+                                layer.close(index);
+                                groupTable.reload();
+                            } else {
+                                layer.msg(res.msg || '发布失败', {icon: 2});
+                            }
+                        });
+                    }
+                });
+            }
+
+            var groupTable = table.render({
+                elem: '#groupTable',
+                url: buildUrl('group_list'),
+                method: 'get',
+                where: {keyword: getKeyword()},
+                page: {limit: 20, limits: [10, 20, 50]},
+                cols: [[
+                    {field: 'id', title: 'ID', width: 70},
+                    {field: 'name', title: '群名称', minWidth: 180},
+                    {field: 'owner_name', title: '群主', width: 120},
+                    {field: 'member_count', title: '成员数', width: 100},
+                    {field: 'message_count', title: '消息数', width: 100},
+                    {field: 'status', title: '状态', width: 90, templet: '#statusTpl'},
+                    {field: 'update_at', title: '更新时间', width: 170},
+                    {title: '操作', width: 230, fixed: 'right', toolbar: '#groupToolbarTpl'}
+                ]],
+                parseData: function(res){
+                    return {code: res.code, msg: res.msg, count: res.count, data: res.data};
+                }
+            });
+
+            var fileTable = table.render({
+                elem: '#fileTable',
+                url: buildUrl('file_list'),
+                method: 'get',
+                where: {keyword: getKeyword()},
+                page: {limit: 20, limits: [10, 20, 50]},
+                cols: [[
+                    {type: 'checkbox', width: 48},
+                    {field: 'id', title: 'ID', width: 70},
+                    {field: 'original_name', title: '文件名', minWidth: 200},
+                    {field: 'mime_type', title: '类型', minWidth: 160},
+                    {field: 'size_bytes', title: '大小', width: 100, templet: function(d){ return formatSize(d.size_bytes); }},
+                    {field: 'upload_username', title: '上传用户', width: 120},
+                    {field: 'ref_count', title: '引用次数', width: 100},
+                    {field: 'create_at', title: '上传时间', width: 170},
+                    {title: '操作', width: 160, fixed: 'right', toolbar: '#fileToolbarTpl'}
+                ]],
+                parseData: function(res){
+                    return {code: res.code, msg: res.msg, count: res.count, data: res.data};
+                }
+            });
+
+            var serverTable = table.render({
+                elem: '#serverTable',
+                url: buildUrl('server_list'),
+                method: 'get',
+                where: {keyword: getKeyword()},
+                page: {limit: 20, limits: [10, 20, 50]},
+                cols: [[
+                    {field: 'id', title: 'ID', width: 70},
+                    {field: 'name', title: '名称', minWidth: 160},
+                    {field: 'code', title: '编码', minWidth: 160},
+                    {field: 'protocol', title: '协议', width: 100},
+                    {field: 'base_url', title: '地址', minWidth: 220},
+                    {field: 'weight', title: '权重', width: 90},
+                    {field: 'priority', title: '优先级', width: 90},
+                    {field: 'last_health_status', title: '健康状态', width: 110},
+                    {field: 'status', title: '状态', width: 90, templet: '#statusTpl'},
+                    {title: '操作', width: 150, fixed: 'right', toolbar: '#serverToolbarTpl'}
+                ]],
+                parseData: function(res){
+                    return {code: res.code, msg: res.msg, count: res.count, data: res.data};
+                }
+            });
+
+            var toolTable = table.render({
+                elem: '#toolTable',
+                url: buildUrl('tool_list'),
+                method: 'get',
+                where: {keyword: getKeyword()},
+                page: {limit: 20, limits: [10, 20, 50]},
+                cols: [[
+                    {field: 'id', title: 'ID', width: 70},
+                    {field: 'name', title: '工具名称', minWidth: 160},
+                    {field: 'code', title: '工具编码', minWidth: 180},
+                    {field: 'tool_type', title: '类型', width: 100, templet: '#toolTypeTpl'},
+                    {field: 'endpoint_name', title: '绑定接口', minWidth: 160},
+                    {field: 'bind_count', title: '绑定员工数', width: 110},
+                    {field: 'status', title: '状态', width: 90, templet: '#statusTpl'},
+                    {field: 'update_at', title: '更新时间', width: 170},
+                    {title: '操作', width: 150, fixed: 'right', toolbar: '#toolToolbarTpl'}
+                ]],
+                parseData: function(res){
+                    return {code: res.code, msg: res.msg, count: res.count, data: res.data};
+                }
+            });
+
+            function reloadActiveTable() {
+                var options = {where: {keyword: getKeyword()}, page: {curr: 1}};
+                if (activeTab === 'group') {
+                    groupTable.reload(options);
+                } else if (activeTab === 'file') {
+                    fileTable.reload(options);
+                } else if (activeTab === 'server') {
+                    serverTable.reload(options);
+                } else {
+                    toolTable.reload(options);
+                }
+            }
+
+            $('#searchBtn').on('click', function(){
+                reloadActiveTable();
+            });
+
+            $('#resetBtn').on('click', function(){
+                $('input[name="keyword"]').val('');
+                reloadActiveTable();
+            });
+
+            $('#reloadGroupBtn').on('click', function(){
+                groupTable.reload({page: {curr: 1}});
+            });
+
+            $('#batchDeleteFileBtn').on('click', function(){
+                var checkStatus = table.checkStatus('fileTable');
+                var ids = (checkStatus.data || []).map(function(item){ return item.id; });
+                if (!ids.length) {
+                    layer.msg('请先选择文件', {icon: 2});
+                    return;
+                }
+                layer.confirm('确定批量删除选中的文件记录和实际文件吗？', {icon: 3, title: '提示'}, function(index){
+                    postData('/admin/api/im', {action: 'file_batch_delete', ids: ids.join(',')}, function(res){
+                        if (res.code === 0) {
+                            layer.msg(res.msg || '删除成功', {icon: 1});
+                            fileTable.reload();
+                        } else {
+                            layer.msg(res.msg || '删除失败', {icon: 2});
+                        }
+                    });
+                    layer.close(index);
+                });
+            });
+
+            $('#addServerBtn').on('click', function(){
+                openServerForm(null);
+            });
+
+            $('#addToolBtn').on('click', function(){
+                openToolForm(null);
+            });
+
+            element.on('tab(imTabs)', function(data){
+                activeTab = ['group', 'file', 'server', 'tool'][data.index] || 'group';
+            });
+
+            table.on('tool(groupTable)', function(obj){
+                var data = obj.data;
+                if (obj.event === 'detail') {
+                    openGroupDetail(data.id);
+                } else if (obj.event === 'notice') {
+                    openGroupNotice(data);
+                } else if (obj.event === 'toggle') {
+                    var nextStatus = data.status === 1 ? 0 : 1;
+                    var tip = nextStatus === 1 ? '启用' : '封禁';
+                    layer.confirm('确定要' + tip + '该群聊吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/im', {action: 'group_status', group_id: data.id, status: nextStatus}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '状态更新成功', {icon: 1});
+                                groupTable.reload();
+                            } else {
+                                layer.msg(res.msg || '状态更新失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+
+            table.on('tool(fileTable)', function(obj){
+                var data = obj.data;
+                if (obj.event === 'delete') {
+                    layer.confirm('确定删除该文件吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/im', {action: 'file_delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                fileTable.reload();
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+
+            table.on('tool(serverTable)', function(obj){
+                var data = obj.data;
+                if (obj.event === 'edit') {
+                    $.get(buildUrl('server_detail'), {id: data.id}, function(res){
+                        if (res.code !== 0) {
+                            layer.msg(res.msg || '详情加载失败', {icon: 2});
+                            return;
+                        }
+                        openServerForm(res.data);
+                    }, 'json');
+                } else if (obj.event === 'delete') {
+                    layer.confirm('确定删除该聊天服务器配置吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/im', {action: 'server_delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                serverTable.reload();
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+
+            table.on('tool(toolTable)', function(obj){
+                var data = obj.data;
+                if (obj.event === 'edit') {
+                    $.get(buildUrl('tool_detail'), {id: data.id}, function(res){
+                        if (res.code !== 0) {
+                            layer.msg(res.msg || '详情加载失败', {icon: 2});
+                            return;
+                        }
+                        openToolForm(res.data);
+                    }, 'json');
+                } else if (obj.event === 'delete') {
+                    layer.confirm('确定删除该AI工具吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/im', {action: 'tool_delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                toolTable.reload();
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

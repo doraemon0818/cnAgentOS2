@@ -1,0 +1,3021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        :root {
+            --bg-main: #08131d;
+            --bg-side: rgba(5, 18, 29, 0.88);
+            --bg-chat: rgba(10, 24, 38, 0.9);
+            --card: rgba(9, 25, 39, 0.86);
+            --card-strong: rgba(10, 30, 47, 0.96);
+            --line: rgba(54, 199, 255, 0.12);
+            --line-strong: rgba(54, 199, 255, 0.22);
+            --text-main: #f2fbff;
+            --text-sub: #9ab8c7;
+            --text-mute: #6f8b99;
+            --brand: #22d6ff;
+            --brand-2: #0b7ea2;
+            --user-bubble: linear-gradient(135deg, #0c6788 0%, #18bbe1 100%);
+            --other-bubble: rgba(21, 43, 61, 0.98);
+            --shadow: 0 28px 64px rgba(0, 0, 0, 0.28);
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; min-height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 14% 18%, rgba(26, 200, 255, 0.12), transparent 20%),
+                radial-gradient(circle at 82% 14%, rgba(45, 154, 255, 0.08), transparent 18%),
+                linear-gradient(180deg, #06111a 0%, #071723 52%, #08131d 100%);
+            overflow: hidden;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(rgba(31, 208, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(31, 208, 255, 0.035) 1px, transparent 1px);
+            background-size: 30px 30px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.58), transparent 96%);
+        }
+        body.weather-mode {
+            background:
+                radial-gradient(circle at 16% 16%, rgba(142, 218, 255, 0.18), transparent 18%),
+                radial-gradient(circle at 78% 10%, rgba(72, 112, 255, 0.16), transparent 20%),
+                linear-gradient(180deg, #0b2033 0%, #12324b 44%, #0c1926 100%);
+        }
+        .page {
+            height: 100vh;
+            padding: 12px;
+        }
+        .topbar {
+            display: none;
+        }
+        .brand h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+        }
+        .brand p {
+            margin: 8px 0 0;
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        .system-switch {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .switch-btn, .ghost-btn, .primary-btn, .tool-btn {
+            border: 1px solid var(--line);
+            background: rgba(8, 23, 35, 0.92);
+            color: var(--text-main);
+            height: 40px;
+            border-radius: 12px;
+            padding: 0 16px;
+            cursor: pointer;
+            transition: all .2s ease;
+            font-size: 14px;
+        }
+        .switch-btn.active, .primary-btn {
+            background: linear-gradient(135deg, #0e4258 0%, #0f7ca3 54%, #1ce2ff 100%);
+            border-color: rgba(28, 226, 255, 0.38);
+            box-shadow: 0 12px 26px rgba(13, 124, 163, 0.22);
+        }
+        .ghost-btn:hover, .tool-btn:hover, .switch-btn:hover {
+            border-color: var(--line-strong);
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 92px 340px 1fr;
+            gap: 14px;
+            height: 100%;
+        }
+        .nav-rail, .sidebar, .chat-area {
+            min-height: 0;
+            border-radius: 24px;
+            background: var(--bg-side);
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+        }
+        .nav-rail {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 10px;
+            gap: 14px;
+            background: rgba(6, 18, 28, 0.96);
+        }
+        .rail-profile {
+            width: 100%;
+            padding: 12px 8px;
+            border-radius: 24px;
+            background: rgba(11, 30, 46, 0.98);
+            border: 1px solid rgba(44, 161, 208, 0.14);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+        }
+        .rail-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(11, 91, 130, 0.96), rgba(27, 183, 225, 0.92));
+            border: 1px solid rgba(34, 214, 255, 0.22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ebfbff;
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .rail-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        .rail-profile-name {
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+        .rail-profile-role {
+            font-size: 11px;
+            color: var(--text-sub);
+        }
+        .rail-nav {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .rail-actions {
+            width: 100%;
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(54, 199, 255, 0.08);
+        }
+        .rail-tab {
+            width: 100%;
+            height: 48px;
+            border-radius: 16px;
+            border: 1px solid transparent;
+            background: rgba(10, 26, 40, 0.94);
+            color: var(--text-sub);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .2s ease;
+            position: relative;
+        }
+        .rail-tab.active {
+            color: var(--text-main);
+            border-color: rgba(34, 214, 255, 0.3);
+            background: rgba(16, 48, 67, 0.98);
+            box-shadow: inset 0 0 0 1px rgba(34, 214, 255, 0.08);
+        }
+        .rail-tab svg {
+            width: 19px;
+            height: 19px;
+        }
+        .rail-tab:hover {
+            color: var(--text-main);
+            border-color: rgba(34, 214, 255, 0.2);
+        }
+        .rail-badge-dot {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(214, 31, 67, 0.96), rgba(255, 88, 88, 0.92));
+            border: 1px solid rgba(255, 210, 220, 0.3);
+            box-shadow: 0 0 0 2px rgba(10, 26, 40, 0.9), 0 4px 10px rgba(113, 10, 34, 0.4);
+            display: none;
+        }
+        .rail-badge-dot.active {
+            display: block;
+        }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+        }
+        .middle-panel {
+            background: rgba(7, 18, 29, 0.96);
+        }
+        .sidebar-top {
+            padding: 14px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(8, 20, 31, 0.94);
+        }
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(23, 49, 66, 0.96);
+            border: 1px solid var(--line);
+            color: #dff7ff;
+            font-size: 12px;
+        }
+        .side-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .side-actions button {
+            flex: 1;
+        }
+        .refresh-icon-btn {
+            width: 42px;
+            min-width: 42px;
+            padding: 0;
+            flex: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .refresh-icon-btn svg,
+        .search-submit-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .middle-header {
+            padding: 14px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(8, 20, 31, 0.94);
+        }
+        .plus-menu {
+            position: relative;
+        }
+        .plus-btn {
+            width: 42px;
+            min-width: 42px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .plus-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        .plus-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 148px;
+            padding: 8px;
+            border-radius: 14px;
+            border: 1px solid rgba(56, 160, 201, 0.16);
+            background: rgba(7, 21, 33, 0.98);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.26);
+            display: none;
+            z-index: 20;
+        }
+        .plus-dropdown.active {
+            display: block;
+        }
+        .plus-item {
+            width: 100%;
+            height: 40px;
+            border: 0;
+            background: transparent;
+            color: var(--text-main);
+            border-radius: 10px;
+            text-align: left;
+            padding: 0 12px;
+            cursor: pointer;
+        }
+        .plus-item:hover {
+            background: rgba(15, 45, 63, 0.98);
+        }
+        .tab-btn {
+            width: 48px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            background: rgba(12, 28, 41, 0.92);
+            color: var(--text-sub);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tab-btn.active {
+            color: var(--text-main);
+            border-color: rgba(34, 214, 255, 0.3);
+            background: rgba(15, 45, 63, 0.98);
+        }
+        .tab-btn:hover {
+            border-color: rgba(34, 214, 255, 0.2);
+            color: var(--text-main);
+        }
+        .tab-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .search-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .search-input-wrap {
+            position: relative;
+            flex: 1;
+        }
+        .search-input-wrap svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            width: 16px;
+            height: 16px;
+            transform: translateY(-50%);
+            color: var(--text-mute);
+            pointer-events: none;
+        }
+        .search-row input {
+            flex: 1;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(6, 17, 27, 0.92);
+            color: var(--text-main);
+            padding: 0 14px 0 40px;
+            outline: none;
+        }
+        .search-submit-btn {
+            width: 42px;
+            min-width: 42px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar-body {
+            min-height: 0;
+            flex: 1;
+            overflow: hidden;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .sidebar-panels {
+            min-height: 0;
+            flex: 1;
+            overflow: auto;
+            padding-right: 4px;
+        }
+        .sidebar-footer {
+            flex-shrink: 0;
+        }
+        .panel-block {
+            display: none;
+            gap: 12px;
+            flex-direction: column;
+        }
+        .panel-block.active {
+            display: flex;
+        }
+        .section-card {
+            padding: 14px;
+            border-radius: 18px;
+            background: rgba(10, 25, 38, 0.96);
+            border: 1px solid rgba(44, 161, 208, 0.14);
+        }
+        .friend-request-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .request-panel {
+            padding: 12px;
+            border-radius: 16px;
+            background: rgba(11, 29, 44, 0.82);
+            border: 1px solid rgba(56, 160, 201, 0.12);
+        }
+        .request-panel-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .request-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .request-item {
+            padding: 10px;
+            border-radius: 14px;
+            background: rgba(8, 23, 35, 0.92);
+            border: 1px solid rgba(56, 160, 201, 0.1);
+        }
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .hint {
+            color: var(--text-sub);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+        .conversation-list, .friend-list, .employee-list, .search-result-list, .member-mini-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .conversation-item, .friend-item, .search-item {
+            padding: 12px;
+            border-radius: 16px;
+            background: rgba(11, 29, 44, 0.95);
+            border: 1px solid rgba(56, 160, 201, 0.12);
+            cursor: pointer;
+        }
+        .list-item-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .list-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 16px;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(12, 72, 102, 0.96), rgba(23, 144, 194, 0.92));
+            border: 1px solid rgba(34, 214, 255, 0.18);
+            color: #ecfbff;
+            font-size: 16px;
+            font-weight: 800;
+        }
+        .list-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .item-body {
+            min-width: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .conversation-item.active {
+            border-color: rgba(34, 214, 255, 0.32);
+            box-shadow: inset 0 0 0 1px rgba(34, 214, 255, 0.08), 0 12px 22px rgba(11, 58, 77, 0.18);
+        }
+        .item-title {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+            align-items: flex-start;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .item-title-main {
+            min-width: 0;
+            flex: 1;
+        }
+        .item-title-side {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .item-side {
+            min-width: 34px;
+            align-self: stretch;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .item-side.time-only {
+            justify-content: flex-end;
+        }
+        .item-time {
+            color: var(--text-sub);
+            font-size: 12px;
+            line-height: 1;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .item-meta, .item-sub {
+            color: var(--text-sub);
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .item-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+        .item-name-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .item-type-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #dff9ff;
+            background: rgba(18, 57, 79, 0.96);
+            border: 1px solid rgba(54, 199, 255, 0.18);
+            flex-shrink: 0;
+        }
+        .item-type-icon svg {
+            width: 13px;
+            height: 13px;
+            display: block;
+        }
+        .unread-badge {
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(158, 24, 59, 0.72) 0%, rgba(187, 47, 47, 0.58) 100%);
+            border: 1px solid rgba(255, 101, 101, 0.38);
+            backdrop-filter: blur(10px);
+            color: #fff1f4;
+            font-size: 11px;
+            font-weight: 700;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 22px rgba(92, 8, 27, 0.34);
+        }
+        .mini-btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .mini-action-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+            border: 1px solid rgba(28, 226, 255, 0.28);
+            background: linear-gradient(135deg, rgba(14, 66, 88, 0.96) 0%, rgba(15, 124, 163, 0.94) 54%, rgba(28, 226, 255, 0.92) 100%);
+            color: #f8ffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(13, 124, 163, 0.18);
+        }
+        .mini-action-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+        .mini-btn {
+            height: 32px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(37, 161, 207, 0.2);
+            background: rgba(12, 36, 53, 0.96);
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .mini-btn.danger {
+            border-color: rgba(255, 108, 108, 0.22);
+            background: rgba(60, 17, 24, 0.96);
+            color: #ffd8dd;
+        }
+        .mini-btn.muted {
+            opacity: 0.72;
+            cursor: default;
+        }
+        .employee-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(13, 33, 49, 0.96);
+            border: 1px solid rgba(34, 214, 255, 0.14);
+            cursor: pointer;
+            font-size: 13px;
+            color: #dcf7ff;
+        }
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background: var(--bg-chat);
+        }
+        .chat-header {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(8, 19, 30, 0.98);
+        }
+        .chat-head-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+        .chat-head-actions {
+            position: relative;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .chat-head-icon-btn {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(8, 23, 35, 0.92);
+            color: var(--text-main);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-head-icon-btn svg {
+            width: 17px;
+            height: 17px;
+            display: block;
+        }
+        .chat-title-row {
+            display: flex;
+            align-items: center;
+        }
+        .chat-title {
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .chat-sub {
+            color: var(--text-sub);
+            font-size: 13px;
+            line-height: 1.8;
+            margin-top: 8px;
+        }
+        .member-popover {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 250px;
+            max-width: 320px;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(56, 160, 201, 0.16);
+            background: rgba(7, 21, 33, 0.98);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.26);
+            display: none;
+            z-index: 30;
+        }
+        .member-popover.active {
+            display: block;
+        }
+        .member-popover-title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .member-popover-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 220px;
+            overflow: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(35, 154, 201, 0.72) rgba(7, 21, 33, 0.96);
+        }
+        .member-popover-list::-webkit-scrollbar {
+            width: 10px;
+        }
+        .member-popover-list::-webkit-scrollbar-track {
+            background: rgba(7, 21, 33, 0.96);
+            border-radius: 999px;
+        }
+        .member-popover-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(23, 144, 194, 0.92), rgba(13, 92, 128, 0.96));
+            border-radius: 999px;
+            border: 2px solid rgba(7, 21, 33, 0.96);
+        }
+        .member-popover-list::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(34, 186, 240, 0.96), rgba(15, 109, 150, 0.98));
+        }
+        .member-popover-item {
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(55, 173, 222, 0.12);
+            background: rgba(11, 35, 50, 0.96);
+            color: #d5f4ff;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .messages {
+            min-height: 0;
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .empty-chat {
+            margin: auto;
+            text-align: center;
+            color: var(--text-sub);
+            line-height: 2;
+        }
+        .message-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .message-row.self {
+            justify-content: flex-end;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 52, 74, 0.96);
+            border: 1px solid rgba(34, 214, 255, 0.2);
+            color: #d9f7ff;
+            font-weight: 800;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .message-main {
+            max-width: min(720px, 76%);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .message-row.self .message-main {
+            align-items: flex-end;
+        }
+        .sender-line {
+            color: var(--text-sub);
+            font-size: 12px;
+        }
+        .sender-line.hidden {
+            display: none;
+        }
+        .bubble {
+            padding: 12px 14px;
+            border-radius: 18px;
+            line-height: 1.8;
+            font-size: 14px;
+            word-break: break-word;
+            white-space: pre-wrap;
+            background: var(--other-bubble);
+            border: 1px solid rgba(56, 160, 201, 0.12);
+        }
+        .message-row.self .bubble {
+            background: var(--user-bubble);
+            border-color: transparent;
+            color: #f8ffff;
+        }
+        .bubble.notice {
+            background: rgba(58, 92, 18, 0.18);
+            border-color: rgba(149, 220, 72, 0.18);
+        }
+        .bubble.emoji {
+            font-size: 32px;
+            line-height: 1.3;
+            padding: 10px 16px;
+        }
+        .weather-card {
+            min-width: 280px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(33, 104, 150, 0.96), rgba(63, 163, 223, 0.92));
+            color: #f6fdff;
+            border: 1px solid rgba(183, 233, 255, 0.24);
+            box-shadow: 0 18px 34px rgba(8, 54, 84, 0.22);
+        }
+        .weather-city {
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .weather-main {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-end;
+            margin-top: 12px;
+        }
+        .weather-temp {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .weather-desc {
+            font-size: 14px;
+            color: rgba(246, 253, 255, 0.82);
+            margin-top: 6px;
+        }
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(110px, 1fr));
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .weather-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.12);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+        .weather-item strong {
+            display: block;
+            font-size: 13px;
+            color: #ffffff;
+        }
+        .music-card {
+            width: min(340px, 100%);
+            padding: 14px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(11, 43, 60, 0.98), rgba(7, 96, 122, 0.96));
+            border: 1px solid rgba(73, 220, 255, 0.2);
+            box-shadow: 0 18px 34px rgba(4, 38, 56, 0.24);
+            color: #effcff;
+        }
+        .music-card-top {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+        .music-cover {
+            width: 68px;
+            height: 68px;
+            border-radius: 16px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .music-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .music-cover-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .music-info {
+            min-width: 0;
+            flex: 1;
+        }
+        .music-title {
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .music-artist,
+        .music-source {
+            margin-top: 4px;
+            font-size: 13px;
+            color: rgba(239, 252, 255, 0.78);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .music-actions {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .music-play-btn {
+            height: 36px;
+            padding: 0 16px;
+            border: 1px solid rgba(46, 229, 255, 0.3);
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(9, 113, 141, 0.96), rgba(0, 217, 255, 0.92));
+            color: #f9ffff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .music-play-btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .music-play-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+        .music-audio {
+            display: none;
+        }
+        .file-link {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            color: #bfefff;
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(8, 26, 38, 0.5);
+            border: 1px solid rgba(58, 160, 201, 0.14);
+        }
+        .image-bubble {
+            display: block;
+            max-width: min(320px, 42vw);
+            border-radius: 18px;
+            overflow: hidden;
+            background: rgba(8, 26, 38, 0.6);
+            border: 1px solid rgba(58, 160, 201, 0.14);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+        }
+        .message-row.self .image-bubble {
+            border-color: rgba(48, 212, 255, 0.2);
+        }
+        .image-bubble img {
+            display: block;
+            width: 100%;
+            max-height: 360px;
+            object-fit: cover;
+            background: rgba(6, 17, 27, 0.92);
+        }
+        .message-time-divider {
+            align-self: center;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(235, 246, 255, 0.92);
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .composer {
+            padding: 14px 18px 18px;
+            border-top: 1px solid var(--line);
+            background: rgba(8, 19, 30, 0.98);
+        }
+        .tool-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .emoji-row {
+            display: none;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .emoji-row.active {
+            display: flex;
+        }
+        .mention-row {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .mention-row.active {
+            display: flex;
+        }
+        .mention-chip-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .mention-chip {
+            height: 34px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(34, 214, 255, 0.18);
+            background: rgba(11, 35, 50, 0.96);
+            color: #d5f4ff;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .emoji-chip {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(58, 160, 201, 0.16);
+            background: rgba(8, 24, 37, 0.96);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .input-row textarea {
+            flex: 1;
+            min-height: 88px;
+            max-height: 180px;
+            resize: vertical;
+            border-radius: 16px;
+            border: 1px solid rgba(58, 160, 201, 0.14);
+            background: rgba(8, 22, 34, 0.98);
+            color: var(--text-main);
+            padding: 14px;
+            outline: none;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .send-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 110px;
+            justify-content: flex-end;
+            align-items: stretch;
+        }
+        .send-icon-btn {
+            width: 100%;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(28, 226, 255, 0.38);
+            background: linear-gradient(135deg, #0e4258 0%, #0f7ca3 54%, #1ce2ff 100%);
+            box-shadow: 0 12px 26px rgba(13, 124, 163, 0.22);
+            color: #f8ffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0 16px;
+        }
+        .send-icon-btn svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(1, 6, 11, 0.62);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .overlay.active {
+            display: flex;
+        }
+        .modal {
+            width: min(760px, calc(100vw - 30px));
+            max-height: calc(100vh - 40px);
+            overflow: auto;
+            border-radius: 24px;
+            border: 1px solid var(--line);
+            background: rgba(7, 20, 31, 0.98);
+            box-shadow: var(--shadow);
+            padding: 22px;
+        }
+        .modal,
+        .select-panel {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(35, 154, 201, 0.72) rgba(7, 21, 33, 0.96);
+        }
+        .modal::-webkit-scrollbar,
+        .select-panel::-webkit-scrollbar {
+            width: 10px;
+        }
+        .modal::-webkit-scrollbar-track,
+        .select-panel::-webkit-scrollbar-track {
+            background: rgba(7, 21, 33, 0.96);
+            border-radius: 999px;
+        }
+        .modal::-webkit-scrollbar-thumb,
+        .select-panel::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(23, 144, 194, 0.92), rgba(13, 92, 128, 0.96));
+            border-radius: 999px;
+            border: 2px solid rgba(7, 21, 33, 0.96);
+        }
+        .modal h3 {
+            margin: 0 0 14px;
+            font-size: 20px;
+        }
+        .modal .field {
+            margin-bottom: 14px;
+        }
+        .modal label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-sub);
+            font-size: 13px;
+        }
+        .modal input[type="text"] {
+            width: 100%;
+            height: 42px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(8, 22, 34, 0.98);
+            color: var(--text-main);
+            padding: 0 14px;
+            outline: none;
+        }
+        .select-dropdown {
+            position: relative;
+        }
+        .select-trigger {
+            width: 100%;
+            min-height: 42px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(8, 22, 34, 0.98);
+            color: var(--text-main);
+            padding: 0 40px 0 14px;
+            display: flex;
+            align-items: center;
+            text-align: left;
+            cursor: pointer;
+            position: relative;
+        }
+        .select-trigger::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid rgba(214, 246, 255, 0.88);
+            border-bottom: 2px solid rgba(214, 246, 255, 0.88);
+            transform: translateY(-65%) rotate(45deg);
+            pointer-events: none;
+            transition: transform .2s ease;
+        }
+        .select-dropdown.active .select-trigger::after {
+            transform: translateY(-25%) rotate(-135deg);
+        }
+        .select-summary {
+            display: block;
+            width: 100%;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .select-summary.placeholder {
+            color: var(--text-sub);
+        }
+        .select-panel {
+            display: none;
+            margin-top: 10px;
+            max-height: 180px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+        .select-dropdown.active .select-panel {
+            display: block;
+        }
+        .check-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .check-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+        }
+        .check-item {
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(9, 28, 42, 0.96);
+            border: 1px solid rgba(58, 160, 201, 0.12);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .modal-actions {
+            margin-top: 18px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .status-line {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+        @media (max-width: 1100px) {
+            .layout {
+                grid-template-columns: 84px 300px 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="topbar">
+            <div class="brand">
+                <h1>智能聊天子系统</h1>
+                <p>仿微信桌面端交互风格，融合数字员工、群聊、文件与企业化 AI 工作台能力。</p>
+            </div>
+            <div class="system-switch">
+                <button class="switch-btn" type="button" onclick="window.location.href='/'">智能问数</button>
+                <button class="switch-btn active" type="button">智能聊天</button>
+                <span class="user-pill">当前用户：{{username}}</span>
+                <span class="user-pill">角色：{{role}}</span>
+                <form action="/auth/logout" method="post" style="margin:0;">
+                    {% module xsrf_form_html() %}
+                    <button class="ghost-btn" type="submit">退出登录</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="layout">
+            <aside class="nav-rail">
+                <div class="rail-profile">
+                    <div class="rail-avatar" id="railProfileAvatar">
+                        <span id="railProfileFallback">U</span>
+                        <img id="railProfileImage" alt="当前用户头像">
+                    </div>
+                    <div class="rail-profile-name" id="railProfileName">{{username}}</div>
+                    <div class="rail-profile-role" id="railProfileRole">{{role}}</div>
+                </div>
+                <div class="rail-nav">
+                    <button class="rail-tab active" data-tab="sessions" type="button" onclick="switchTab('sessions', this)" title="消息" aria-label="消息">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </button>
+                    <button class="rail-tab" data-tab="friends" type="button" onclick="switchTab('friends', this)" title="好友" aria-label="好友">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M20 21a8 8 0 0 0-16 0"></path>
+                            <circle cx="12" cy="8" r="4"></circle>
+                        </svg>
+                    </button>
+                    <button class="rail-tab" data-tab="requests" type="button" onclick="switchTab('requests', this)" title="好友申请" aria-label="好友申请">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M15 18v-6"></path>
+                            <path d="M12 15h6"></path>
+                            <path d="M8 21a5 5 0 0 1 0-10 4 4 0 1 1 7.75-1.5"></path>
+                        </svg>
+                        <span class="rail-badge-dot" id="friendRequestDot"></span>
+                    </button>
+                    <button class="rail-tab" data-tab="groups" type="button" onclick="switchTab('groups', this)" title="群聊" aria-label="群聊">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="7" cy="8" r="3"></circle>
+                            <circle cx="17" cy="8" r="3"></circle>
+                            <path d="M2 19a5 5 0 0 1 10 0"></path>
+                            <path d="M12 19a5 5 0 0 1 10 0"></path>
+                        </svg>
+                    </button>
+                    <button class="rail-tab" data-tab="employees" type="button" onclick="switchTab('employees', this)" title="数字员工" aria-label="数字员工">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="4" y="5" width="16" height="12" rx="3"></rect>
+                            <path d="M9 21h6"></path>
+                            <path d="M12 17v4"></path>
+                            <circle cx="9" cy="11" r="1"></circle>
+                            <circle cx="15" cy="11" r="1"></circle>
+                        </svg>
+                    </button>
+                </div>
+                <div class="rail-actions">
+                    <button class="rail-tab" type="button" title="智能问数" aria-label="智能问数" onclick="window.location.href='/'">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 19h16"></path>
+                            <path d="M6 15V9"></path>
+                            <path d="M12 15V5"></path>
+                            <path d="M18 15v-3"></path>
+                        </svg>
+                    </button>
+                    <button class="rail-tab active" type="button" title="智能聊天" aria-label="智能聊天">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </button>
+                    <form action="/auth/logout" method="post" style="margin:0;width:100%;">
+                        {% module xsrf_form_html() %}
+                        <button class="rail-tab" type="submit" title="退出登录" aria-label="退出登录" style="width:100%;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <path d="M16 17l5-5-5-5"></path>
+                                <path d="M21 12H9"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </aside>
+
+            <aside class="sidebar middle-panel">
+                <div class="middle-header">
+                    <div class="search-row">
+                        <div class="search-input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="7"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" id="userSearchInput" placeholder="搜索好友">
+                        </div>
+                        <div class="plus-menu">
+                            <button class="tool-btn plus-btn" type="button" onclick="togglePlusMenu()" title="更多" aria-label="更多">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 5v14"></path>
+                                    <path d="M5 12h14"></path>
+                                </svg>
+                            </button>
+                            <div class="plus-dropdown" id="plusDropdown">
+                                <button class="plus-item" type="button" onclick="openAddFriendPanel()">添加好友</button>
+                                <button class="plus-item" type="button" onclick="showGroupModal(); closePlusMenu();">创建群聊</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-body">
+                    <div class="sidebar-panels">
+                        <div class="panel-block active" id="tab-sessions">
+                            <div class="section-card">
+                                <div class="section-title">
+                                    <span>消息</span>
+                                    <span class="hint" id="conversationCountHint">0 条</span>
+                                </div>
+                                <div class="conversation-list" id="conversationList"></div>
+                            </div>
+                        </div>
+
+                        <div class="panel-block" id="tab-friends">
+                            <div class="section-card">
+                                <div class="section-title">
+                                    <span>好友</span>
+                                    <span class="hint" id="friendCountHint">0 位好友</span>
+                                </div>
+                                <div class="friend-list" id="friendList"></div>
+                            </div>
+                        </div>
+
+                        <div class="panel-block" id="tab-requests">
+                            <div class="section-card">
+                                <div class="section-title">
+                                    <span>好友申请</span>
+                                    <span class="hint" id="friendRequestHint">0 条待处理</span>
+                                </div>
+                                <div class="friend-request-stack" id="friendRequestPanels"></div>
+                            </div>
+                        </div>
+
+                        <div class="panel-block" id="tab-groups">
+                            <div class="section-card">
+                                <div class="section-title">
+                                    <span>群聊</span>
+                                    <span class="hint" id="groupCountHint">0 个群聊</span>
+                                </div>
+                                <div class="conversation-list" id="groupList"></div>
+                            </div>
+                        </div>
+
+                        <div class="panel-block" id="tab-employees">
+                            <div class="section-card">
+                                <div class="section-title">
+                                    <span>数字员工</span>
+                                    <span class="hint" id="employeeCountHint">0 个</span>
+                                </div>
+                                <div class="search-result-list" id="employeeQuickList"></div>
+                            </div>
+                        </div>
+
+                        <div class="panel-block" id="tab-discover">
+                            <div class="section-card">
+                                <div class="section-title">添加好友</div>
+                                <div class="search-result-list" id="searchResultList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="chat-area">
+                <div class="chat-header">
+                    <div class="chat-head-top">
+                        <div>
+                            <div class="chat-title-row">
+                                <div class="chat-title" id="chatTitle">请选择一个会话</div>
+                            </div>
+                        </div>
+                        <div class="chat-head-actions">
+                            <button class="chat-head-icon-btn" id="memberToggleBtn" type="button" onclick="toggleMemberPopover()" title="查看群员" aria-label="查看群员" style="display:none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="7" cy="8" r="3"></circle>
+                                    <circle cx="17" cy="8" r="3"></circle>
+                                    <path d="M2 19a5 5 0 0 1 10 0"></path>
+                                    <path d="M12 19a5 5 0 0 1 10 0"></path>
+                                </svg>
+                            </button>
+                            <div class="member-popover" id="memberPopover">
+                                <div class="member-popover-title">群成员</div>
+                                <div class="member-popover-list" id="memberPopoverList"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="messages" id="messageList">
+                    <div class="empty-chat">
+                        <div style="font-size:22px;font-weight:800;margin-bottom:8px;">欢迎进入智能聊天</div>
+                        <div>先从左侧选择一个好友、群聊或数字员工，开始你的第一条消息。</div>
+                    </div>
+                </div>
+
+                <div class="composer">
+                    <div class="tool-row">
+                        <button class="tool-btn" type="button" onclick="toggleEmojiPanel()">表情</button>
+                        <button class="tool-btn" type="button" onclick="document.getElementById('fileInput').click()">文件</button>
+                        <button class="tool-btn" type="button" onclick="refreshCurrentConversation()">刷新会话</button>
+                    </div>
+                    <div class="emoji-row" id="emojiPanel"></div>
+                    <div class="mention-row" id="mentionRow">
+                        <div class="mention-chip-list" id="mentionChipList"></div>
+                    </div>
+                    <div class="input-row">
+                        <textarea id="messageInput" placeholder="输入消息；在群聊中可通过 @数字员工别名 触发数字员工回复"></textarea>
+                        <div class="send-col">
+                            <button class="send-icon-btn" type="button" onclick="sendTextMessage()" title="发送消息" aria-label="发送消息">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M22 2 11 13"></path>
+                                    <path d="m22 2-7 20-4-9-9-4Z"></path>
+                                </svg>
+                            </button>
+                            <button class="ghost-btn" type="button" onclick="clearComposer()">清空输入</button>
+                        </div>
+                    </div>
+                    <div class="status-line" id="statusLine">系统就绪</div>
+                    <input type="file" id="fileInput" style="display:none" onchange="uploadChatFile(this)">
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="overlay" id="groupModal">
+        <div class="modal">
+            <h3>创建群聊</h3>
+            <div class="field">
+                <label>群名称</label>
+                <input type="text" id="groupNameInput" placeholder="请输入群聊名称">
+            </div>
+            <div class="field">
+                <label>选择好友成员</label>
+                <div class="select-dropdown" id="groupFriendDropdown">
+                    <button class="select-trigger" type="button" onclick="toggleGroupFriendDropdown()">
+                        <span class="select-summary placeholder" id="groupFriendSummary">请选择好友成员</span>
+                    </button>
+                    <div class="select-panel" id="groupFriendDropdownPanel">
+                        <div class="check-list" id="groupFriendChecks"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label>选择数字员工</label>
+                <div class="check-grid" id="groupEmployeeChecks"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="ghost-btn" type="button" onclick="hideGroupModal()">取消</button>
+                <button class="primary-btn" type="button" onclick="submitCreateGroup()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var state = {
+            currentUser: null,
+            conversations: [],
+            friends: [],
+            friendRequests: { incoming: [], outgoing: [] },
+            employees: [],
+            currentConversation: null,
+            currentMessages: [],
+            currentMembers: [],
+            currentTab: 'sessions',
+            searchMode: 'friends',
+            syncInProgress: false,
+            lastSyncAt: 0,
+            unreadTotal: 0,
+            eventSource: null,
+            streamConnected: false
+        };
+        var emojiList = ['😀', '😄', '😂', '😍', '😎', '🥳', '🤖', '🌤️', '🎵', '🎉', '👍', '❤️'];
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, function (s) {
+                return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s];
+            });
+        }
+
+        function getCookie(name) {
+            var match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        function getXsrfToken() {
+            return getCookie('_xsrf');
+        }
+
+        async function apiGet(action, params) {
+            var url = new URL('/api/im', window.location.origin);
+            url.searchParams.set('action', action);
+            Object.keys(params || {}).forEach(function (key) {
+                if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+                    url.searchParams.set(key, params[key]);
+                }
+            });
+            var resp = await fetch(url.toString(), { credentials: 'same-origin' });
+            return resp.json();
+        }
+
+        async function apiPost(action, payload) {
+            var body = new URLSearchParams();
+            body.set('_xsrf', getXsrfToken());
+            Object.keys(payload || {}).forEach(function (key) {
+                if (payload[key] !== undefined && payload[key] !== null) {
+                    body.set(key, payload[key]);
+                }
+            });
+            var resp = await fetch('/api/im?action=' + encodeURIComponent(action), {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                body: body.toString()
+            });
+            return resp.json();
+        }
+
+        function setStatus(text) {
+            document.getElementById('statusLine').textContent = text;
+        }
+
+        function getUnreadBadgeHtml(count) {
+            var value = Number(count || 0);
+            if (value <= 0) {
+                return '';
+            }
+            return '<span class="unread-badge">' + escapeHtml(value > 99 ? '99+' : String(value)) + '</span>';
+        }
+
+        function getDisplayInitial(text) {
+            return String(text || 'U').trim().slice(0, 1).toUpperCase() || 'U';
+        }
+
+        function renderAvatarNode(url, text, className) {
+            var name = className || 'avatar';
+            var imageHtml = url ? '<img src="' + escapeHtml(url) + '" alt="头像" style="display:block;">' : '';
+            var fallbackHtml = '<span' + (url ? ' style="display:none;"' : '') + '>' + escapeHtml(getDisplayInitial(text)) + '</span>';
+            return '<div class="' + name + '">' + imageHtml + fallbackHtml + '</div>';
+        }
+
+        function getGroupIconHtml() {
+            return '<span class="item-type-icon" title="群聊"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="8" r="3"></circle><circle cx="17" cy="8" r="3"></circle><path d="M2 19a5 5 0 0 1 10 0"></path><path d="M12 19a5 5 0 0 1 10 0"></path></svg></span>';
+        }
+
+        function getRobotIconHtml() {
+            return '<span class="item-type-icon" title="数字员工"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="3"></rect><path d="M9 21h6"></path><path d="M12 17v4"></path><circle cx="9" cy="11" r="1"></circle><circle cx="15" cy="11" r="1"></circle></svg></span>';
+        }
+
+        function getConversationRightIcon(item) {
+            if (!item) {
+                return '';
+            }
+            if (item.chat_type === 'group') {
+                return getGroupIconHtml();
+            }
+            if (item.chat_type === 'employee') {
+                return getRobotIconHtml();
+            }
+            return '';
+        }
+
+        function getSendIconButtonHtml(onclickCode, title) {
+            return '' +
+                '<button class="mini-action-btn" type="button" onclick="' + onclickCode + '" title="' + escapeHtml(title || '发送消息') + '" aria-label="' + escapeHtml(title || '发送消息') + '">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                        '<path d="M22 2 11 13"></path>' +
+                        '<path d="m22 2-7 20-4-9-9-4Z"></path>' +
+                    '</svg>' +
+                '</button>';
+        }
+
+        function getConversationDisplayName(item) {
+            if (!item) {
+                return '';
+            }
+            if (item.chat_type === 'group') {
+                return (item.display_name || '未命名群聊') + '（' + Number(item.member_count || 0) + '）';
+            }
+            return item.display_name || '';
+        }
+
+        function updateMiddleSearchUI() {
+            var input = document.getElementById('userSearchInput');
+            if (!input) {
+                return;
+            }
+            var mode = state.searchMode || state.currentTab || 'friends';
+            var placeholders = {
+                sessions: '搜索消息会话',
+                friends: '搜索已添加的好友',
+                requests: '搜索好友申请',
+                groups: '搜索群聊',
+                employees: '搜索数字员工',
+                discover: '在此搜索其他用户'
+            };
+            input.placeholder = placeholders[mode] || '搜索';
+        }
+
+        function closePlusMenu() {
+            var dropdown = document.getElementById('plusDropdown');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+            }
+        }
+
+        function togglePlusMenu() {
+            var dropdown = document.getElementById('plusDropdown');
+            if (!dropdown) {
+                return;
+            }
+            dropdown.classList.toggle('active');
+        }
+
+        function setActivePanel(tab, activeRailTab) {
+            state.currentTab = tab;
+            if (tab !== 'discover') {
+                state.searchMode = tab;
+            }
+            document.querySelectorAll('.rail-tab').forEach(function (node) {
+                node.classList.toggle('active', node.getAttribute('data-tab') === (activeRailTab || tab));
+            });
+            document.querySelectorAll('.panel-block').forEach(function (node) {
+                node.classList.toggle('active', node.id === 'tab-' + tab);
+            });
+            updateMiddleSearchUI();
+            closePlusMenu();
+            if (tab === 'sessions') {
+                renderConversations();
+            } else if (tab === 'friends') {
+                renderFriends();
+            } else if (tab === 'requests') {
+                renderFriendRequestPanels();
+            } else if (tab === 'groups') {
+                renderGroups();
+            } else if (tab === 'employees') {
+                renderEmployees();
+            }
+        }
+
+        function switchTab(tab, button) {
+            setActivePanel(tab, button && button.getAttribute('data-tab'));
+        }
+
+        function activateTab(tab) {
+            setActivePanel(tab, tab);
+        }
+
+        function openAddFriendPanel() {
+            state.searchMode = 'discover';
+            setActivePanel('discover', 'friends');
+            updateMiddleSearchUI();
+            closePlusMenu();
+            document.getElementById('userSearchInput').focus();
+        }
+
+        function renderCurrentUserCard() {
+            var user = state.currentUser || {};
+            var image = document.getElementById('railProfileImage');
+            var fallback = document.getElementById('railProfileFallback');
+            document.getElementById('railProfileName').textContent = user.username || '{{username}}';
+            document.getElementById('railProfileRole').textContent = user.role || '{{role}}';
+            fallback.textContent = getDisplayInitial(user.username || 'U');
+            if (user.avatar_url) {
+                image.src = user.avatar_url;
+                image.style.display = 'block';
+                fallback.style.display = 'none';
+            } else {
+                image.removeAttribute('src');
+                image.style.display = 'none';
+                fallback.style.display = 'block';
+            }
+        }
+
+        function renderLoadingState(title, desc) {
+            document.getElementById('chatTitle').textContent = title || '正在打开会话...';
+            renderMembers([]);
+            document.getElementById('messageList').innerHTML = '<div class="empty-chat"><div style="font-size:20px;font-weight:800;margin-bottom:8px;">正在打开会话</div><div>正在同步聊天记录，请稍候。</div></div>';
+        }
+
+        function renderOpenErrorState(message) {
+            document.getElementById('chatTitle').textContent = '打开会话失败';
+            renderMembers([]);
+            document.getElementById('messageList').innerHTML = '<div class="empty-chat"><div style="font-size:20px;font-weight:800;margin-bottom:8px;">打开失败</div><div>' + escapeHtml(message || '会话加载失败，请稍后重试。') + '</div></div>';
+        }
+
+        function renderEmojiPanel() {
+            var html = emojiList.map(function (emoji) {
+                return '<button class="emoji-chip" type="button" onclick="appendEmoji(\'' + emoji + '\')">' + emoji + '</button>';
+            }).join('');
+            document.getElementById('emojiPanel').innerHTML = html;
+        }
+
+        function toggleEmojiPanel() {
+            document.getElementById('emojiPanel').classList.toggle('active');
+        }
+
+        function appendEmoji(emoji) {
+            var input = document.getElementById('messageInput');
+            input.value += emoji;
+            input.focus();
+        }
+
+        function insertMentionText(alias) {
+            var value = String(alias || '').trim();
+            if (!value) {
+                return;
+            }
+            var input = document.getElementById('messageInput');
+            var mention = '@' + value;
+            var text = input.value || '';
+            if (text.indexOf(mention) >= 0) {
+                input.focus();
+                return;
+            }
+            var prefix = text && !/\s$/.test(text) ? ' ' : '';
+            input.value = text + prefix + mention + ' ';
+            input.focus();
+        }
+
+        function toggleMemberPopover(forceState) {
+            var button = document.getElementById('memberToggleBtn');
+            var popover = document.getElementById('memberPopover');
+            if (!button || !popover || button.style.display === 'none') {
+                return;
+            }
+            var shouldOpen = typeof forceState === 'boolean' ? forceState : !popover.classList.contains('active');
+            popover.classList.toggle('active', shouldOpen);
+        }
+
+        function closeMemberPopover() {
+            var popover = document.getElementById('memberPopover');
+            if (popover) {
+                popover.classList.remove('active');
+            }
+        }
+
+        function getAvailableMentionEmployees() {
+            if (!state.currentConversation) {
+                return [];
+            }
+            if (state.currentConversation.chat_type === 'group') {
+                return (state.currentMembers || [])
+                    .filter(function (item) { return item.member_type === 'employee' && item.alias; })
+                    .map(function (item) {
+                        return { id: item.employee_id, alias: item.alias, name: item.name || item.alias };
+                    });
+            }
+            if (state.currentConversation.chat_type === 'employee' && state.currentConversation.target_employee_id) {
+                var target = (state.employees || []).find(function (item) {
+                    return Number(item.id) === Number(state.currentConversation.target_employee_id);
+                });
+                if (target) {
+                    return [{ id: target.id, alias: target.alias, name: target.name || target.alias }];
+                }
+            }
+            return [];
+        }
+
+        function renderMentionTools() {
+            var row = document.getElementById('mentionRow');
+            var chips = document.getElementById('mentionChipList');
+            var input = document.getElementById('messageInput');
+            var employees = getAvailableMentionEmployees();
+
+            chips.innerHTML = '';
+
+            if (!state.currentConversation) {
+                row.classList.remove('active');
+                input.placeholder = '输入消息，先从左侧选择一个会话';
+                return;
+            }
+            if (state.currentConversation.chat_type === 'employee' && employees.length) {
+                row.classList.add('active');
+                chips.innerHTML = employees.map(function (item) {
+                    return '<button class="mention-chip" type="button" onclick="insertMentionText(\'' + String(item.alias).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">@' + escapeHtml(item.alias) + '</button>';
+                }).join('');
+                input.placeholder = '直接给 ' + employees[0].name + ' 发送消息即可';
+                return;
+            }
+            if (state.currentConversation.chat_type === 'group' && employees.length) {
+                row.classList.add('active');
+                chips.innerHTML = employees.map(function (item) {
+                    return '<button class="mention-chip" type="button" onclick="insertMentionText(\'' + String(item.alias).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">@' + escapeHtml(item.alias) + '</button>';
+                }).join('');
+                input.placeholder = '输入消息，可点击上方数字员工快捷按钮自动插入';
+                return;
+            }
+            row.classList.remove('active');
+            input.placeholder = state.currentConversation.chat_type === 'group'
+                ? '输入消息；当前群没有数字员工，可直接群聊'
+                : '输入消息';
+        }
+
+        async function sendEmojiMessage(emoji) {
+            if (!state.currentConversation) {
+                appendEmoji(emoji);
+                return;
+            }
+            setStatus('正在发送表情...');
+            var resp = await apiPost('send_message', {
+                conversation_id: state.currentConversation.id,
+                content_type: 'emoji',
+                content_text: emoji,
+                extra_json: '{}'
+            });
+            if (resp.code !== 0) {
+                setStatus(resp.msg || '表情发送失败');
+                return;
+            }
+            state.currentMessages = state.currentMessages.concat(resp.data.messages || []);
+            state.currentConversation = resp.data.conversation || state.currentConversation;
+            mergeConversation(state.currentConversation);
+            renderMessages();
+            renderConversations();
+            setStatus('表情已发送');
+        }
+
+        function clearComposer() {
+            document.getElementById('messageInput').value = '';
+        }
+
+        function formatFileSize(size) {
+            var value = Number(size || 0);
+            if (!value) {
+                return '0 B';
+            }
+            if (value < 1024) {
+                return value + ' B';
+            }
+            if (value < 1024 * 1024) {
+                return (value / 1024).toFixed(1) + ' KB';
+            }
+            return (value / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        var BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+        function parseRawDateTimeMatch(value) {
+            var text = String(value || '').trim();
+            if (!text) {
+                return null;
+            }
+            return text.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+        }
+
+        function getBeijingNow() {
+            return new Date(Date.now() + BEIJING_OFFSET_MS);
+        }
+
+        function getBeijingDayStart(date) {
+            return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+        }
+
+        function parseDateTimeText(value) {
+            var match = parseRawDateTimeMatch(value);
+            if (!match) {
+                return null;
+            }
+            var timestamp = Date.UTC(
+                Number(match[1]),
+                Number(match[2]) - 1,
+                Number(match[3]),
+                Number(match[4] || 0),
+                Number(match[5] || 0),
+                Number(match[6] || 0)
+            );
+            var date = new Date(timestamp + BEIJING_OFFSET_MS);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        function formatConversationTime(value) {
+            var text = String(value || '').trim();
+            if (!text) {
+                return '';
+            }
+            var date = parseDateTimeText(text);
+            if (!date) {
+                return text;
+            }
+            var now = getBeijingNow();
+            var diffDays = Math.round((getBeijingDayStart(now) - getBeijingDayStart(date)) / 86400000);
+            if (diffDays === 0) {
+                return String(date.getUTCHours()).padStart(2, '0') + ':' + String(date.getUTCMinutes()).padStart(2, '0');
+            }
+            if (diffDays === 1) {
+                return '昨天';
+            }
+            return String(date.getUTCMonth() + 1).padStart(2, '0') + '-' + String(date.getUTCDate()).padStart(2, '0');
+        }
+
+        function formatMessageDividerTime(value) {
+            var date = parseDateTimeText(value);
+            if (!date) {
+                return String(value || '').trim();
+            }
+            var now = getBeijingNow();
+            var diffDays = Math.round((getBeijingDayStart(now) - getBeijingDayStart(date)) / 86400000);
+            var hh = String(date.getUTCHours()).padStart(2, '0');
+            var mm = String(date.getUTCMinutes()).padStart(2, '0');
+            if (diffDays === 0) {
+                return hh + ':' + mm;
+            }
+            if (diffDays === 1) {
+                return '昨天 ' + hh + ':' + mm;
+            }
+            return String(date.getUTCMonth() + 1).padStart(2, '0') + '-' + String(date.getUTCDate()).padStart(2, '0') + ' ' + hh + ':' + mm;
+        }
+
+        function shouldShowMessageDivider(previousItem, currentItem) {
+            if (!previousItem || !currentItem) {
+                return false;
+            }
+            var previousDate = parseDateTimeText(previousItem.create_at);
+            var currentDate = parseDateTimeText(currentItem.create_at);
+            if (!previousDate || !currentDate) {
+                return false;
+            }
+            return currentDate.getTime() - previousDate.getTime() >= 3 * 60 * 1000;
+        }
+
+        function renderWeatherCard(weather) {
+            var city = weather.city || weather.province || '天气';
+            var weatherText = weather.weather || weather.text || '天气未知';
+            var temp = weather.temp || weather.temperature || '--';
+            var tempLow = weather.tempn || weather.low || '--';
+            var wind = weather.wind || weather.windDir || '--';
+            var windSpeed = weather.windSpeed || weather.wind_speed || '--';
+            var current = weather.current && typeof weather.current === 'object' ? weather.current : {};
+            var air = weather.air || weather.aqi || current.air || current.aqi || weather.airQuality || current.airQuality || '--';
+            return '' +
+                '<div class="weather-card">' +
+                    '<div class="weather-city">' + escapeHtml(city) + '</div>' +
+                    '<div class="weather-main">' +
+                        '<div>' +
+                            '<div class="weather-temp">' + escapeHtml(temp) + '°</div>' +
+                            '<div class="weather-desc">' + escapeHtml(weatherText) + '</div>' +
+                        '</div>' +
+                        '<div class="weather-desc">低温 ' + escapeHtml(tempLow) + '°</div>' +
+                    '</div>' +
+                    '<div class="weather-grid">' +
+                        '<div class="weather-item"><strong>风向风速</strong>' + escapeHtml(String(wind) + ' / ' + String(windSpeed)) + '</div>' +
+                        '<div class="weather-item"><strong>空气质量</strong>' + escapeHtml(String(air)) + '</div>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        function isWeatherCardPayload(payload) {
+            return !!(payload && typeof payload === 'object' && (
+                payload.weather !== undefined ||
+                payload.temp !== undefined ||
+                payload.tempn !== undefined ||
+                payload.wind !== undefined ||
+                (payload.current && typeof payload.current === 'object')
+            ));
+        }
+
+        function isMusicCardPayload(payload) {
+            return !!(payload && typeof payload === 'object' && (
+                payload.song !== undefined ||
+                payload.singer !== undefined ||
+                payload.Music !== undefined ||
+                payload.music !== undefined ||
+                payload.url !== undefined ||
+                payload.audio !== undefined
+            ));
+        }
+
+        function resolveMusicCard(extra) {
+            if (!extra || typeof extra !== 'object') {
+                return null;
+            }
+            if (extra.music_card && typeof extra.music_card === 'object') {
+                return extra.music_card;
+            }
+            if (extra.payload && typeof extra.payload === 'object') {
+                if (extra.payload.data && isMusicCardPayload(extra.payload.data)) {
+                    return extra.payload.data;
+                }
+                if (isMusicCardPayload(extra.payload)) {
+                    return extra.payload;
+                }
+            }
+            return null;
+        }
+
+        function renderMusicCard(card) {
+            var title = card.song || card.name || card.title || '音乐推荐';
+            var singer = card.singer || card.artist || card.author || '未知歌手';
+            var cover = card.cover || card.pic || card.image || card.poster || '';
+            var source = card.source || card.platform || card.from || '音乐';
+            var playUrl = card.Music || card.music || card.url || card.audio || card.play_url || '';
+            var coverHtml = cover
+                ? '<img src="' + escapeHtml(cover) + '" alt="' + escapeHtml(title) + '">'
+                : '<div class="music-cover-fallback">♪</div>';
+            var playIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 6.5v11l9-5.5-9-5.5Z"></path></svg>';
+            return '' +
+                '<div class="music-card">' +
+                    '<div class="music-card-top">' +
+                        '<div class="music-cover">' + coverHtml + '</div>' +
+                        '<div class="music-info">' +
+                            '<div class="music-title">' + escapeHtml(title) + '</div>' +
+                            '<div class="music-artist">' + escapeHtml(singer) + '</div>' +
+                            '<div class="music-source">' + escapeHtml(source) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="music-actions">' +
+                        '<button class="music-play-btn" type="button"' + (playUrl ? ' onclick="toggleMusicCardPlayback(this)"' : ' disabled') + '>' +
+                            playIcon +
+                            '<span class="music-play-label">' + (playUrl ? '播放' : '暂无音源') + '</span>' +
+                        '</button>' +
+                        (playUrl ? '<audio class="music-audio" preload="none" src="' + escapeHtml(playUrl) + '" onended="resetMusicCardPlayback(this)"></audio>' : '') +
+                    '</div>' +
+                '</div>';
+        }
+
+        function toggleMusicCardPlayback(button) {
+            var card = button && button.closest('.music-card');
+            var audio = card ? card.querySelector('.music-audio') : null;
+            var label = button ? button.querySelector('.music-play-label') : null;
+            if (!audio || !label) {
+                return;
+            }
+            if (audio.paused) {
+                audio.play().then(function () {
+                    label.textContent = '暂停';
+                }).catch(function () {
+                    label.textContent = '播放失败';
+                });
+            } else {
+                audio.pause();
+                label.textContent = '播放';
+            }
+        }
+
+        function resetMusicCardPlayback(audio) {
+            var card = audio && audio.closest('.music-card');
+            var label = card ? card.querySelector('.music-play-label') : null;
+            if (label) {
+                label.textContent = '播放';
+            }
+        }
+
+        function renderMessageBubble(item) {
+            if (item.content_type === 'file' && item.extra && item.extra.file_url) {
+                var mimeType = (item.extra.mime_type || '').toLowerCase();
+                var fileName = item.extra.file_name || item.content_text || '图片';
+                if (mimeType.indexOf('image/') === 0) {
+                    return '' +
+                        '<a class="image-bubble" href="' + escapeHtml(item.extra.file_url) + '" target="_blank" title="' + escapeHtml(fileName) + '">' +
+                            '<img src="' + escapeHtml(item.extra.file_url) + '" alt="' + escapeHtml(fileName) + '">' +
+                        '</a>';
+                }
+                return '<a class="file-link" href="' + escapeHtml(item.extra.file_url) + '" target="_blank">📎 ' + escapeHtml(item.extra.file_name || item.content_text || '文件') + ' · ' + escapeHtml(formatFileSize(item.extra.file_size || 0)) + '</a>';
+            }
+            if (item.extra) {
+                if (item.extra.weather_card) {
+                    return renderWeatherCard(item.extra.weather_card);
+                }
+                if (item.extra.payload && typeof item.extra.payload === 'object') {
+                    if (item.extra.payload.data && isWeatherCardPayload(item.extra.payload.data)) {
+                        return renderWeatherCard(item.extra.payload.data);
+                    }
+                    if (isWeatherCardPayload(item.extra.payload)) {
+                        return renderWeatherCard(item.extra.payload);
+                    }
+                }
+                var musicCard = resolveMusicCard(item.extra);
+                if (musicCard) {
+                    return renderMusicCard(musicCard);
+                }
+            }
+            var bubbleClass = 'bubble';
+            if (item.content_type === 'notice') {
+                bubbleClass += ' notice';
+            }
+            if (item.content_type === 'emoji') {
+                bubbleClass += ' emoji';
+            }
+            return '<div class="' + bubbleClass + '">' + escapeHtml(item.content_text || '') + '</div>';
+        }
+
+        function sortConversations() {
+            state.conversations.sort(function (a, b) {
+                var av = a.last_message_at || a.update_at || '';
+                var bv = b.last_message_at || b.update_at || '';
+                return bv.localeCompare(av);
+            });
+        }
+
+        function mergeConversation(conversation) {
+            var found = false;
+            state.conversations = state.conversations.map(function (item) {
+                if (item.id === conversation.id) {
+                    found = true;
+                    return conversation;
+                }
+                return item;
+            });
+            if (!found) {
+                state.conversations.push(conversation);
+            }
+            sortConversations();
+            renderConversations();
+            renderGroups();
+        }
+
+        function applyWeatherMode() {
+            var body = document.body;
+            if (state.currentConversation && /天气/.test(state.currentConversation.display_name || '')) {
+                body.classList.add('weather-mode');
+            } else {
+                body.classList.remove('weather-mode');
+            }
+        }
+
+        function getSearchKeyword() {
+            return (document.getElementById('userSearchInput').value || '').trim().toLowerCase();
+        }
+
+        function matchesKeyword(values, keyword) {
+            if (!keyword) {
+                return true;
+            }
+            return values.some(function (value) {
+                return String(value || '').toLowerCase().indexOf(keyword) >= 0;
+            });
+        }
+
+        function renderConversations() {
+            var container = document.getElementById('conversationList');
+            var countHint = state.conversations.length + ' 条';
+            if (state.unreadTotal > 0) {
+                countHint += ' · 未读 ' + state.unreadTotal;
+            }
+            document.getElementById('conversationCountHint').textContent = countHint;
+            if (!state.conversations.length) {
+                container.innerHTML = '<div class="hint">暂无会话，先从好友或数字员工入口开始。</div>';
+                return;
+            }
+            var keyword = state.searchMode === 'sessions' ? getSearchKeyword() : '';
+            var list = state.conversations.filter(function (item) {
+                return matchesKeyword([item.display_name, item.subtitle, item.last_message_preview, item.last_sender_name], keyword);
+            });
+            if (!list.length) {
+                container.innerHTML = '<div class="hint">没有匹配的会话。</div>';
+                return;
+            }
+            container.innerHTML = list.map(function (item) {
+                var cls = state.currentConversation && state.currentConversation.id === item.id ? 'conversation-item active' : 'conversation-item';
+                var avatarUrl = item.chat_type === 'private' ? item.target_avatar_url : '';
+                var rightIcon = getConversationRightIcon(item);
+                var sideClass = rightIcon ? 'item-side' : 'item-side time-only';
+                return '' +
+                    '<div class="' + cls + '" onclick="openConversation(' + item.id + ')">' +
+                        '<div class="list-item-row">' +
+                            renderAvatarNode(avatarUrl, getConversationDisplayName(item), 'list-avatar') +
+                            '<div class="item-body">' +
+                                '<div class="item-title">' +
+                                    '<div class="item-title-main"><span class="item-name"><span class="item-name-text">' + escapeHtml(getConversationDisplayName(item)) + '</span>' + getUnreadBadgeHtml(item.unread_count) + '</span></div>' +
+                                '</div>' +
+                                '<div class="item-sub">' + escapeHtml((item.last_sender_name ? item.last_sender_name + '：' : '') + (item.last_message_preview || '暂无消息')) + '</div>' +
+                            '</div>' +
+                            '<div class="' + sideClass + '">' +
+                                rightIcon +
+                                '<div class="item-time">' + escapeHtml(formatConversationTime(item.last_message_at || '')) + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function renderFriends() {
+            var container = document.getElementById('friendList');
+            document.getElementById('friendCountHint').textContent = state.friends.length + ' 位好友';
+            if (!state.friends.length) {
+                container.innerHTML = '<div class="hint">暂无好友，可通过右上角“+”添加。</div>';
+                renderGroupOptions();
+                return;
+            }
+            var keyword = state.searchMode === 'friends' ? getSearchKeyword() : '';
+            var list = state.friends.filter(function (item) {
+                return matchesKeyword([item.username, item.role], keyword);
+            });
+            if (!list.length) {
+                container.innerHTML = '<div class="hint">没有匹配的好友。</div>';
+                return;
+            }
+            container.innerHTML = list.map(function (item) {
+                return '' +
+                    '<div class="friend-item">' +
+                        '<div class="list-item-row">' +
+                            renderAvatarNode(item.avatar_url, item.username, 'list-avatar') +
+                            '<div class="item-body">' +
+                                '<div class="item-title"><div class="item-title-main"><span class="item-name-text">' + escapeHtml(item.username) + '</span></div></div>' +
+                            '</div>' +
+                            '<div class="item-side">' +
+                                '<div class="item-meta">' + (item.is_online ? '在线' : '离线') + '</div>' +
+                                '<div class="mini-btn-row">' +
+                                    '<button class="mini-btn" type="button" onclick="removeFriend(' + item.id + ')">删除好友</button>' +
+                                    getSendIconButtonHtml('openPrivateConversation(' + item.id + ')', '发消息') +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+            renderGroupOptions();
+        }
+
+        function renderFriendRequestPanels() {
+            var container = document.getElementById('friendRequestPanels');
+            if (!container) {
+                return;
+            }
+            var incoming = ((state.friendRequests || {}).incoming || []);
+            var outgoing = ((state.friendRequests || {}).outgoing || []);
+            var keyword = state.searchMode === 'requests' ? getSearchKeyword() : '';
+            if (keyword) {
+                incoming = incoming.filter(function (item) {
+                    return matchesKeyword([item.username, item.role], keyword);
+                });
+                outgoing = outgoing.filter(function (item) {
+                    return matchesKeyword([item.username, item.role], keyword);
+                });
+            }
+            var incomingTotal = ((state.friendRequests || {}).incoming || []).length;
+            var hint = document.getElementById('friendRequestHint');
+            if (hint) {
+                hint.textContent = incomingTotal ? (incomingTotal + ' 条待处理') : '暂无待处理';
+            }
+            var sections = [];
+            if (incoming.length) {
+                sections.push(
+                    '<div class="request-panel">' +
+                        '<div class="request-panel-title"><span>收到的申请</span><span class="hint">' + incoming.length + ' 条</span></div>' +
+                        '<div class="request-list">' +
+                            incoming.map(function (item) {
+                                return '' +
+                                    '<div class="request-item">' +
+                                        '<div class="list-item-row">' +
+                                            renderAvatarNode(item.avatar_url, item.username, 'list-avatar') +
+                                            '<div class="item-body">' +
+                                                '<div class="item-title"><div class="item-title-main"><span class="item-name-text">' + escapeHtml(item.username) + '</span></div><div class="item-title-side"><span class="item-meta">等待你同意</span></div></div>' +
+                                                '<div class="item-sub">' + escapeHtml(item.role || '普通用户') + ' · ' + escapeHtml(formatConversationTime(item.create_at || item.update_at || '')) + '</div>' +
+                                                '<div class="mini-btn-row">' +
+                                                    '<button class="mini-btn" type="button" onclick="approveFriendRequest(' + item.user_id + ')">同意</button>' +
+                                                    '<button class="mini-btn danger" type="button" onclick="rejectFriendRequest(' + item.user_id + ')">拒绝</button>' +
+                                                '</div>' +
+                                            '</div>' +
+                                        '</div>' +
+                                    '</div>';
+                            }).join('') +
+                        '</div>' +
+                    '</div>'
+                );
+            }
+            if (outgoing.length) {
+                sections.push(
+                    '<div class="request-panel">' +
+                        '<div class="request-panel-title"><span>我发出的申请</span><span class="hint">' + outgoing.length + ' 条</span></div>' +
+                        '<div class="request-list">' +
+                            outgoing.map(function (item) {
+                                return '' +
+                                    '<div class="request-item">' +
+                                        '<div class="list-item-row">' +
+                                            renderAvatarNode(item.avatar_url, item.username, 'list-avatar') +
+                                            '<div class="item-body">' +
+                                                '<div class="item-title"><div class="item-title-main"><span class="item-name-text">' + escapeHtml(item.username) + '</span></div><div class="item-title-side"><span class="item-meta">等待对方同意</span></div></div>' +
+                                                '<div class="item-sub">' + escapeHtml(item.role || '普通用户') + ' · ' + escapeHtml(formatConversationTime(item.create_at || item.update_at || '')) + '</div>' +
+                                            '</div>' +
+                                        '</div>' +
+                                    '</div>';
+                            }).join('') +
+                        '</div>' +
+                    '</div>'
+                );
+            }
+            if (!sections.length) {
+                container.innerHTML = '<div class="hint">' + (keyword ? '没有匹配的好友申请。' : '暂无好友申请。') + '</div>';
+                return;
+            }
+            container.innerHTML = sections.join('');
+        }
+
+        function renderFriendRequestDot() {
+            var dot = document.getElementById('friendRequestDot');
+            if (!dot) {
+                return;
+            }
+            var incomingCount = (((state.friendRequests || {}).incoming) || []).length;
+            dot.classList.toggle('active', incomingCount > 0);
+        }
+
+        function renderGroups() {
+            var groups = state.conversations.filter(function (item) {
+                return item.chat_type === 'group';
+            });
+            var container = document.getElementById('groupList');
+            document.getElementById('groupCountHint').textContent = groups.length + ' 个群聊';
+            if (!groups.length) {
+                container.innerHTML = '<div class="hint">暂无群聊，可通过右上角“+”创建。</div>';
+                return;
+            }
+            var keyword = state.searchMode === 'groups' ? getSearchKeyword() : '';
+            var list = groups.filter(function (item) {
+                return matchesKeyword([item.display_name, item.subtitle, item.last_message_preview, item.last_sender_name], keyword);
+            });
+            if (!list.length) {
+                container.innerHTML = '<div class="hint">没有匹配的群聊。</div>';
+                return;
+            }
+            container.innerHTML = list.map(function (item) {
+                var cls = state.currentConversation && state.currentConversation.id === item.id ? 'conversation-item active' : 'conversation-item';
+                var rightIcon = getConversationRightIcon(item);
+                var sideClass = rightIcon ? 'item-side' : 'item-side time-only';
+                return '' +
+                    '<div class="' + cls + '" onclick="openConversation(' + item.id + ')">' +
+                        '<div class="list-item-row">' +
+                            renderAvatarNode('', getConversationDisplayName(item), 'list-avatar') +
+                            '<div class="item-body">' +
+                                '<div class="item-title">' +
+                                    '<div class="item-title-main"><span class="item-name"><span class="item-name-text">' + escapeHtml(getConversationDisplayName(item)) + '</span>' + getUnreadBadgeHtml(item.unread_count) + '</span></div>' +
+                                '</div>' +
+                                '<div class="item-sub">' + escapeHtml((item.last_sender_name ? item.last_sender_name + '：' : '') + (item.last_message_preview || '暂无消息')) + '</div>' +
+                            '</div>' +
+                            '<div class="item-side">' +
+                                getGroupIconHtml() +
+                                '<div class="item-time">' + escapeHtml(formatConversationTime(item.last_message_at || '')) + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function renderEmployees() {
+            var container = document.getElementById('employeeQuickList');
+            document.getElementById('employeeCountHint').textContent = state.employees.length + ' 个';
+            var keyword = state.searchMode === 'employees' ? getSearchKeyword() : '';
+            var list = state.employees.filter(function (item) {
+                return matchesKeyword([item.name, item.alias, item.description], keyword);
+            });
+            if (!list.length) {
+                container.innerHTML = '<div class="hint">没有匹配的数字员工。</div>';
+                return;
+            }
+            container.innerHTML = list.map(function (item) {
+                return '' +
+                    '<div class="search-item">' +
+                        '<div class="list-item-row">' +
+                            renderAvatarNode('', item.name || item.alias, 'list-avatar') +
+                            '<div class="item-body">' +
+                                '<div class="item-title"><div class="item-title-main"><span class="item-name-text">' + escapeHtml(item.name) + '</span></div></div>' +
+                            '</div>' +
+                            '<div class="item-side">' +
+                                getRobotIconHtml() +
+                                getSendIconButtonHtml('openEmployeeConversation(' + item.id + ')', '进入聊天') +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+            renderGroupOptions();
+        }
+
+        function renderSearchResult(items) {
+            var container = document.getElementById('searchResultList');
+            if (!items.length) {
+                container.innerHTML = '<div class="hint">未检索到匹配用户。</div>';
+                return;
+            }
+            container.innerHTML = items.map(function (item) {
+                var relationStatus = item.relation_status || (item.is_friend ? 'friend' : 'none');
+                var relationLabel = '可添加';
+                var actionHtml = '<button class="mini-btn" type="button" onclick="addFriend(' + item.id + ')">发送申请</button>';
+                if (relationStatus === 'friend') {
+                    relationLabel = '已是好友';
+                    actionHtml = '<button class="mini-btn" type="button" onclick="openPrivateConversation(' + item.id + ')">发消息</button>';
+                } else if (relationStatus === 'pending_outgoing') {
+                    relationLabel = '等待对方同意';
+                    actionHtml = '<button class="mini-btn muted" type="button" disabled>已发送申请</button>';
+                } else if (relationStatus === 'pending_incoming') {
+                    relationLabel = '对方已申请你';
+                    actionHtml = '' +
+                        '<button class="mini-btn" type="button" onclick="approveFriendRequest(' + item.id + ')">同意</button>' +
+                        '<button class="mini-btn danger" type="button" onclick="rejectFriendRequest(' + item.id + ')">拒绝</button>';
+                }
+                return '' +
+                    '<div class="search-item">' +
+                        '<div class="list-item-row">' +
+                            renderAvatarNode(item.avatar_url, item.username, 'list-avatar') +
+                            '<div class="item-body">' +
+                                '<div class="item-title"><div class="item-title-main"><span class="item-name-text">' + escapeHtml(item.username) + '</span></div><div class="item-title-side"><span class="item-meta">' + escapeHtml(relationLabel) + '</span></div></div>' +
+                                '<div class="mini-btn-row">' +
+                                    actionHtml +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function renderGroupOptions() {
+            document.getElementById('groupFriendChecks').innerHTML = state.friends.map(function (item) {
+                return '<label class="check-item"><input type="checkbox" value="' + item.id + '" class="group-friend-check" onchange="updateGroupFriendSummary()"><span>' + escapeHtml(item.username) + '</span></label>';
+            }).join('');
+            document.getElementById('groupEmployeeChecks').innerHTML = state.employees.map(function (item) {
+                return '<label class="check-item"><input type="checkbox" value="' + item.id + '" class="group-employee-check"><span>@' + escapeHtml(item.alias) + '</span></label>';
+            }).join('');
+            updateGroupFriendSummary();
+        }
+
+        function toggleGroupFriendDropdown(forceState) {
+            var dropdown = document.getElementById('groupFriendDropdown');
+            if (!dropdown) {
+                return;
+            }
+            var shouldOpen = typeof forceState === 'boolean' ? forceState : !dropdown.classList.contains('active');
+            dropdown.classList.toggle('active', shouldOpen);
+        }
+
+        function closeGroupFriendDropdown() {
+            toggleGroupFriendDropdown(false);
+        }
+
+        function updateGroupFriendSummary() {
+            var summary = document.getElementById('groupFriendSummary');
+            if (!summary) {
+                return;
+            }
+            var checkedNodes = Array.prototype.slice.call(document.querySelectorAll('.group-friend-check:checked'));
+            if (!checkedNodes.length) {
+                summary.textContent = '请选择好友成员';
+                summary.classList.add('placeholder');
+                return;
+            }
+            var names = checkedNodes.map(function (node) {
+                var textNode = node.parentNode ? node.parentNode.querySelector('span') : null;
+                return textNode ? textNode.textContent.trim() : '';
+            }).filter(Boolean);
+            if (names.length <= 2) {
+                summary.textContent = names.join('、');
+            } else {
+                summary.textContent = '已选择 ' + names.length + ' 位好友';
+            }
+            summary.classList.remove('placeholder');
+        }
+
+        function renderMembers(members) {
+            var button = document.getElementById('memberToggleBtn');
+            var list = document.getElementById('memberPopoverList');
+            var title = document.querySelector('.member-popover-title');
+            var isGroup = state.currentConversation && state.currentConversation.chat_type === 'group';
+            if (!button || !list || !title) {
+                renderMentionTools();
+                return;
+            }
+            if (!isGroup || !members || !members.length) {
+                button.style.display = 'none';
+                list.innerHTML = '';
+                title.textContent = '群成员';
+                closeMemberPopover();
+                renderMentionTools();
+                return;
+            }
+            button.style.display = 'inline-flex';
+            title.textContent = '群成员（' + members.length + '）';
+            list.innerHTML = members.map(function (item) {
+                var suffix = item.member_type === 'employee' ? ' · 数字员工' : '';
+                return '<div class="member-popover-item">' + escapeHtml((item.name || '成员') + suffix) + '</div>';
+            }).join('');
+            renderMentionTools();
+        }
+
+        function renderMessages() {
+            var container = document.getElementById('messageList');
+            if (!state.currentConversation) {
+                container.innerHTML = '<div class="empty-chat"><div style="font-size:22px;font-weight:800;margin-bottom:8px;">请选择一个会话</div></div>';
+                return;
+            }
+            if (!state.currentMessages.length) {
+                container.innerHTML = '<div class="empty-chat"><div style="font-size:18px;font-weight:800;margin-bottom:8px;">还没有消息</div><div>发送第一条消息，开始聊天。</div></div>';
+                return;
+            }
+            container.innerHTML = state.currentMessages.map(function (item, index) {
+                var previous = index > 0 ? state.currentMessages[index - 1] : null;
+                var isSelf = item.sender_type === 'user' && item.sender_name === state.currentUser.username;
+                var isGroupChat = state.currentConversation && state.currentConversation.chat_type === 'group';
+                var showSenderLine = !!isGroupChat && !isSelf;
+                var bubbleContent = renderMessageBubble(item);
+                var otherAvatarUrl = item.sender_avatar_url || '';
+                if (!otherAvatarUrl && state.currentConversation && state.currentConversation.chat_type === 'private') {
+                    otherAvatarUrl = state.currentConversation.target_avatar_url || '';
+                }
+                var otherAvatar = renderAvatarNode(otherAvatarUrl, item.sender_name || state.currentConversation.display_name || 'U', 'avatar');
+                var selfAvatar = renderAvatarNode(state.currentUser.avatar_url, state.currentUser.username || '我', 'avatar');
+                var divider = shouldShowMessageDivider(previous, item)
+                    ? '<div class="message-time-divider">' + escapeHtml(formatMessageDividerTime(item.create_at || '')) + '</div>'
+                    : '';
+                return divider +
+                    '<div class="message-row' + (isSelf ? ' self' : '') + '">' +
+                        (isSelf ? '' : otherAvatar) +
+                        '<div class="message-main">' +
+                            '<div class="sender-line' + (showSenderLine ? '' : ' hidden') + '">' + escapeHtml(item.sender_name || '未知') + '</div>' +
+                            bubbleContent +
+                        '</div>' +
+                        (isSelf ? selfAvatar : '') +
+                    '</div>';
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function applyBootstrapData(data) {
+            state.currentUser = data.user;
+            state.conversations = data.conversations || [];
+            state.friends = data.friends || [];
+            state.friendRequests = data.friend_requests || { incoming: [], outgoing: [] };
+            state.employees = data.employees || [];
+            state.unreadTotal = Number(data.unread_total || 0);
+            sortConversations();
+            renderFriendRequestDot();
+            renderConversations();
+            renderFriends();
+            renderFriendRequestPanels();
+            renderGroups();
+            renderEmployees();
+            renderCurrentUserCard();
+            updateMiddleSearchUI();
+        }
+
+        function applyConversationDetail(data, silent) {
+            state.currentConversation = data.conversation;
+            state.currentMessages = data.messages || [];
+            state.currentMembers = data.members || [];
+            document.getElementById('chatTitle').textContent = getConversationDisplayName(state.currentConversation) || '未命名会话';
+            renderMembers(state.currentMembers);
+            renderMessages();
+            renderConversations();
+            applyWeatherMode();
+            renderMentionTools();
+            if (!silent) {
+                setStatus('已打开会话：' + (state.currentConversation.display_name || ''));
+            }
+        }
+
+        async function refreshBootstrap(silent) {
+            if (!silent) {
+                setStatus('正在加载聊天数据...');
+            }
+            var resp = await apiGet('bootstrap', {});
+            if (resp.code !== 0) {
+                if (!silent) {
+                    setStatus(resp.msg || '加载失败');
+                }
+                return;
+            }
+            applyBootstrapData(resp.data);
+            if (state.currentConversation) {
+                var keep = state.conversations.find(function (item) { return item.id === state.currentConversation.id; });
+                if (keep) {
+                    await openConversation(keep.id, true);
+                } else {
+                    state.currentConversation = null;
+                    state.currentMessages = [];
+                    state.currentMembers = [];
+                    renderMembers([]);
+                    renderMessages();
+                    applyWeatherMode();
+                    renderMentionTools();
+                }
+            }
+            if (!silent) {
+                setStatus('聊天数据已同步');
+            }
+        }
+
+        async function openConversation(conversationId, silent) {
+            var resp = await apiGet('detail', { conversation_id: conversationId });
+            if (resp.code !== 0) {
+                renderOpenErrorState(resp.msg || '加载会话失败');
+                setStatus(resp.msg || '加载会话失败');
+                return;
+            }
+            applyConversationDetail(resp.data, silent);
+        }
+
+        async function openPrivateConversation(userId) {
+            activateTab('sessions');
+            renderLoadingState('正在打开私聊...', '正在从通讯录进入聊天会话，请稍候。');
+            setStatus('正在打开私聊...');
+            var resp = await apiGet('open_private', { target_user_id: userId });
+            if (resp.code !== 0) {
+                setStatus(resp.msg || '打开私聊失败');
+                return;
+            }
+            mergeConversation(resp.data);
+            await openConversation(resp.data.id);
+        }
+
+        async function openEmployeeConversation(employeeId) {
+            activateTab('sessions');
+            renderLoadingState('正在打开数字员工会话...', '正在连接数字员工并同步聊天记录。');
+            setStatus('正在打开数字员工会话...');
+            var resp = await apiGet('open_employee', { employee_id: employeeId });
+            if (resp.code !== 0) {
+                setStatus(resp.msg || '打开数字员工会话失败');
+                return;
+            }
+            mergeConversation(resp.data);
+            await openConversation(resp.data.id);
+        }
+
+        async function handleMiddleSearch() {
+            if (state.searchMode === 'discover') {
+                await searchUsers();
+                return;
+            }
+            if (state.currentTab === 'sessions') {
+                renderConversations();
+            } else if (state.currentTab === 'friends') {
+                renderFriends();
+            } else if (state.currentTab === 'requests') {
+                renderFriendRequestPanels();
+            } else if (state.currentTab === 'groups') {
+                renderGroups();
+            } else if (state.currentTab === 'employees') {
+                renderEmployees();
+            }
+        }
+
+        async function searchUsers() {
+            var keyword = document.getElementById('userSearchInput').value.trim();
+            if (!keyword) {
+                openAddFriendPanel();
+                renderSearchResult([]);
+                return;
+            }
+            setStatus('正在搜索用户...');
+            var resp = await apiGet('search_users', { keyword: keyword });
+            if (resp.code !== 0) {
+                setStatus(resp.msg || '搜索失败');
+                return;
+            }
+            openAddFriendPanel();
+            renderSearchResult(resp.data || []);
+            setStatus('搜索完成');
+        }
+
+        async function addFriend(userId) {
+            var resp = await apiPost('add_friend', { target_user_id: userId });
+            setStatus(resp.msg || (resp.code === 0 ? '申请已发送' : '发送申请失败'));
+            if (resp.code === 0) {
+                await refreshBootstrap();
+                searchUsers();
+            }
+        }
+
+        async function approveFriendRequest(userId) {
+            var resp = await apiPost('approve_friend', { requester_user_id: userId });
+            setStatus(resp.msg || (resp.code === 0 ? '已同意好友申请' : '处理失败'));
+            if (resp.code === 0) {
+                await refreshBootstrap();
+                if (state.currentTab === 'discover') {
+                    searchUsers();
+                }
+            }
+        }
+
+        async function rejectFriendRequest(userId) {
+            var resp = await apiPost('reject_friend', { requester_user_id: userId });
+            setStatus(resp.msg || (resp.code === 0 ? '已拒绝好友申请' : '处理失败'));
+            if (resp.code === 0) {
+                await refreshBootstrap();
+                if (state.currentTab === 'discover') {
+                    searchUsers();
+                }
+            }
+        }
+
+        async function removeFriend(userId) {
+            if (!window.confirm('确认删除这个好友吗？')) {
+                return;
+            }
+            var resp = await apiPost('remove_friend', { friend_user_id: userId });
+            setStatus(resp.msg || (resp.code === 0 ? '已删除好友' : '删除好友失败'));
+            if (resp.code === 0) {
+                await refreshBootstrap();
+                if (state.currentTab === 'discover') {
+                    searchUsers();
+                }
+            }
+        }
+
+        function showGroupModal() {
+            renderGroupOptions();
+            closeGroupFriendDropdown();
+            document.getElementById('groupModal').classList.add('active');
+        }
+
+        function hideGroupModal() {
+            closeGroupFriendDropdown();
+            document.getElementById('groupModal').classList.remove('active');
+        }
+
+        async function submitCreateGroup() {
+            var name = document.getElementById('groupNameInput').value.trim();
+            var memberUserIds = Array.prototype.slice.call(document.querySelectorAll('.group-friend-check:checked')).map(function (node) { return node.value; }).join(',');
+            var memberEmployeeIds = Array.prototype.slice.call(document.querySelectorAll('.group-employee-check:checked')).map(function (node) { return node.value; }).join(',');
+            var resp = await apiPost('create_group', {
+                name: name,
+                member_user_ids: memberUserIds,
+                member_employee_ids: memberEmployeeIds
+            });
+            setStatus(resp.msg || (resp.code === 0 ? '群聊创建成功' : '群聊创建失败'));
+            if (resp.code === 0 && resp.data) {
+                hideGroupModal();
+                document.getElementById('groupNameInput').value = '';
+                await refreshBootstrap();
+                await openConversation(resp.data.id);
+            }
+        }
+
+        async function refreshCurrentConversation() {
+            if (!state.currentConversation) {
+                return;
+            }
+            await openConversation(state.currentConversation.id, true);
+        }
+
+        async function syncChatState() {
+            if (state.syncInProgress) {
+                return;
+            }
+            state.syncInProgress = true;
+            try {
+                await refreshBootstrap(true);
+                state.lastSyncAt = Date.now();
+            } finally {
+                state.syncInProgress = false;
+            }
+        }
+
+        function disconnectIMStream() {
+            if (state.eventSource) {
+                state.eventSource.close();
+                state.eventSource = null;
+            }
+            state.streamConnected = false;
+        }
+
+        function connectIMStream() {
+            if (state.eventSource || !window.EventSource) {
+                return;
+            }
+            var source = new EventSource('/api/im/stream');
+            state.eventSource = source;
+            source.onopen = function () {
+                state.streamConnected = true;
+                setStatus('实时消息通道已连接');
+            };
+            source.onmessage = function (event) {
+                try {
+                    var payload = JSON.parse(event.data || '{}');
+                    if (payload.type === 'update') {
+                        syncChatState();
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            };
+            source.onerror = function () {
+                disconnectIMStream();
+            };
+        }
+
+        async function sendTextMessage() {
+            if (!state.currentConversation) {
+                setStatus('请先选择一个会话');
+                return;
+            }
+            var input = document.getElementById('messageInput');
+            var text = input.value.trim();
+            if (!text) {
+                setStatus('请输入消息内容');
+                return;
+            }
+            setStatus('正在发送消息...');
+            var resp = await apiPost('send_message', {
+                conversation_id: state.currentConversation.id,
+                content_type: 'text',
+                content_text: text,
+                extra_json: '{}'
+            });
+            if (resp.code !== 0) {
+                setStatus(resp.msg || '发送失败');
+                return;
+            }
+            input.value = '';
+            state.currentMessages = state.currentMessages.concat(resp.data.messages || []);
+            state.currentConversation = resp.data.conversation || state.currentConversation;
+            mergeConversation(state.currentConversation);
+            renderMessages();
+            renderConversations();
+            applyWeatherMode();
+            if (resp.data && resp.data.employee_pending) {
+                setStatus('消息已发送，@' + (resp.data.pending_employee_alias || '数字员工') + ' 正在处理中...');
+            } else {
+                setStatus('消息已发送');
+            }
+        }
+
+        async function uploadChatFile(input) {
+            if (!state.currentConversation) {
+                setStatus('请先选择一个会话');
+                input.value = '';
+                return;
+            }
+            if (!input.files || !input.files.length) {
+                return;
+            }
+            var formData = new FormData();
+            formData.append('_xsrf', getXsrfToken());
+            formData.append('file', input.files[0]);
+            setStatus('正在上传文件...');
+            var resp = await fetch('/api/im/upload', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData
+            }).then(function (r) { return r.json(); });
+            if (resp.code !== 0) {
+                setStatus(resp.msg || '文件上传失败');
+                input.value = '';
+                return;
+            }
+            var sendResp = await apiPost('send_message', {
+                conversation_id: state.currentConversation.id,
+                content_type: 'file',
+                content_text: resp.data.file_name,
+                file_id: resp.data.file_id,
+                extra_json: JSON.stringify(resp.data)
+            });
+            input.value = '';
+            if (sendResp.code !== 0) {
+                setStatus(sendResp.msg || '文件消息发送失败');
+                return;
+            }
+            state.currentMessages = state.currentMessages.concat(sendResp.data.messages || []);
+            state.currentConversation = sendResp.data.conversation || state.currentConversation;
+            mergeConversation(state.currentConversation);
+            renderMessages();
+            renderConversations();
+            if (sendResp.data && sendResp.data.employee_pending) {
+                setStatus('文件已发送，@' + (sendResp.data.pending_employee_alias || '数字员工') + ' 正在处理中...');
+            } else {
+                setStatus('文件已发送');
+            }
+        }
+
+        document.getElementById('messageInput').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendTextMessage();
+            }
+        });
+
+        document.getElementById('userSearchInput').addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleMiddleSearch();
+            }
+        });
+        document.getElementById('userSearchInput').addEventListener('input', function () {
+            if (state.searchMode !== 'discover') {
+                handleMiddleSearch();
+            }
+        });
+        document.addEventListener('click', function (event) {
+            var menu = document.querySelector('.plus-menu');
+            if (menu && !menu.contains(event.target)) {
+                closePlusMenu();
+            }
+            var friendDropdown = document.getElementById('groupFriendDropdown');
+            if (friendDropdown && !friendDropdown.contains(event.target)) {
+                closeGroupFriendDropdown();
+            }
+            var memberActions = document.querySelector('.chat-head-actions');
+            if (memberActions && !memberActions.contains(event.target)) {
+                closeMemberPopover();
+            }
+        });
+
+        renderEmojiPanel();
+        renderMentionTools();
+        updateMiddleSearchUI();
+        refreshBootstrap();
+        connectIMStream();
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                disconnectIMStream();
+            } else {
+                connectIMStream();
+                syncChatState();
+            }
+        });
+        setInterval(function () {
+            if (!document.hidden && !state.streamConnected) {
+                syncChatState();
+            }
+        }, 4000);
+    </script>
+</body>
+</html>

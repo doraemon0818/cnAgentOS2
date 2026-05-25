@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <style>
+        :root {
+            --ui-bg-1: #020d18;
+            --ui-bg-2: #041726;
+            --ui-panel: rgba(4, 20, 32, 0.84);
+            --ui-panel-strong: rgba(5, 24, 38, 0.94);
+            --ui-border: rgba(28, 224, 255, 0.16);
+            --ui-text: #ecfdff;
+            --ui-sub: #9ec6d2;
+            --ui-muted: #6d9aa7;
+            --ui-shadow: 0 20px 56px rgba(0, 6, 14, 0.4), 0 0 0 1px rgba(16, 222, 255, 0.06);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(0, 247, 255, 0.14), transparent 24%),
+                radial-gradient(circle at 88% 10%, rgba(14, 215, 255, 0.12), transparent 20%),
+                linear-gradient(180deg, var(--ui-bg-1) 0%, var(--ui-bg-2) 52%, #03111d 100%);
+            color: var(--ui-text);
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(rgba(20, 238, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 238, 255, 0.04) 1px, transparent 1px);
+            background-size: 32px 32px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.52), transparent 86%);
+        }
+        .page {
+            height: 100vh;
+            padding: 12px;
+            overflow: hidden;
+        }
+        .topbar {
+            display: none;
+        }
+        .brand-title {
+            font-size: 30px;
+            font-weight: 800;
+        }
+        .brand-sub {
+            margin-top: 8px;
+            color: var(--ui-sub);
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .top-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .system-switch {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(0, 247, 255, 0.1);
+            color: #bcfbff;
+            font-size: 12px;
+            border: 1px solid rgba(0, 247, 255, 0.18);
+            box-shadow: inset 0 0 14px rgba(0, 247, 255, 0.04);
+        }
+        .ghost-btn, .primary-btn {
+            height: 40px;
+            border-radius: 12px;
+            padding: 0 16px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .switch-btn {
+            height: 40px;
+            border-radius: 12px;
+            padding: 0 16px;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid rgba(0, 247, 255, 0.16);
+            background: rgba(4, 20, 32, 0.82);
+            color: var(--ui-text);
+        }
+        .switch-btn.active {
+            border: 0;
+            background: linear-gradient(135deg, #043349 0%, #0f7ea0 52%, #00f7ff 100%);
+            color: #efffff;
+            box-shadow: 0 0 0 1px rgba(0, 247, 255, 0.14), 0 14px 34px rgba(0, 92, 120, 0.26), inset 0 0 18px rgba(0, 247, 255, 0.12);
+        }
+        .ghost-btn {
+            border: 1px solid rgba(0, 247, 255, 0.16);
+            background: rgba(4, 20, 32, 0.82);
+            color: var(--ui-text);
+        }
+        .primary-btn {
+            border: 0;
+            background: linear-gradient(135deg, #043349 0%, #0f7ea0 52%, #00f7ff 100%);
+            color: #efffff;
+            box-shadow: 0 0 0 1px rgba(0, 247, 255, 0.14), 0 14px 34px rgba(0, 92, 120, 0.26), inset 0 0 18px rgba(0, 247, 255, 0.12);
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 92px 360px 1fr;
+            gap: 14px;
+            height: 100%;
+            min-height: 0;
+        }
+        .panel {
+            background: var(--ui-panel);
+            border: 1px solid var(--ui-border);
+            border-radius: 24px;
+            box-shadow: var(--ui-shadow);
+            backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+        }
+        .panel::before {
+            content: "";
+            position: absolute;
+            inset: 12px;
+            border: 1px solid rgba(0, 247, 255, 0.06);
+            border-radius: inherit;
+            pointer-events: none;
+        }
+        .nav-rail {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 10px;
+            gap: 14px;
+            background: rgba(6, 18, 28, 0.96);
+        }
+        .rail-profile {
+            width: 100%;
+            padding: 12px 8px;
+            border-radius: 24px;
+            background: rgba(11, 30, 46, 0.98);
+            border: 1px solid rgba(44, 161, 208, 0.14);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+        }
+        .rail-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(11, 91, 130, 0.96), rgba(27, 183, 225, 0.92));
+            border: 1px solid rgba(34, 214, 255, 0.22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ebfbff;
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .rail-name {
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+        .rail-role {
+            font-size: 11px;
+            color: var(--ui-sub);
+        }
+        .rail-spacer {
+            flex: 1;
+        }
+        .rail-actions {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(54, 199, 255, 0.08);
+        }
+        .rail-action-form {
+            width: 100%;
+        }
+        .rail-btn {
+            width: 100%;
+            height: 48px;
+            border-radius: 16px;
+            border: 1px solid transparent;
+            background: rgba(10, 26, 40, 0.94);
+            color: var(--ui-sub);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .2s ease;
+        }
+        .rail-btn.active {
+            color: var(--ui-text);
+            border-color: rgba(34, 214, 255, 0.3);
+            background: rgba(16, 48, 67, 0.98);
+            box-shadow: inset 0 0 0 1px rgba(34, 214, 255, 0.08);
+        }
+        .rail-btn:hover {
+            color: var(--ui-text);
+            border-color: rgba(34, 214, 255, 0.2);
+        }
+        .rail-btn svg {
+            width: 19px;
+            height: 19px;
+        }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background: rgba(7, 18, 29, 0.96);
+        }
+        .workspace-head {
+            padding: 18px;
+            border-bottom: 1px solid rgba(0, 247, 255, 0.08);
+            background: rgba(8, 20, 31, 0.94);
+        }
+        .workspace-title {
+            font-size: 24px;
+            font-weight: 800;
+        }
+        .workspace-sub {
+            margin-top: 8px;
+            color: var(--ui-sub);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        .workspace-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .workspace-actions button {
+            flex: 1;
+        }
+        .workspace-scroll {
+            flex: 1;
+            overflow: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .workspace-scroll,
+        .history-list,
+        .chat-list,
+        .composer-bottom,
+        .message-content pre {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(35, 154, 201, 0.72) rgba(7, 21, 33, 0.96);
+        }
+        .workspace-scroll::-webkit-scrollbar,
+        .history-list::-webkit-scrollbar,
+        .chat-list::-webkit-scrollbar,
+        .composer-bottom::-webkit-scrollbar,
+        .message-content pre::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        .workspace-scroll::-webkit-scrollbar-track,
+        .history-list::-webkit-scrollbar-track,
+        .chat-list::-webkit-scrollbar-track,
+        .composer-bottom::-webkit-scrollbar-track,
+        .message-content pre::-webkit-scrollbar-track {
+            background: rgba(7, 21, 33, 0.96);
+            border-radius: 999px;
+        }
+        .workspace-scroll::-webkit-scrollbar-thumb,
+        .history-list::-webkit-scrollbar-thumb,
+        .chat-list::-webkit-scrollbar-thumb,
+        .composer-bottom::-webkit-scrollbar-thumb,
+        .message-content pre::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(23, 144, 194, 0.92), rgba(13, 92, 128, 0.96));
+            border-radius: 999px;
+            border: 2px solid rgba(7, 21, 33, 0.96);
+        }
+        .workspace-scroll::-webkit-scrollbar-thumb:hover,
+        .history-list::-webkit-scrollbar-thumb:hover,
+        .chat-list::-webkit-scrollbar-thumb:hover,
+        .composer-bottom::-webkit-scrollbar-thumb:hover,
+        .message-content pre::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(34, 169, 219, 0.96), rgba(16, 112, 153, 0.98));
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .section-sub {
+            color: var(--ui-sub);
+            font-size: 12px;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+        .sidebar-card {
+            padding: 16px;
+            border-radius: 18px;
+            background: var(--ui-panel-strong);
+            border: 1px solid rgba(0, 247, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .compact-card {
+            padding-top: 18px;
+        }
+        .sidebar-card::after {
+            content: "";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 28px;
+            height: 28px;
+            border-top: 1px solid rgba(0, 247, 255, 0.22);
+            border-left: 1px solid rgba(0, 247, 255, 0.22);
+            pointer-events: none;
+        }
+        .model-select {
+            width: 100%;
+            height: 44px;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 247, 255, 0.14);
+            background: rgba(4, 19, 31, 0.96);
+            color: var(--ui-text);
+            padding: 0 42px 0 12px;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+        }
+        .select-wrap {
+            position: relative;
+        }
+        .select-wrap::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid rgba(214, 246, 255, 0.88);
+            border-bottom: 2px solid rgba(214, 246, 255, 0.88);
+            transform: translateY(-65%) rotate(45deg);
+            pointer-events: none;
+        }
+        .prompt-list {
+            display: grid;
+            gap: 10px;
+        }
+        .prompt-item {
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(5, 25, 39, 0.88);
+            border: 1px solid rgba(0, 247, 255, 0.1);
+            color: #cceef5;
+            cursor: pointer;
+            line-height: 1.7;
+            font-size: 13px;
+        }
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+            flex: 1;
+            overflow: auto;
+            padding-right: 4px;
+        }
+        .history-item {
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(5, 24, 37, 0.9);
+            border: 1px solid rgba(0, 247, 255, 0.08);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .history-item.active {
+            border-color: rgba(0, 247, 255, 0.3);
+            box-shadow: 0 0 0 1px rgba(0, 247, 255, 0.1), 0 12px 26px rgba(0, 84, 112, 0.18), inset 0 0 16px rgba(0, 247, 255, 0.06);
+        }
+        .history-title {
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.6;
+            margin-bottom: 6px;
+        }
+        .history-preview {
+            font-size: 12px;
+            color: var(--ui-sub);
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .history-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--ui-muted);
+            font-size: 11px;
+        }
+        .history-meta-text {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .history-delete-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 9px;
+            border: 1px solid rgba(0, 247, 255, 0.18);
+            background: rgba(6, 33, 45, 0.94);
+            color: rgba(148, 245, 255, 0.96);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease;
+        }
+        .history-delete-btn svg {
+            width: 13px;
+            height: 13px;
+            display: block;
+        }
+        .history-delete-btn:hover {
+            background: rgba(7, 52, 69, 0.98);
+            border-color: rgba(0, 247, 255, 0.34);
+            color: #d7fbff;
+            box-shadow: 0 8px 18px rgba(0, 120, 156, 0.18);
+        }
+        .chat-shell {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            background: rgba(7, 18, 29, 0.96);
+        }
+        .chat-header {
+            padding: 18px 20px 16px;
+            border-bottom: 1px solid rgba(0, 247, 255, 0.08);
+            background: rgba(8, 20, 31, 0.9);
+        }
+        .chat-title {
+            font-size: 24px;
+            font-weight: 800;
+        }
+        .chat-sub {
+            margin-top: 8px;
+            color: var(--ui-sub);
+            font-size: 13px;
+            line-height: 1.8;
+        }
+        .chat-list {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 20px 18px 12px;
+        }
+        .empty-state {
+            margin: auto;
+            max-width: 760px;
+            padding: 34px 28px;
+            border-radius: 22px;
+            border: 1px dashed rgba(0, 247, 255, 0.18);
+            color: var(--ui-sub);
+            text-align: center;
+            line-height: 1.9;
+        }
+        .message-row {
+            display: flex;
+        }
+        .message-row.user {
+            justify-content: flex-end;
+        }
+        .message-row.assistant {
+            justify-content: flex-start;
+        }
+        .message {
+            max-width: 88%;
+            border-radius: 22px;
+            padding: 16px 18px;
+            line-height: 1.85;
+            word-break: break-word;
+        }
+        .message.user {
+            background: linear-gradient(135deg, rgba(4, 52, 74, 0.98), rgba(9, 121, 152, 0.96), rgba(0, 247, 255, 0.78));
+            color: #f3ffff;
+            box-shadow: 0 0 0 1px rgba(0, 247, 255, 0.12), 0 14px 34px rgba(0, 90, 120, 0.24);
+        }
+        .message.assistant {
+            background: rgba(5, 24, 37, 0.96);
+            border: 1px solid rgba(0, 247, 255, 0.12);
+            color: var(--ui-text);
+        }
+        .message-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .message-status {
+            margin-bottom: 10px;
+            color: var(--ui-sub);
+            font-size: 13px;
+        }
+        .message-content {
+            font-size: 15px;
+        }
+        .message-content p + p,
+        .message-content ul + p,
+        .message-content ol + p,
+        .message-content pre + p,
+        .message-content table + p,
+        .message-content blockquote + p {
+            margin-top: 12px;
+        }
+        .message-content h1,
+        .message-content h2,
+        .message-content h3 {
+            margin: 10px 0 8px;
+            font-size: 18px;
+        }
+        .message-content ul,
+        .message-content ol {
+            padding-left: 20px;
+        }
+        .message-content pre {
+            margin-top: 10px;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(8, 16, 34, 0.92);
+            overflow: auto;
+        }
+        .message-content code {
+            background: rgba(0, 247, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .message-content pre code {
+            background: transparent;
+            padding: 0;
+        }
+        .message-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            overflow: hidden;
+            border-radius: 14px;
+        }
+        .message-content th,
+        .message-content td {
+            border: 1px solid rgba(0, 247, 255, 0.12);
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 13px;
+            vertical-align: top;
+        }
+        .message-content th {
+            background: rgba(5, 34, 48, 0.92);
+        }
+        .message-content blockquote {
+            margin-top: 10px;
+            padding: 10px 14px;
+            border-left: 3px solid rgba(0, 247, 255, 0.58);
+            background: rgba(5, 30, 47, 0.62);
+            border-radius: 0 12px 12px 0;
+        }
+        .weather-card {
+            min-width: 280px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(33, 104, 150, 0.96), rgba(63, 163, 223, 0.92));
+            color: #f6fdff;
+            border: 1px solid rgba(183, 233, 255, 0.24);
+            box-shadow: 0 18px 34px rgba(8, 54, 84, 0.22);
+        }
+        .weather-city {
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .weather-main {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-end;
+            margin-top: 12px;
+        }
+        .weather-temp {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .weather-desc {
+            font-size: 14px;
+            color: rgba(246, 253, 255, 0.82);
+            margin-top: 6px;
+        }
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(110px, 1fr));
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .weather-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.12);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+        .weather-item strong {
+            display: block;
+            font-size: 13px;
+            color: #ffffff;
+        }
+        .music-card {
+            min-width: 300px;
+            padding: 14px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(14, 44, 62, 0.98), rgba(9, 88, 112, 0.96));
+            border: 1px solid rgba(73, 220, 255, 0.2);
+            box-shadow: 0 18px 34px rgba(4, 38, 56, 0.24);
+            color: #effcff;
+        }
+        .music-card-top {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+        .music-cover {
+            width: 68px;
+            height: 68px;
+            border-radius: 16px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .music-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .music-cover-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .music-info {
+            min-width: 0;
+            flex: 1;
+        }
+        .music-title {
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.4;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .music-artist,
+        .music-source {
+            margin-top: 4px;
+            font-size: 13px;
+            color: rgba(239, 252, 255, 0.78);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .music-actions {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .music-play-btn {
+            height: 36px;
+            padding: 0 16px;
+            border: 1px solid rgba(46, 229, 255, 0.3);
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(9, 113, 141, 0.96), rgba(0, 217, 255, 0.92));
+            color: #f9ffff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .music-play-btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .music-play-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+        .music-audio {
+            display: none;
+        }
+        .composer {
+            border-top: 1px solid rgba(0, 247, 255, 0.08);
+            padding: 14px 18px 18px;
+            background: rgba(8, 19, 30, 0.98);
+        }
+        .composer-top {
+            margin-bottom: 10px;
+            max-width: 280px;
+        }
+        .composer-box {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 14px;
+            align-items: stretch;
+        }
+        .composer textarea {
+            width: 100%;
+            min-height: 118px;
+            resize: vertical;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 247, 255, 0.14);
+            background: rgba(4, 22, 35, 0.94);
+            color: #f5f8ff;
+            padding: 16px 18px;
+            font-size: 15px;
+            outline: none;
+            line-height: 1.8;
+        }
+        .composer textarea:focus {
+            border-color: rgba(0, 247, 255, 0.42);
+            box-shadow: 0 0 0 3px rgba(0, 247, 255, 0.08);
+        }
+        .composer-side {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-self: stretch;
+        }
+        .composer-side .primary-btn,
+        .composer-side .ghost-btn {
+            min-width: 92px;
+            flex: 1;
+        }
+        .composer-bottom {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+        .employee-select {
+            width: 100%;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 247, 255, 0.14);
+            background: rgba(4, 19, 31, 0.96);
+            color: var(--ui-text);
+            padding: 0 38px 0 12px;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+        }
+        .prompt-list.compact {
+            display: flex;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+        .prompt-list.compact .prompt-item {
+            min-width: 240px;
+            padding: 10px 12px;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .section-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .section-count {
+            color: var(--ui-sub);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        @media (max-width: 1080px) {
+            .layout {
+                grid-template-columns: 92px 1fr;
+            }
+            .sidebar {
+                display: none;
+            }
+        }
+        @media (max-width: 720px) {
+            .page {
+                padding: 8px;
+            }
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            .nav-rail {
+                display: none;
+            }
+            .sidebar {
+                display: none;
+            }
+            .composer-box {
+                grid-template-columns: 1fr;
+            }
+            .composer-side {
+                flex-direction: row;
+            }
+            .prompt-list.compact {
+                flex-wrap: wrap;
+            }
+            .message {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="topbar">
+            <div>
+                <div class="brand-title">智能问数工作台</div>
+                <div class="brand-sub">登录后可在“智能问数”和“智能聊天”两个子系统之间切换；当前页面为智能问数工作台。</div>
+            </div>
+            <div class="top-actions">
+                <div class="system-switch">
+                    <button class="switch-btn active" type="button">智能问数</button>
+                    <button class="switch-btn" type="button" onclick="window.location.href='/im'">智能聊天</button>
+                </div>
+                <div class="badge">当前用户：{{username}}</div>
+                <div class="badge">角色：{{role}}</div>
+                <form action="/auth/logout" method="post">
+                    {% module xsrf_form_html() %}
+                    <button class="ghost-btn" type="submit">退出登录</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="layout">
+            <aside class="panel nav-rail">
+                <div class="rail-profile">
+                    <div class="rail-avatar">{{ (username or 'U')[0:1].upper() }}</div>
+                    <div class="rail-name">{{ username }}</div>
+                    <div class="rail-role">{{ role }}</div>
+                </div>
+                <div class="rail-spacer"></div>
+                <div class="rail-actions">
+                    <button class="rail-btn active" type="button" title="智能问数" aria-label="智能问数">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 19h16"></path>
+                            <path d="M6 15V9"></path>
+                            <path d="M12 15V5"></path>
+                            <path d="M18 15v-3"></path>
+                        </svg>
+                    </button>
+                    <button class="rail-btn" type="button" onclick="window.location.href='/im'" title="智能聊天" aria-label="智能聊天">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M8 10h8"></path>
+                            <path d="M8 14h5"></path>
+                            <path d="M6 5h12a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H11l-5 3v-3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z"></path>
+                        </svg>
+                    </button>
+                    <form class="rail-action-form" action="/auth/logout" method="post">
+                        {% module xsrf_form_html() %}
+                        <button class="rail-btn" type="submit" title="退出登录" aria-label="退出登录">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <path d="M16 17l5-5-5-5"></path>
+                                <path d="M21 12H9"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </aside>
+
+            <aside class="panel sidebar">
+                <div class="workspace-head">
+                    <div class="workspace-title">智能问数</div>
+                    <div class="workspace-sub">面向数据分析、知识问答和数字员工协同的统一工作区。</div>
+                    <div class="workspace-actions">
+                        <button class="primary-btn" type="button" onclick="startNewChat()">新建任务</button>
+                        <button class="ghost-btn" type="button" onclick="window.location.href='/im'">去智能聊天</button>
+                    </div>
+                </div>
+
+                <div class="workspace-scroll">
+                    <div class="sidebar-card compact-card">
+                        <div class="section-title">模型服务</div>
+                        <div class="section-sub">选择当前对话默认调用的模型。</div>
+                        <div class="select-wrap">
+                            <select class="model-select" id="modelSelect"></select>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-card compact-card" style="flex:1; display:flex; flex-direction:column; min-height:280px;">
+                        <div class="section-row">
+                            <div class="section-title" style="margin-bottom:0;">历史任务</div>
+                            <div class="section-count">最近会话</div>
+                        </div>
+                        <div class="section-sub">点击任务可回访历史问数结果与对话记录。</div>
+                        <div class="history-list" id="historyList"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="panel chat-shell">
+                <div class="chat-header">
+                    <div class="chat-title" id="chatTitle">新对话</div>
+                    <div class="chat-sub" id="chatSub">输入问题后，系统会自动识别普通问答、智能问数或数字员工调用。</div>
+                </div>
+
+                <div class="chat-list" id="chatList">
+                    <div class="empty-state" id="emptyState">
+                        开始一次新的任务。<br>
+                        可以直接提问数据问题、普通 AI 问题，或通过 `@数字员工` 发起协同分析。
+                    </div>
+                </div>
+
+                <div class="composer">
+                    <div class="composer-top">
+                        <div class="select-wrap">
+                            <select class="employee-select" id="employeeSelect">
+                                <option value="">选择数字员工</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="composer-box">
+                        <div>
+                            <textarea id="messageInput" placeholder="输入问题，支持普通问答、智能问数和 @数字员工 调用"></textarea>
+                        </div>
+                        <div class="composer-side">
+                            <button class="primary-btn" id="sendBtn" type="button">发送</button>
+                            <button class="ghost-btn" type="button" onclick="clearComposer()">清空输入</button>
+                        </div>
+                    </div>
+                    <div class="composer-bottom">
+                        <div class="prompt-list compact" id="promptList"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        var state = {
+            eventSource: null,
+            sessions: [],
+            employees: [],
+            models: [],
+            currentSessionId: null,
+            currentModelId: null
+        };
+
+        function escapeHtml(text) {
+            return String(text || '').replace(/[&<>"']/g, function(ch){
+                return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+            });
+        }
+
+        function getCookie(name) {
+            var match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
+            return match ? decodeURIComponent(match[1]) : '';
+        }
+
+        function getXsrfToken() {
+            return getCookie('_xsrf');
+        }
+
+        var BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+        function parseRawDateTimeMatch(value) {
+            var text = String(value || '').trim();
+            if (!text) {
+                return null;
+            }
+            return text.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+        }
+
+        function getBeijingNow() {
+            return new Date(Date.now() + BEIJING_OFFSET_MS);
+        }
+
+        function getBeijingDayStart(date) {
+            return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+        }
+
+        function parseBeijingDate(text) {
+            var match = parseRawDateTimeMatch(text);
+            if (!match) {
+                return null;
+            }
+            var timestamp = Date.UTC(
+                Number(match[1]),
+                Number(match[2]) - 1,
+                Number(match[3]),
+                Number(match[4] || 0),
+                Number(match[5] || 0),
+                Number(match[6] || 0)
+            );
+            var date = new Date(timestamp + BEIJING_OFFSET_MS);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        function formatTime(text) {
+            var date = parseBeijingDate(text);
+            if (!date) { return ''; }
+            var year = date.getUTCFullYear();
+            var month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            var day = String(date.getUTCDate()).padStart(2, '0');
+            var hh = String(date.getUTCHours()).padStart(2, '0');
+            var mm = String(date.getUTCMinutes()).padStart(2, '0');
+            var ss = String(date.getUTCSeconds()).padStart(2, '0');
+            return year + '-' + month + '-' + day + ' ' + hh + ':' + mm + ':' + ss;
+        }
+
+        function formatSessionTime(text) {
+            var value = String(text || '').trim();
+            if (!value) { return ''; }
+            var date = parseBeijingDate(value);
+            if (!date) {
+                return value.slice(0, 16);
+            }
+            var now = getBeijingNow();
+            var diffDays = Math.round((getBeijingDayStart(now) - getBeijingDayStart(date)) / 86400000);
+            var hh = String(date.getUTCHours()).padStart(2, '0');
+            var mm = String(date.getUTCMinutes()).padStart(2, '0');
+            if (diffDays === 0) {
+                return hh + ':' + mm;
+            }
+            if (diffDays === 1) {
+                return '昨天';
+            }
+            var month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            var day = String(date.getUTCDate()).padStart(2, '0');
+            return month + '-' + day;
+        }
+
+        function fillMessage(text) {
+            var input = document.getElementById('messageInput');
+            input.value = text;
+            input.focus();
+        }
+
+        function clearComposer() {
+            document.getElementById('messageInput').value = '';
+        }
+
+        function startNewChat() {
+            if (state.eventSource) {
+                state.eventSource.close();
+                state.eventSource = null;
+            }
+            state.currentSessionId = null;
+            document.getElementById('chatTitle').textContent = '新对话';
+            document.getElementById('chatSub').textContent = '输入问题后，系统会自动识别普通问答、智能问数或数字员工调用。';
+            renderSessions(state.sessions);
+            renderEmpty();
+        }
+
+        function renderEmpty() {
+            document.getElementById('chatList').innerHTML =
+                '<div class="empty-state" id="emptyState">' +
+                '开始一次新的任务。<br>可以直接提问数据问题、普通 AI 问题，或通过 `@数字员工` 发起协同分析。' +
+                '</div>';
+        }
+
+        function scrollToBottom() {
+            var chatList = document.getElementById('chatList');
+            chatList.scrollTop = chatList.scrollHeight;
+        }
+
+        function renderInlineMarkdown(text) {
+            var html = escapeHtml(text || '');
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+            html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+            return html;
+        }
+
+        function renderMarkdown(md) {
+            var source = String(md || '');
+            var codeBlocks = [];
+            source = source.replace(/```([\s\S]*?)```/g, function(_, code){
+                var key = '__CODE_BLOCK_' + codeBlocks.length + '__';
+                codeBlocks.push('<pre><code>' + escapeHtml(code.trim()) + '</code></pre>');
+                return key;
+            });
+            var blocks = source.split(/\n{2,}/).map(function(item){ return item.trim(); }).filter(Boolean);
+            var html = blocks.map(function(block){
+                if (/^#{1,3}\s/.test(block)) {
+                    var lines = block.split('\n');
+                    var line = lines.shift() || '';
+                    var level = line.match(/^#+/)[0].length;
+                    level = Math.min(level, 3);
+                    var headingHtml = '<h' + level + '>' + renderInlineMarkdown(line.replace(/^#{1,3}\s*/, '')) + '</h' + level + '>';
+                    var rest = lines.join('\n').trim();
+                    if (!rest) {
+                        return headingHtml;
+                    }
+                    return headingHtml + '<p>' + renderInlineMarkdown(rest).replace(/\n/g, '<br>') + '</p>';
+                }
+                if (/^\|.+\|\s*\n\|[\-\s|:]+\|/.test(block)) {
+                    var lines = block.split('\n');
+                    var headerCells = lines[0].split('|').slice(1, -1).map(function(cell){ return '<th>' + renderInlineMarkdown(cell.trim()) + '</th>'; }).join('');
+                    var bodyRows = lines.slice(2).map(function(line){
+                        if (!line.trim()) { return ''; }
+                        var cells = line.split('|').slice(1, -1).map(function(cell){ return '<td>' + renderInlineMarkdown(cell.trim()) + '</td>'; }).join('');
+                        return '<tr>' + cells + '</tr>';
+                    }).join('');
+                    return '<table><thead><tr>' + headerCells + '</tr></thead><tbody>' + bodyRows + '</tbody></table>';
+                }
+                if (/^(?:- |\* )/m.test(block) && block.split('\n').every(function(line){ return /^(?:- |\* )/.test(line); })) {
+                    return '<ul>' + block.split('\n').map(function(line){
+                        return '<li>' + renderInlineMarkdown(line.replace(/^(?:- |\* )/, '')) + '</li>';
+                    }).join('') + '</ul>';
+                }
+                if (/^\d+\.\s/m.test(block) && block.split('\n').every(function(line){ return /^\d+\.\s/.test(line); })) {
+                    return '<ol>' + block.split('\n').map(function(line){
+                        return '<li>' + renderInlineMarkdown(line.replace(/^\d+\.\s/, '')) + '</li>';
+                    }).join('') + '</ol>';
+                }
+                if (/^>/.test(block)) {
+                    return '<blockquote>' + renderInlineMarkdown(block.replace(/^>\s?/gm, '').replace(/\n/g, '<br>')) + '</blockquote>';
+                }
+                return '<p>' + renderInlineMarkdown(block).replace(/\n/g, '<br>') + '</p>';
+            }).join('');
+            codeBlocks.forEach(function(codeHtml, index){
+                html = html.replace('__CODE_BLOCK_' + index + '__', codeHtml);
+            });
+            return html || '<p></p>';
+        }
+
+        function renderWeatherCard(weather) {
+            var current = weather && weather.current && typeof weather.current === 'object' ? weather.current : {};
+            var city = weather.city || weather.province || '天气';
+            var weatherText = weather.weather || weather.text || '天气未知';
+            var temp = weather.temp || weather.temperature || '--';
+            var tempLow = weather.tempn || weather.low || '--';
+            var wind = weather.wind || weather.windDir || '--';
+            var windSpeed = weather.windSpeed || weather.wind_speed || '--';
+            var air = weather.air || weather.aqi || current.air || current.aqi || weather.airQuality || current.airQuality || '--';
+            return '' +
+                '<div class="weather-card">' +
+                    '<div class="weather-city">' + escapeHtml(city) + '</div>' +
+                    '<div class="weather-main">' +
+                        '<div>' +
+                            '<div class="weather-temp">' + escapeHtml(String(temp)) + '°</div>' +
+                            '<div class="weather-desc">' + escapeHtml(weatherText) + '</div>' +
+                        '</div>' +
+                        '<div class="weather-desc">低温 ' + escapeHtml(String(tempLow)) + '°</div>' +
+                    '</div>' +
+                    '<div class="weather-grid">' +
+                        '<div class="weather-item"><strong>风向风速</strong>' + escapeHtml(String(wind) + ' / ' + String(windSpeed)) + '</div>' +
+                        '<div class="weather-item"><strong>空气质量</strong>' + escapeHtml(String(air)) + '</div>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        function isWeatherCardPayload(payload) {
+            return !!(payload && typeof payload === 'object' && (
+                payload.weather !== undefined ||
+                payload.temp !== undefined ||
+                payload.tempn !== undefined ||
+                payload.wind !== undefined ||
+                (payload.current && typeof payload.current === 'object')
+            ));
+        }
+
+        function isMusicCardPayload(payload) {
+            return !!(payload && typeof payload === 'object' && (
+                payload.song !== undefined ||
+                payload.singer !== undefined ||
+                payload.Music !== undefined ||
+                payload.music !== undefined ||
+                payload.url !== undefined ||
+                payload.audio !== undefined
+            ));
+        }
+
+        function resolveWeatherCard(extraData) {
+            var extra = extraData || {};
+            if (extra.weather_card && typeof extra.weather_card === 'object') {
+                return extra.weather_card;
+            }
+            if (extra.payload && typeof extra.payload === 'object') {
+                if (extra.payload.data && isWeatherCardPayload(extra.payload.data)) {
+                    return extra.payload.data;
+                }
+                if (isWeatherCardPayload(extra.payload)) {
+                    return extra.payload;
+                }
+            }
+            return null;
+        }
+
+        function resolveMusicCard(extraData) {
+            var extra = extraData || {};
+            if (extra.music_card && typeof extra.music_card === 'object') {
+                return extra.music_card;
+            }
+            if (extra.payload && typeof extra.payload === 'object') {
+                if (extra.payload.data && isMusicCardPayload(extra.payload.data)) {
+                    return extra.payload.data;
+                }
+                if (isMusicCardPayload(extra.payload)) {
+                    return extra.payload;
+                }
+            }
+            return null;
+        }
+
+        function renderMusicCard(card) {
+            var title = card.song || card.name || card.title || '音乐推荐';
+            var singer = card.singer || card.artist || card.author || '未知歌手';
+            var cover = card.cover || card.pic || card.image || card.poster || '';
+            var source = card.source || card.platform || card.from || '音乐';
+            var playUrl = card.Music || card.music || card.url || card.audio || card.play_url || '';
+            var coverHtml = cover
+                ? '<img src="' + escapeHtml(cover) + '" alt="' + escapeHtml(title) + '">'
+                : '<div class="music-cover-fallback">♪</div>';
+            var playIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 6.5v11l9-5.5-9-5.5Z"></path></svg>';
+            return '' +
+                '<div class="music-card">' +
+                    '<div class="music-card-top">' +
+                        '<div class="music-cover">' + coverHtml + '</div>' +
+                        '<div class="music-info">' +
+                            '<div class="music-title">' + escapeHtml(title) + '</div>' +
+                            '<div class="music-artist">' + escapeHtml(singer) + '</div>' +
+                            '<div class="music-source">' + escapeHtml(source) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="music-actions">' +
+                        '<button class="music-play-btn" type="button"' + (playUrl ? ' onclick="toggleMusicCardPlayback(this)"' : ' disabled') + '>' +
+                            playIcon +
+                            '<span class="music-play-label">' + (playUrl ? '播放' : '暂无音源') + '</span>' +
+                        '</button>' +
+                        (playUrl ? '<audio class="music-audio" preload="none" src="' + escapeHtml(playUrl) + '" onended="resetMusicCardPlayback(this)"></audio>' : '') +
+                    '</div>' +
+                '</div>';
+        }
+
+        function toggleMusicCardPlayback(button) {
+            var card = button && button.closest('.music-card');
+            var audio = card ? card.querySelector('.music-audio') : null;
+            var label = button ? button.querySelector('.music-play-label') : null;
+            if (!audio || !label) {
+                return;
+            }
+            if (audio.paused) {
+                audio.play().then(function(){
+                    label.textContent = '暂停';
+                }).catch(function(){
+                    label.textContent = '播放失败';
+                });
+            } else {
+                audio.pause();
+                label.textContent = '播放';
+            }
+        }
+
+        function resetMusicCardPlayback(audio) {
+            var card = audio && audio.closest('.music-card');
+            var label = card ? card.querySelector('.music-play-label') : null;
+            if (label) {
+                label.textContent = '播放';
+            }
+        }
+
+        function buildMessageContentHtml(content, isMarkdown, extraData) {
+            var weatherCard = resolveWeatherCard(extraData);
+            if (weatherCard) {
+                return renderWeatherCard(weatherCard);
+            }
+            var musicCard = resolveMusicCard(extraData);
+            if (musicCard) {
+                return renderMusicCard(musicCard);
+            }
+            return isMarkdown ? renderMarkdown(content) : escapeHtml(content).replace(/\n/g, '<br>');
+        }
+
+        function ensureChatReady() {
+            var empty = document.getElementById('emptyState');
+            if (empty) {
+                empty.remove();
+            }
+        }
+
+        function buildMetaHtml(metaList) {
+            return (metaList || []).map(function(item){
+                return '<span class="badge">' + escapeHtml(item) + '</span>';
+            }).join('');
+        }
+
+        function createMessageElement(role, metaList, content, id, isMarkdown, extraData) {
+            ensureChatReady();
+            var wrap = document.createElement('div');
+            wrap.className = 'message-row ' + role;
+            wrap.innerHTML =
+                '<div class="message ' + role + '"' + (id ? ' id="' + id + '"' : '') + '>' +
+                    '<div class="message-meta">' + buildMetaHtml(metaList) + '</div>' +
+                    '<div class="message-status"></div>' +
+                    '<div class="message-content">' + buildMessageContentHtml(content, isMarkdown, extraData) + '</div>' +
+                '</div>';
+            document.getElementById('chatList').appendChild(wrap);
+            scrollToBottom();
+            return wrap;
+        }
+
+        function setMessageStatus(id, text) {
+            var node = document.getElementById(id);
+            if (!node) { return; }
+            node.querySelector('.message-status').innerHTML = text ? escapeHtml(text).replace(/\n/g, '<br>') : '';
+            scrollToBottom();
+        }
+
+        function setMessageMeta(id, metaList) {
+            var node = document.getElementById(id);
+            if (!node) { return; }
+            node.querySelector('.message-meta').innerHTML = buildMetaHtml(metaList);
+        }
+
+        function setMessageContent(id, content, isMarkdown, extraData) {
+            var node = document.getElementById(id);
+            if (!node) { return; }
+            node.querySelector('.message-content').innerHTML = buildMessageContentHtml(content, isMarkdown, extraData);
+            scrollToBottom();
+        }
+
+        function buildAssistantMeta(data) {
+            var meta = [];
+            if (data.employee && data.employee.alias) {
+                meta.push('@' + data.employee.alias);
+                if (data.employee.category) {
+                    meta.push(data.employee.category);
+                }
+            } else if (data.intent === 'db') {
+                meta.push('智能问数');
+            } else {
+                meta.push('AI 对话');
+            }
+            if (data.model && data.model.name) {
+                meta.push(data.model.name);
+            }
+            if (data.total_tokens) {
+                meta.push('Token ' + data.total_tokens);
+            }
+            if (data.response_ms) {
+                meta.push(data.response_ms + 'ms');
+            }
+            return meta;
+        }
+
+        function renderEmployees(list) {
+            state.employees = list || [];
+            var employeeSelect = document.getElementById('employeeSelect');
+            var employeeOptions = '<option value="">选择数字员工</option>';
+            state.employees.forEach(function(item){
+                employeeOptions += '<option value="' + escapeHtml(item.alias) + '">@' + escapeHtml(item.alias) + '</option>';
+            });
+            employeeSelect.innerHTML = employeeOptions;
+
+            var prompts = [
+                '最新一条深度采集数据是什么？',
+                '统计一下已深采的数据数量和未深采的数据数量'
+            ];
+            document.getElementById('promptList').innerHTML = prompts.slice(0, 2).map(function(text){
+                return '<div class="prompt-item" onclick="fillMessage(\'' + text.replace(/'/g, "\\'") + '\')">' + escapeHtml(text) + '</div>';
+            }).join('');
+        }
+
+        function renderModels(list) {
+            state.models = list || [];
+            var select = document.getElementById('modelSelect');
+            var html = '';
+            state.models.forEach(function(item){
+                var selected = state.currentModelId ? Number(state.currentModelId) === Number(item.id) : Number(item.is_default) === 1;
+                if (!state.currentModelId && selected) {
+                    state.currentModelId = Number(item.id);
+                }
+                html += '<option value="' + item.id + '"' + (selected ? ' selected' : '') + '>' +
+                    escapeHtml(item.name + ' / ' + item.model_name + (item.is_default ? '（默认）' : '')) +
+                '</option>';
+            });
+            select.innerHTML = html || '<option value="">暂无可用模型</option>';
+            if (!state.currentModelId && state.models.length) {
+                state.currentModelId = Number(state.models[0].id);
+            }
+        }
+
+        function renderSessions(list) {
+            state.sessions = list || [];
+            var html = '';
+            state.sessions.forEach(function(item){
+                var active = Number(item.id) === Number(state.currentSessionId);
+                html += '<div class="history-item' + (active ? ' active' : '') + '" onclick="openSession(' + item.id + ')">';
+                html += '<div class="history-title">' + escapeHtml(item.title || '未命名任务') + '</div>';
+                html += '<div class="history-preview">' + escapeHtml(item.last_message_preview || '暂无消息摘要') + '</div>';
+                html += '<div class="history-meta">';
+                html += '<div class="history-meta-text">';
+                if (item.model_name) {
+                    html += '<span>' + escapeHtml(item.model_name) + '</span>';
+                }
+                if (item.last_intent) {
+                    html += '<span>' + escapeHtml(item.last_intent) + '</span>';
+                }
+                html += '<span>' + escapeHtml(formatSessionTime(item.update_at)) + '</span>';
+                html += '</div>';
+                html += '<button class="history-delete-btn" type="button" title="删除会话" onclick="deleteSession(event, ' + item.id + ')">';
+                html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>';
+                html += '</button>';
+                html += '</div></div>';
+            });
+            document.getElementById('historyList').innerHTML = html || '<div class="section-sub">还没有历史任务，先发起一次对话吧。</div>';
+        }
+
+        function refreshSessions() {
+            fetch('/api/chat/session')
+                .then(function(resp){ return resp.json(); })
+                .then(function(res){
+                    if (res.code === 0) {
+                        renderSessions((res.data || {}).sessions || []);
+                    }
+                });
+        }
+
+        async function deleteSession(event, sessionId) {
+            if (event) {
+                event.stopPropagation();
+            }
+            if (!window.confirm('确认删除这条历史会话吗？')) {
+                return;
+            }
+            try {
+                var body = new URLSearchParams();
+                body.set('_xsrf', getXsrfToken());
+                body.set('action', 'delete');
+                body.set('session_id', String(sessionId));
+                var resp = await fetch('/api/chat/session', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                    body: body.toString()
+                });
+                var res = await resp.json();
+                if (res.code !== 0) {
+                    alert(res.msg || '删除失败');
+                    return;
+                }
+                renderSessions((res.data || {}).sessions || []);
+                state.sessions = (res.data || {}).sessions || [];
+                if (Number(state.currentSessionId) === Number(sessionId)) {
+                    startNewChat();
+                }
+            } catch (error) {
+                alert('删除失败，请刷新页面后重试');
+            }
+        }
+
+        function renderStoredMessage(item) {
+            var meta = [];
+            if (item.role === 'user') {
+                meta = ['我', formatTime(item.create_at)];
+                createMessageElement('user', meta, item.content_text || item.content_markdown || '', null, false, null);
+                return;
+            }
+            var extra = item.extra || {};
+            if (item.message_type === 'employee' && extra.employee && extra.employee.alias) {
+                meta.push('@' + extra.employee.alias);
+                if (extra.employee.category) {
+                    meta.push(extra.employee.category);
+                }
+            } else if (item.intent === 'db' || item.message_type === 'db') {
+                meta.push('智能问数');
+            } else {
+                meta.push('AI 对话');
+            }
+            if (item.model_name) {
+                meta.push(item.model_name);
+            }
+            if (item.total_tokens) {
+                meta.push('Token ' + item.total_tokens);
+            }
+            if (item.response_ms) {
+                meta.push(item.response_ms + 'ms');
+            }
+            if (item.create_at) {
+                meta.push(formatTime(item.create_at));
+            }
+            createMessageElement('assistant', meta, item.content_markdown || item.content_text || '', null, true, extra);
+        }
+
+        function openSession(sessionId, silent) {
+            fetch('/api/chat/session?session_id=' + encodeURIComponent(sessionId))
+                .then(function(resp){ return resp.json(); })
+                .then(function(res){
+                    if (res.code !== 0) {
+                        if (!silent) {
+                            alert(res.msg || '会话加载失败');
+                        }
+                        return;
+                    }
+                    var data = res.data || {};
+                    var session = data.session || {};
+                    state.currentSessionId = session.id;
+                    if (session.model_id) {
+                        state.currentModelId = Number(session.model_id);
+                        document.getElementById('modelSelect').value = session.model_id;
+                    }
+                    document.getElementById('chatTitle').textContent = session.title || '历史任务';
+                    document.getElementById('chatSub').textContent = '创建于 ' + formatTime(session.create_at) + '，最近更新 ' + formatTime(session.update_at);
+                    document.getElementById('chatList').innerHTML = '';
+                    (data.messages || []).forEach(renderStoredMessage);
+                    if (!(data.messages || []).length) {
+                        renderEmpty();
+                    }
+                    renderSessions(state.sessions);
+                    scrollToBottom();
+                });
+        }
+
+        function syncCurrentSession(silent) {
+            if (!state.currentSessionId) {
+                return;
+            }
+            openSession(state.currentSessionId, silent !== false);
+        }
+
+        function bootstrap() {
+            fetch('/api/chat/bootstrap')
+                .then(function(resp){ return resp.json(); })
+                .then(function(res){
+                    if (res.code !== 0) {
+                        alert(res.msg || '初始化失败');
+                        return;
+                    }
+                    var data = res.data || {};
+                    renderModels(data.models || []);
+                    renderEmployees(data.employees || []);
+                    renderSessions(data.sessions || []);
+                });
+        }
+
+        function sendMessage() {
+            var input = document.getElementById('messageInput');
+            var message = (input.value || '').trim();
+            if (!message) { return; }
+            if (state.eventSource) {
+                state.eventSource.close();
+                state.eventSource = null;
+            }
+
+            createMessageElement('user', ['我', formatTime(new Date().toISOString())], message, null, false, null);
+            var assistantId = 'assistant-' + Date.now();
+            createMessageElement('assistant', ['处理中'], '', assistantId, true, null);
+            setMessageStatus(assistantId, '正在初始化对话...');
+            input.value = '';
+
+            var params = new URLSearchParams();
+            params.set('message', message);
+            if (state.currentSessionId) {
+                params.set('session_id', state.currentSessionId);
+            }
+            if (state.currentModelId && !message.trim().startsWith('@')) {
+                params.set('model_id', state.currentModelId);
+            }
+
+            state.eventSource = new EventSource('/api/chat/stream?' + params.toString());
+            var fullText = '';
+            var streamFinished = false;
+
+            state.eventSource.onmessage = function(event) {
+                var data = JSON.parse(event.data);
+                if (data.type === 'session') {
+                    state.currentSessionId = data.session && data.session.id;
+                    if (data.session && data.session.title) {
+                        document.getElementById('chatTitle').textContent = data.session.title;
+                    }
+                    refreshSessions();
+                } else if (data.type === 'status') {
+                    setMessageStatus(assistantId, data.message || '');
+                    if (data.intent === 'db') {
+                        setMessageMeta(assistantId, ['智能问数', state.models.find(function(item){ return Number(item.id) === Number(state.currentModelId); }) ? state.models.find(function(item){ return Number(item.id) === Number(state.currentModelId); }).name : '']);
+                    }
+                } else if (data.type === 'delta') {
+                    fullText += data.content || '';
+                    setMessageMeta(assistantId, buildAssistantMeta(data));
+                    setMessageStatus(assistantId, '');
+                    setMessageContent(assistantId, fullText, true, data);
+                } else if (data.type === 'done') {
+                    streamFinished = true;
+                    fullText = data.content || fullText;
+                    setMessageMeta(assistantId, buildAssistantMeta(data));
+                    setMessageStatus(assistantId, '');
+                    setMessageContent(assistantId, fullText, true, data);
+                    if (data.session_id) {
+                        state.currentSessionId = data.session_id;
+                    }
+                    refreshSessions();
+                    syncCurrentSession(true);
+                    state.eventSource.close();
+                    state.eventSource = null;
+                } else if (data.type === 'error') {
+                    streamFinished = true;
+                    setMessageMeta(assistantId, ['错误']);
+                    setMessageStatus(assistantId, '');
+                    setMessageContent(assistantId, data.message || '服务异常', false);
+                    if (state.eventSource) {
+                        state.eventSource.close();
+                        state.eventSource = null;
+                    }
+                    refreshSessions();
+                    syncCurrentSession(true);
+                }
+            };
+
+            state.eventSource.onerror = function() {
+                if (streamFinished) {
+                    return;
+                }
+                streamFinished = true;
+                setMessageMeta(assistantId, ['异常']);
+                setMessageStatus(assistantId, '');
+                setMessageContent(assistantId, '连接中断或服务异常，请稍后重试。', false);
+                if (state.eventSource) {
+                    state.eventSource.close();
+                    state.eventSource = null;
+                }
+                refreshSessions();
+                syncCurrentSession(true);
+            };
+        }
+
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('keydown', function(event){
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+        document.getElementById('employeeSelect').addEventListener('change', function(){
+            var alias = (this.value || '').trim();
+            if (!alias) {
+                return;
+            }
+            fillMessage('@' + alias + ' ');
+            this.value = '';
+        });
+        document.getElementById('modelSelect').addEventListener('change', function(){
+            state.currentModelId = Number(this.value || 0) || null;
+        });
+
+        bootstrap();
+    </script>
+</body>
+</html>
