@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>接口管理</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f2f2f2;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .search-bar, .table-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .search-bar { margin-bottom: 15px; }
+        .layui-table th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 500;
+        }
+        .layui-btn-group { margin-bottom: 15px; }
+        .method-tag, .format-tag, .status-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .method-get { background: #e6f7ff; color: #1890ff; }
+        .method-post { background: #f6ffed; color: #52c41a; }
+        .method-other { background: #fff7e6; color: #fa8c16; }
+        .format-json { background: #f0f5ff; color: #2f54eb; }
+        .format-text { background: #f9f0ff; color: #722ed1; }
+        .status-on { background: #e6f7e6; color: #52c41a; }
+        .status-off { background: #fff1f0; color: #ff4d4f; }
+        .form-section {
+            background: #fafafa;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 12px 15px 2px;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .tip-text {
+            font-size: 12px;
+            color: #999;
+            line-height: 1.8;
+        }
+        .response-box {
+            min-height: 240px;
+            max-height: 420px;
+            overflow: auto;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(4, 10, 24, 0.9);
+            color: #d8e6ff;
+            font-family: Consolas, Monaco, monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.7;
+        }
+        .test-meta-grid {
+            display: flex;
+            gap: 12px;
+            margin: 14px 0;
+            flex-wrap: wrap;
+        }
+        .test-meta-item {
+            min-width: 140px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(28, 44, 84, 0.9);
+            border: 1px solid rgba(103, 136, 255, 0.18);
+        }
+        .test-meta-label {
+            font-size: 12px;
+            color: #9db0d5;
+            margin-bottom: 6px;
+        }
+        .test-meta-value {
+            color: #f4f8ff;
+            font-size: 15px;
+            font-weight: 600;
+            word-break: break-all;
+        }
+        .test-note {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #97a9cf;
+            line-height: 1.8;
+        }
+        .url-cell {
+            color: #5b8cff;
+            word-break: break-all;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+</head>
+<body>
+    <div class="search-bar">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-inline" style="width: 280px;">
+                        <input type="text" name="keyword" placeholder="接口名称 / 编码 / 地址 / 备注" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" class="layui-btn layui-btn-normal" id="searchBtn">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="resetBtn">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="layui-btn-group">
+            <button type="button" class="layui-btn layui-btn-normal" id="addBtn">
+                <i class="layui-icon layui-icon-add-1"></i> 新增接口
+            </button>
+        </div>
+        <table class="layui-hide" id="interfaceTable" lay-filter="interfaceTable"></table>
+    </div>
+
+    <script type="text/html" id="methodTpl">
+        {{!# if(d.method === 'GET') { }}
+        <span class="method-tag method-get">GET</span>
+        {{!# } else if(d.method === 'POST') { }}
+        <span class="method-tag method-post">POST</span>
+        {{!# } else { }}
+        <span class="method-tag method-other">{{!d.method}}</span>
+        {{!# } }}
+    </script>
+
+    <script type="text/html" id="formatTpl">
+        <span class="format-tag format-json">{{!d.response_format}}</span>
+    </script>
+
+    <script type="text/html" id="statusTpl">
+        {{!# if(d.status === 1) { }}
+        <span class="status-tag status-on">启用</span>
+        {{!# } else { }}
+        <span class="status-tag status-off">停用</span>
+        {{!# } }}
+    </script>
+
+    <script type="text/html" id="urlTpl">
+        <div class="url-cell">{{!d.url}}</div>
+    </script>
+
+    <script type="text/html" id="toolbarTpl">
+        <div class="layui-btn-container">
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" lay-event="test">测试</button>
+            <button type="button" class="layui-btn layui-btn-sm" lay-event="edit">编辑</button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">删除</button>
+        </div>
+    </script>
+
+    <script type="text/html" id="interfaceFormTpl">
+        <form class="layui-form" style="padding:20px 18px 6px;" id="interfaceForm">
+            <input type="hidden" name="id" value="{{!d.id || ''}}">
+            <div class="form-section">
+                <div class="section-title">基础信息</div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">接口名称</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="name" value="{{!d.name || ''}}" placeholder="例如：网易云随机音乐" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">接口编码</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="code" value="{{!d.code || ''}}" placeholder="例如：music_rand" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">请求方式</label>
+                            <div class="layui-input-block">
+                                <select name="method">
+                                    <option value="GET" {{!d.method === 'GET' || !d.method ? 'selected' : ''}}>GET</option>
+                                    <option value="POST" {{!d.method === 'POST' ? 'selected' : ''}}>POST</option>
+                                    <option value="PUT" {{!d.method === 'PUT' ? 'selected' : ''}}>PUT</option>
+                                    <option value="DELETE" {{!d.method === 'DELETE' ? 'selected' : ''}}>DELETE</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">返回格式</label>
+                            <div class="layui-input-block">
+                                <select name="response_format">
+                                    <option value="JSON" {{!d.response_format === 'JSON' || !d.response_format ? 'selected' : ''}}>JSON</option>
+                                    <option value="TEXT" {{!d.response_format === 'TEXT' ? 'selected' : ''}}>TEXT</option>
+                                    <option value="XML" {{!d.response_format === 'XML' ? 'selected' : ''}}>XML</option>
+                                    <option value="HTML" {{!d.response_format === 'HTML' ? 'selected' : ''}}>HTML</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">接口地址</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="url" value="{{!d.url || ''}}" placeholder="例如：https://api.52vmy.cn/api/query/tian" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">请求示例</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="sample_url" value="{{!d.sample_url || ''}}" placeholder="可填写完整示例请求地址" class="layui-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">调用配置</div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">默认QPS</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="default_qps" value="{{!d.default_qps || ''}}" placeholder="例如：每2秒最多4次" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">超时秒数</label>
+                            <div class="layui-input-block">
+                                <input type="number" name="timeout_seconds" value="{{!d.timeout_seconds || 20}}" placeholder="默认 20 秒" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">请求头JSON</label>
+                    <div class="layui-input-block">
+                        <textarea name="headers_json" class="layui-textarea" placeholder='{"User-Agent":"Mozilla/5.0"}'>{{!d.headers_json || (d.headers ? JSON.stringify(d.headers, null, 2) : '{}')}}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">参数定义JSON</label>
+                    <div class="layui-input-block">
+                        <textarea name="params_schema_json" class="layui-textarea" placeholder='[{"name":"city","required":1,"default":"北京市","placeholder":"城市名称"}]'>{{!d.params_schema_json || (d.params_schema ? JSON.stringify(d.params_schema, null, 2) : '[]')}}</textarea>
+                        <div class="tip-text">用于记录接口参数定义，方便后续其他模块和测试调用复用。</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">请求体模板</label>
+                    <div class="layui-input-block">
+                        <textarea name="body_template" class="layui-textarea" placeholder='适用于 POST/PUT 接口，例如：{"keyword":"demo"}'>{{!d.body_template || ''}}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">补充说明</div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">鉴权备注</label>
+                    <div class="layui-input-block">
+                        <textarea name="auth_note" class="layui-textarea" placeholder="例如：默认QPS有限制，携带Token可无限制">{{!d.auth_note || ''}}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">接口备注</label>
+                    <div class="layui-input-block">
+                        <textarea name="remark" class="layui-textarea" placeholder="例如：点击前往三日天气 API">{{!d.remark || ''}}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" {{!d.status === 1 || !d.id ? 'checked' : ''}}>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </script>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'layer', 'jquery', 'form', 'laytpl'], function(){
+            var table = layui.table;
+            var layer = layui.layer;
+            var $ = layui.jquery;
+            var form = layui.form;
+            var laytpl = layui.laytpl;
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.post(url, data, callback, 'json');
+            }
+
+            function htmlEncode(text) {
+                return $('<div/>').text(text || '').html();
+            }
+
+            function buildExampleParams(paramsSchema) {
+                var example = {};
+                (paramsSchema || []).forEach(function(item){
+                    if (!item || !item.name) { return; }
+                    if (item.default !== undefined && item.default !== null && item.default !== '') {
+                        example[item.name] = item.default;
+                    } else if (item.example !== undefined && item.example !== null && item.example !== '') {
+                        example[item.name] = item.example;
+                    } else {
+                        example[item.name] = '';
+                    }
+                });
+                return example;
+            }
+
+            function tryParseJsonText(text) {
+                if (!text || typeof text !== 'string') {
+                    return null;
+                }
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function formatResponseOutput(result) {
+                var parsed = result && result.json;
+                if (!parsed && result && result.text) {
+                    parsed = tryParseJsonText(result.text);
+                }
+                if (parsed) {
+                    return JSON.stringify(parsed, null, 2);
+                }
+                if (result && result.text) {
+                    return result.text;
+                }
+                return '无响应内容';
+            }
+
+            function fillResponseMeta(result) {
+                $('#testStatusCode').text(result && result.status_code ? result.status_code : '-');
+                $('#testContentType').text(result && result.content_type ? result.content_type : '-');
+                $('#testContentSize').text(result && result.text ? result.text.length + ' 字符' : '0 字符');
+            }
+
+            var tableIns = table.render({
+                elem: '#interfaceTable',
+                url: '/admin/api/interface',
+                method: 'get',
+                page: {limit: 20, limits: [10, 20, 50]},
+                cols: [[
+                    {field: 'id', title: 'ID', width: 70, sort: true},
+                    {field: 'name', title: '接口名称', minWidth: 180},
+                    {field: 'code', title: '接口编码', width: 150},
+                    {field: 'url', title: '接口地址', minWidth: 260, templet: '#urlTpl'},
+                    {field: 'method', title: '方式', width: 90, templet: '#methodTpl'},
+                    {field: 'response_format', title: '格式', width: 90, templet: '#formatTpl'},
+                    {field: 'default_qps', title: '默认QPS', width: 160},
+                    {field: 'status', title: '状态', width: 90, templet: '#statusTpl'},
+                    {field: 'update_at', title: '更新时间', width: 170},
+                    {title: '操作', width: 220, fixed: 'right', toolbar: '#toolbarTpl'}
+                ]],
+                parseData: function(res){
+                    return {code: res.code, msg: res.msg, count: res.count, data: res.data};
+                }
+            });
+
+            function collectFormData(layero, action) {
+                var data = {
+                    action: action,
+                    id: layero.find('input[name="id"]').val(),
+                    name: $.trim(layero.find('input[name="name"]').val()),
+                    code: $.trim(layero.find('input[name="code"]').val()),
+                    url: $.trim(layero.find('input[name="url"]').val()),
+                    method: layero.find('select[name="method"]').val(),
+                    response_format: layero.find('select[name="response_format"]').val(),
+                    sample_url: $.trim(layero.find('input[name="sample_url"]').val()),
+                    default_qps: $.trim(layero.find('input[name="default_qps"]').val()),
+                    timeout_seconds: $.trim(layero.find('input[name="timeout_seconds"]').val()) || '20',
+                    headers_json: $.trim(layero.find('textarea[name="headers_json"]').val()) || '{}',
+                    params_schema_json: $.trim(layero.find('textarea[name="params_schema_json"]').val()) || '[]',
+                    body_template: $.trim(layero.find('textarea[name="body_template"]').val()),
+                    auth_note: $.trim(layero.find('textarea[name="auth_note"]').val()),
+                    remark: $.trim(layero.find('textarea[name="remark"]').val()),
+                    status: layero.find('input[name="status"]').is(':checked') ? 1 : 0
+                };
+                if (!data.name || !data.code || !data.url) {
+                    layer.msg('接口名称、接口编码和接口地址不能为空', {icon: 2});
+                    return null;
+                }
+                return data;
+            }
+
+            function openForm(data) {
+                data = data || {method: 'GET', response_format: 'JSON', timeout_seconds: 20, status: 1};
+                layer.open({
+                    type: 1,
+                        closeBtn: 1,
+                    title: data.id ? '编辑接口' : '新增接口',
+                    area: ['960px', '800px'],
+                    content: laytpl($('#interfaceFormTpl').html()).render(data),
+                    btn: ['保存', '取消'],
+                    success: function(){ form.render(); },
+                    yes: function(index, layero){
+                        var formData = collectFormData(layero, data.id ? 'update' : 'add');
+                        if (!formData) { return; }
+                        postData('/admin/api/interface', formData, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '保存成功', {icon: 1});
+                                layer.close(index);
+                                tableIns.reload();
+                            } else {
+                                layer.msg(res.msg || '保存失败', {icon: 2});
+                            }
+                        });
+                    }
+                });
+            }
+
+            function openTestDialog(data) {
+                var exampleParams = buildExampleParams(data.params_schema || []);
+                var paramsPlaceholder = data.method === 'GET' || data.method === 'DELETE' ? '{"city":"北京市"}' : '{}';
+                var initialParams = Object.keys(exampleParams).length ? JSON.stringify(exampleParams, null, 2) : '';
+                var isBodyMethod = data.method === 'POST' || data.method === 'PUT';
+                var html = '' +
+                    '<div style="padding:20px;">' +
+                    '  <div style="margin-bottom:14px;color:#c7d4ef;">当前接口：<span style="color:#ffffff;font-weight:600;">' + htmlEncode(data.name) + '</span> <span style="margin-left:10px;padding:2px 10px;border-radius:999px;background:rgba(83,132,255,0.18);color:#8fb3ff;">' + htmlEncode(data.method || 'GET') + '</span></div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">测试参数JSON</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <textarea id="testParamsJson" class="layui-textarea" placeholder=\'' + htmlEncode(paramsPlaceholder) + '\'>' + htmlEncode(initialParams) + '</textarea>' +
+                    '      <div class="test-note">这里填 URL 查询参数，必须是标准 JSON，使用双引号。</div>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item" style="' + (isBodyMethod ? '' : 'opacity:0.58;') + '">' +
+                    '    <label class="layui-form-label">请求体JSON</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <textarea id="testBodyJson" class="layui-textarea" placeholder=\'' + htmlEncode(isBodyMethod ? 'POST/PUT 请求体 JSON' : '当前 ' + (data.method || 'GET') + ' 接口通常无需填写') + '\'>' + htmlEncode(data.body_template || '') + '</textarea>' +
+                    '      <div class="test-note">' + (isBodyMethod ? '当前接口支持通过请求体传参。' : '当前接口一般只需要填写上面的测试参数JSON，这里通常可以留空。') + '</div>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div style="margin-bottom:14px;">' +
+                    '    <button type="button" class="layui-btn layui-btn-normal" id="runInterfaceTest">开始测试</button>' +
+                    '    <button type="button" class="layui-btn layui-btn-primary" id="fillExampleParams">填充示例</button>' +
+                    '  </div>' +
+                    '  <div class="test-meta-grid">' +
+                    '    <div class="test-meta-item"><div class="test-meta-label">状态码</div><div class="test-meta-value" id="testStatusCode">-</div></div>' +
+                    '    <div class="test-meta-item"><div class="test-meta-label">内容类型</div><div class="test-meta-value" id="testContentType">-</div></div>' +
+                    '    <div class="test-meta-item"><div class="test-meta-label">响应长度</div><div class="test-meta-value" id="testContentSize">0 字符</div></div>' +
+                    '  </div>' +
+                    '  <div class="response-box" id="interfaceResponseBox">等待测试...</div>' +
+                    '</div>';
+
+                layer.open({
+                    type: 1,
+                        closeBtn: 1,
+                    title: '接口测试',
+                    area: ['900px', '720px'],
+                    content: html,
+                    success: function(){
+                        $('#fillExampleParams').on('click', function(){
+                            var sample = Object.keys(exampleParams).length ? JSON.stringify(exampleParams, null, 2) : '{}';
+                            $('#testParamsJson').val(sample);
+                        });
+                        $('#runInterfaceTest').on('click', function(){
+                            var paramsJson = $.trim($('#testParamsJson').val());
+                            var bodyJson = $.trim($('#testBodyJson').val());
+                            $('#interfaceResponseBox').text('请求中，请稍候...');
+                            fillResponseMeta(null);
+                            postData('/admin/api/interface/test', {
+                                id: data.id,
+                                params_json: paramsJson,
+                                body_json: bodyJson
+                            }, function(res){
+                                if (res.code === 0) {
+                                    fillResponseMeta(res.data);
+                                    $('#interfaceResponseBox').text(formatResponseOutput(res.data));
+                                } else {
+                                    fillResponseMeta(null);
+                                    $('#interfaceResponseBox').text('测试失败：' + (res.msg || '未知错误'));
+                                }
+                            });
+                        });
+                    }
+                });
+            }
+
+            $('#searchBtn').on('click', function(){
+                tableIns.reload({where: {keyword: $('input[name="keyword"]').val()}, page: {curr: 1}});
+            });
+
+            $('#resetBtn').on('click', function(){
+                $('input[name="keyword"]').val('');
+                tableIns.reload({where: {}, page: {curr: 1}});
+            });
+
+            $('#addBtn').on('click', function(){ openForm(null); });
+
+            table.on('tool(interfaceTable)', function(obj){
+                var data = obj.data;
+                if (obj.event === 'edit') {
+                    $.get('/admin/api/interface', {action: 'detail', id: data.id}, function(res){
+                        if (res.code !== 0) {
+                            layer.msg(res.msg || '详情加载失败', {icon: 2});
+                            return;
+                        }
+                        openForm(res.data);
+                    }, 'json');
+                } else if (obj.event === 'delete') {
+                    layer.confirm('确定删除该接口配置吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/interface', {action: 'delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                tableIns.reload();
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                } else if (obj.event === 'test') {
+                    $.get('/admin/api/interface', {action: 'detail', id: data.id}, function(res){
+                        if (res.code !== 0) {
+                            layer.msg(res.msg || '详情加载失败', {icon: 2});
+                            return;
+                        }
+                        openTestDialog(res.data);
+                    }, 'json');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

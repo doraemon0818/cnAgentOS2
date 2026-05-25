@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+        }
+
+        .login-container {
+            height: 100vh;
+            width: 100vw;
+            background:
+                radial-gradient(circle at 50% 42%, rgba(8, 117, 193, 0.18), transparent 28%),
+                radial-gradient(circle at 15% 18%, rgba(0, 247, 255, 0.08), transparent 18%),
+                linear-gradient(180deg, #03111f 0%, #07233a 55%, #04172a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 30% 40%, rgba(0, 247, 255, 0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 60%, rgba(20, 188, 255, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle var(--duration) ease-in-out infinite;
+            opacity: 0;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: var(--opacity); transform: scale(1); }
+        }
+
+        .header {
+            width: 100%;
+            text-align: center;
+            padding: 40px 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-line {
+            width: 600px;
+            height: 2px;
+            margin: 0 auto 20px;
+            position: relative;
+            background: linear-gradient(90deg, transparent, rgba(0, 247, 255, 0.3), transparent);
+        }
+
+        .header-line::before,
+        .header-line::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            width: 8px;
+            height: 8px;
+            background: #00e7ff;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .header-line::before { left: 0; }
+        .header-line::after { right: 0; }
+
+        .header-line .line-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 2px;
+            background: #00e7ff;
+            box-shadow: 0 0 10px #00e7ff;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #fff;
+            font-weight: 500;
+            letter-spacing: 6px;
+            text-shadow: 0 0 20px rgba(0, 231, 255, 0.32);
+        }
+
+        .header .subtitle {
+            font-size: 12px;
+            color: rgba(0, 231, 255, 0.62);
+            letter-spacing: 8px;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+
+        .main-content {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 100px;
+            padding: 0 80px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .left-graphic {
+            position: relative;
+            width: 650px;
+            height: 650px;
+            flex-shrink: 0;
+        }
+
+        .globe-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 500px;
+        }
+
+        .globe-core {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(0, 231, 255, 0.34), rgba(8, 90, 143, 0.12));
+            box-shadow: 
+                0 0 60px rgba(0, 231, 255, 0.22),
+                0 0 120px rgba(0, 170, 255, 0.12),
+                inset 0 0 40px rgba(0, 231, 255, 0.16);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+        }
+
+        .globe-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 231, 255, 0.26);
+            top: 50%;
+            left: 50%;
+        }
+
+        .globe-ring:nth-child(2) {
+            width: 380px;
+            height: 380px;
+            transform: translate(-50%, -50%) rotateX(70deg);
+            animation: rotateRing 15s linear infinite;
+        }
+
+        .globe-ring:nth-child(3) {
+            width: 420px;
+            height: 420px;
+            transform: translate(-50%, -50%) rotateX(70deg) rotateY(30deg);
+            animation: rotateRing 20s linear infinite reverse;
+        }
+
+        .globe-ring:nth-child(4) {
+            width: 460px;
+            height: 460px;
+            transform: translate(-50%, -50%) rotateX(70deg) rotateY(60deg);
+            animation: rotateRing 25s linear infinite;
+        }
+
+        .globe-ring:nth-child(5) {
+            width: 490px;
+            height: 490px;
+            transform: translate(-50%, -50%) rotateX(70deg) rotateY(90deg);
+            animation: rotateRing 18s linear infinite reverse;
+        }
+
+        @keyframes rotateRing {
+            from { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(0deg); }
+            to { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(360deg); }
+        }
+
+        .globe-ring .node {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #00e7ff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00e7ff, 0 0 15px rgba(0, 231, 255, 0.4);
+        }
+
+        .globe-ring:nth-child(2) .node { top: 0; left: 50%; transform: translate(-50%, -50%); }
+        .globe-ring:nth-child(3) .node { top: 50%; right: 0; transform: translate(50%, -50%); }
+        .globe-ring:nth-child(4) .node { bottom: 0; left: 50%; transform: translate(-50%, 50%); }
+        .globe-ring:nth-child(5) .node { top: 50%; left: 0; transform: translate(-50%, -50%); }
+
+        .connection-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .connection-lines svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .connection-lines line {
+            stroke: rgba(0, 231, 255, 0.16);
+            stroke-width: 1;
+            stroke-dasharray: 4 4;
+            animation: dashMove 2s linear infinite;
+        }
+
+        @keyframes dashMove {
+            to { stroke-dashoffset: -8; }
+        }
+
+        .floating-cube {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: rgba(0, 231, 255, 0.12);
+            border: 1px solid rgba(0, 231, 255, 0.22);
+            animation: floatCube var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+        }
+
+        @keyframes floatCube {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-30px) rotate(180deg); opacity: 0.8; }
+        }
+
+        .floating-cube:nth-child(1) { top: 10%; left: 15%; --duration: 4s; --delay: 0s; }
+        .floating-cube:nth-child(2) { top: 25%; right: 10%; --duration: 5s; --delay: 1s; }
+        .floating-cube:nth-child(3) { bottom: 20%; left: 20%; --duration: 3.5s; --delay: 0.5s; }
+        .floating-cube:nth-child(4) { bottom: 15%; right: 15%; --duration: 4.5s; --delay: 1.5s; }
+        .floating-cube:nth-child(5) { top: 50%; left: 5%; --duration: 5.5s; --delay: 2s; }
+        .floating-cube:nth-child(6) { top: 40%; right: 5%; --duration: 4s; --delay: 0.8s; }
+
+        .tech-hexagon {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(0, 231, 255, 0.18);
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            animation: hexPulse 3s ease-in-out infinite;
+        }
+
+        .tech-hexagon:nth-child(7) { top: 5%; left: 40%; animation-delay: 0s; }
+        .tech-hexagon:nth-child(8) { top: 80%; left: 35%; animation-delay: 1s; }
+        .tech-hexagon:nth-child(9) { top: 15%; right: 20%; animation-delay: 2s; }
+
+        @keyframes hexPulse {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 0.6; transform: scale(1); }
+        }
+
+        .right-login {
+            width: 420px;
+            flex-shrink: 0;
+        }
+
+        .login-box {
+            width: 100%;
+            background: rgba(4, 22, 36, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 45px 40px;
+            border: 1px solid rgba(19, 220, 255, 0.18);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00e7ff, transparent);
+        }
+
+        .login-box .corner {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-color: rgba(0, 231, 255, 0.58);
+            border-style: solid;
+        }
+
+        .login-box .corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+        .login-box .corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+        .login-box .corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+        .login-box .corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .login-header h2 {
+            font-size: 22px;
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 6px;
+            letter-spacing: 3px;
+        }
+
+        .login-header .subtitle {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 4px;
+        }
+
+        .login-form .layui-form-item {
+            margin-bottom: 22px;
+            position: relative;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(0, 231, 255, 0.46);
+            font-size: 15px;
+            z-index: 10;
+            transition: color 0.3s;
+        }
+
+        .login-form .layui-input {
+            height: 44px;
+            padding-left: 42px;
+            padding-right: 15px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 231, 255, 0.16);
+            background: rgba(2, 22, 37, 0.82);
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .login-form .layui-input::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .login-form .layui-input:focus {
+            border-color: #00e7ff;
+            background: rgba(4, 28, 44, 0.94);
+            box-shadow: 0 0 0 3px rgba(0, 231, 255, 0.08);
+        }
+
+        .input-wrapper:focus-within .input-icon {
+            color: #00e7ff;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .form-options .remember-me {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .form-options .remember-me input[type="checkbox"] {
+            margin-right: 6px;
+            accent-color: #00e7ff;
+        }
+
+        .form-options .forgot-password {
+            color: rgba(0, 231, 255, 0.68);
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .form-options .forgot-password:hover {
+            color: #00e7ff;
+        }
+
+        .login-form .layui-btn {
+            height: 44px;
+            width: 100%;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 500;
+            background: linear-gradient(135deg, #1195db 0%, #1571ff 100%);
+            border: none;
+            letter-spacing: 6px;
+            transition: all 0.3s;
+            box-shadow: 0 8px 24px rgba(16, 116, 255, 0.24);
+        }
+
+        .login-form .layui-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(16, 116, 255, 0.3);
+        }
+
+        .login-form .layui-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .login-footer p {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.35);
+            letter-spacing: 1px;
+        }
+
+        .error-msg {
+            background: rgba(255, 50, 50, 0.12);
+            border: 1px solid rgba(255, 50, 50, 0.25);
+            color: #ff6b6b;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            display: none;
+            text-align: center;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        .bottom-decoration {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(180deg, transparent, rgba(0, 247, 255, 0.08));
+            pointer-events: none;
+        }
+
+        @media (max-width: 1100px) {
+            .left-graphic {
+                display: none;
+            }
+            .main-content {
+                gap: 0;
+                padding: 0 20px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .login-box {
+                padding: 35px 25px;
+            }
+            .header h1 {
+                font-size: 20px;
+                letter-spacing: 3px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="stars" id="stars"></div>
+
+        <div class="header">
+            <div class="header-line">
+                <div class="line-center"></div>
+            </div>
+            <h1>AI智能瞭望与智能问数系统</h1>
+            <p class="subtitle">Intelligent Surveillance & Data Query System</p>
+        </div>
+
+        <div class="main-content">
+            <div class="left-graphic">
+                <div class="floating-cube"></div>
+                <div class="floating-cube"></div>
+                <div class="floating-cube"></div>
+                <div class="floating-cube"></div>
+                <div class="floating-cube"></div>
+                <div class="floating-cube"></div>
+                <div class="tech-hexagon"></div>
+                <div class="tech-hexagon"></div>
+                <div class="tech-hexagon"></div>
+
+                <div class="globe-container">
+                    <div class="globe-core"></div>
+                    <div class="globe-ring"><div class="node"></div></div>
+                    <div class="globe-ring"><div class="node"></div></div>
+                    <div class="globe-ring"><div class="node"></div></div>
+                    <div class="globe-ring"><div class="node"></div></div>
+                </div>
+
+                <div class="connection-lines">
+                    <svg viewBox="0 0 450 450">
+                        <line x1="100" y1="100" x2="200" y2="150" />
+                        <line x1="350" y1="120" x2="250" y2="180" />
+                        <line x1="80" y1="300" x2="180" y2="250" />
+                        <line x1="370" y1="280" x2="270" y2="230" />
+                        <line x1="150" y1="80" x2="225" y2="225" />
+                        <line x1="300" y1="350" x2="225" y2="225" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="right-login">
+                <div class="login-box">
+                    <div class="corner tl"></div>
+                    <div class="corner tr"></div>
+                    <div class="corner bl"></div>
+                    <div class="corner br"></div>
+
+                    <div class="login-header">
+                        <h2>用户登录</h2>
+                        <p class="subtitle">USER LOGIN</p>
+                    </div>
+
+                    {% if error %}
+                    <div class="error-msg show">{{error}}</div>
+                    {% end %}
+
+                    <form class="layui-form login-form" method="post" action="/admin/login">
+                        <div class="layui-form-item">
+                            <div class="input-wrapper">
+                                <input type="text" name="username" lay-verify="required" placeholder="请输入用户名" autocomplete="off" class="layui-input">
+                                <i class="fas fa-user input-icon"></i>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <div class="input-wrapper">
+                                <input type="password" name="password" lay-verify="required" placeholder="请输入用户密码" autocomplete="off" class="layui-input">
+                                <i class="fas fa-lock input-icon"></i>
+                            </div>
+                        </div>
+                        <div class="form-options">
+                            <label class="remember-me">
+                                <input type="checkbox"> 记住密码
+                            </label>
+                            <a href="javascript:;" class="forgot-password">忘记密码？</a>
+                        </div>
+                        <div class="layui-form-item">
+                            <button class="layui-btn" lay-submit lay-filter="loginSubmit">登 录</button>
+                        </div>
+                        {% module xsrf_form_html() %}
+                    </form>
+
+                    <div class="login-footer">
+                        <p>© 2026 AI智能瞭望与智能问数系统</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-decoration"></div>
+    </div>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['form', 'layer'], function(){
+            var form = layui.form;
+            var layer = layui.layer;
+
+            form.on('submit(loginSubmit)', function(data){
+                layer.load(1, {shade: [0.3, '#000']});
+                return true;
+            });
+        });
+
+        (function(){
+            var starsContainer = document.getElementById('stars');
+            for(var i = 0; i < 80; i++){
+                var star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.setProperty('--duration', (2 + Math.random() * 4) + 's');
+                star.style.setProperty('--opacity', (0.3 + Math.random() * 0.7));
+                star.style.animationDelay = Math.random() * 5 + 's';
+                star.style.width = (1 + Math.random() * 2) + 'px';
+                star.style.height = star.style.width;
+                starsContainer.appendChild(star);
+            }
+        })();
+    </script>
+</body>
+</html>
