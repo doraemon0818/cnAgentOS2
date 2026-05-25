@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能管理</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f2f2f2;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .search-bar, .table-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .search-bar { margin-bottom: 15px; }
+        .search-bar .layui-form-label {
+            width: 90px;
+            white-space: nowrap;
+        }
+        .layui-table th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 500;
+        }
+        .layui-btn-group { margin-bottom: 15px; }
+        .type-tag, .status-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .type-parent { background: #e6f7ff; color: #1890ff; }
+        .type-child { background: #f6ffed; color: #52c41a; }
+        .status-on { background: #e6f7e6; color: #52c41a; }
+        .status-off { background: #fff1f0; color: #ff4d4f; }
+        .form-section {
+            background: #fafafa;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 12px 15px 2px;
+            margin-bottom: 15px;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+</head>
+<body>
+    <div class="search-bar">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-inline" style="width: 220px;">
+                        <input type="text" name="keyword" placeholder="名称 / 编码 / 路由" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">上级模块</label>
+                    <div class="layui-input-inline" style="width: 200px;">
+                        <select name="parent_id" id="searchParentId">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" class="layui-btn layui-btn-normal" id="searchBtn">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="resetBtn">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="layui-btn-group">
+            <button type="button" class="layui-btn layui-btn-normal" id="addBtn">
+                <i class="layui-icon layui-icon-add-1"></i> 新增功能
+            </button>
+        </div>
+
+        <table class="layui-hide" id="functionTable" lay-filter="functionTable"></table>
+
+        <script type="text/html" id="typeTpl">
+            {{!# if(d.type === 1) { }}
+                <span class="type-tag type-parent">一级模块</span>
+            {{!# } else { }}
+                <span class="type-tag type-child">二级功能</span>
+            {{!# } }}
+        </script>
+
+        <script type="text/html" id="statusTpl">
+            {{!# if(d.status === 1) { }}
+                <span class="status-tag status-on">启用</span>
+            {{!# } else { }}
+                <span class="status-tag status-off">停用</span>
+            {{!# } }}
+        </script>
+
+        <script type="text/html" id="toolbar">
+            <div class="layui-btn-container">
+                <button class="layui-btn layui-btn-sm" lay-event="edit">
+                    <i class="layui-icon layui-icon-edit"></i> 编辑
+                </button>
+                <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">
+                    <i class="layui-icon layui-icon-delete"></i> 删除
+                </button>
+            </div>
+        </script>
+    </div>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'layer', 'form', 'jquery'], function(){
+            var table = layui.table;
+            var layer = layui.layer;
+            var form = layui.form;
+            var $ = layui.jquery;
+
+            var parentOptions = [];
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.post(url, data, callback, 'json');
+            }
+
+            function loadParentOptions(callback) {
+                $.get('/admin/api/function', {action: 'parents'}, function(res){
+                    if (res.code !== 0) {
+                        layer.msg(res.msg || '加载上级模块失败', {icon: 2});
+                        return;
+                    }
+                    parentOptions = res.data || [];
+                    var optionsHtml = '<option value="">全部</option><option value="0">顶级模块</option>';
+                    for (var i = 0; i < parentOptions.length; i++) {
+                        optionsHtml += '<option value="' + parentOptions[i].id + '">' + parentOptions[i].name + '</option>';
+                    }
+                    $('#searchParentId').html(optionsHtml);
+                    form.render('select');
+                    if (callback) {
+                        callback();
+                    }
+                }, 'json');
+            }
+
+            function buildFormHtml(data) {
+                data = data || {
+                    id: '',
+                    parent_id: 0,
+                    name: '',
+                    code: '',
+                    icon: 'layui-icon-app',
+                    url: '',
+                    type: 2,
+                    sort: 0,
+                    status: 1
+                };
+
+                var parentHtml = '<option value="0">顶级模块</option>';
+                for (var i = 0; i < parentOptions.length; i++) {
+                    var selected = String(data.parent_id) === String(parentOptions[i].id) ? ' selected' : '';
+                    parentHtml += '<option value="' + parentOptions[i].id + '"' + selected + '>' + parentOptions[i].name + '</option>';
+                }
+
+                return '' +
+                    '<form class="layui-form" id="functionForm" lay-filter="functionForm" style="padding:20px;">' +
+                    '  <input type="hidden" name="id" value="' + (data.id || '') + '">' +
+                    '  <div class="form-section">' +
+                    '    <div class="layui-form-item">' +
+                    '      <label class="layui-form-label">功能类型</label>' +
+                    '      <div class="layui-input-block">' +
+                    '        <input type="radio" name="type" value="1" title="一级模块" lay-filter="functionType" ' + (data.type === 1 ? 'checked' : '') + '>' +
+                    '        <input type="radio" name="type" value="2" title="二级功能" lay-filter="functionType" ' + (data.type === 2 ? 'checked' : '') + '>' +
+                    '      </div>' +
+                    '    </div>' +
+                    '    <div class="layui-form-item" id="parentBlock">' +
+                    '      <label class="layui-form-label">上级模块</label>' +
+                    '      <div class="layui-input-block">' +
+                    '        <select name="parent_id">' + parentHtml + '</select>' +
+                    '      </div>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">功能名称</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="text" name="name" value="' + (data.name || '') + '" placeholder="请输入功能名称" autocomplete="off" class="layui-input">' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">功能编码</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="text" name="code" value="' + (data.code || '') + '" placeholder="如：system_function" autocomplete="off" class="layui-input">' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">图标类名</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="text" name="icon" value="' + (data.icon || '') + '" placeholder="如：layui-icon-component" autocomplete="off" class="layui-input">' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item" id="urlBlock">' +
+                    '    <label class="layui-form-label">功能路由</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="text" name="url" value="' + (data.url || '') + '" placeholder="如：/admin/function/list" autocomplete="off" class="layui-input">' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">排序值</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="number" name="sort" value="' + (data.sort || 0) + '" placeholder="请输入排序值" autocomplete="off" class="layui-input">' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">状态</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" ' + (data.status === 1 ? 'checked' : '') + '>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '</form>';
+            }
+
+            function toggleFormBlocks(layero) {
+                var selectedType = Number(layero.find('input[name="type"]:checked').val() || 1);
+                if (selectedType === 1) {
+                    layero.find('select[name="parent_id"]').val('0');
+                    layero.find('input[name="url"]').val('');
+                    layero.find('#parentBlock').hide();
+                    layero.find('#urlBlock').hide();
+                } else {
+                    layero.find('#parentBlock').show();
+                    layero.find('#urlBlock').show();
+                }
+                form.render();
+            }
+
+            function collectFormData(layero, action) {
+                var formData = {
+                    action: action,
+                    id: layero.find('input[name="id"]').val(),
+                    parent_id: layero.find('select[name="parent_id"]').val() || '0',
+                    name: $.trim(layero.find('input[name="name"]').val()),
+                    code: $.trim(layero.find('input[name="code"]').val()),
+                    icon: $.trim(layero.find('input[name="icon"]').val()),
+                    url: $.trim(layero.find('input[name="url"]').val()),
+                    type: layero.find('input[name="type"]:checked').val() || '1',
+                    sort: layero.find('input[name="sort"]').val() || '0',
+                    status: layero.find('input[name="status"]').is(':checked') ? 1 : 0
+                };
+
+                if (!formData.name || !formData.code) {
+                    layer.msg('功能名称和编码不能为空', {icon: 2});
+                    return null;
+                }
+                if (Number(formData.type) === 2 && !formData.url) {
+                    layer.msg('二级功能必须填写功能路由', {icon: 2});
+                    return null;
+                }
+                return formData;
+            }
+
+            var tableIns = table.render({
+                elem: '#functionTable',
+                url: '/admin/api/function',
+                method: 'get',
+                page: {limit: 20, limits: [10, 20, 50, 100]},
+                cols: [[
+                    {field: 'id', title: 'ID', width: 70, sort: true, fixed: 'left'},
+                    {field: 'parent_name', title: '上级模块', width: 130},
+                    {field: 'name', title: '功能名称', width: 160},
+                    {field: 'code', title: '功能编码', width: 170},
+                    {field: 'type', title: '类型', width: 110, templet: '#typeTpl'},
+                    {field: 'icon', title: '图标', width: 150},
+                    {field: 'url', title: '功能路由', minWidth: 220},
+                    {field: 'sort', title: '排序', width: 90},
+                    {field: 'status', title: '状态', width: 100, templet: '#statusTpl'},
+                    {field: 'update_at', title: '更新时间', width: 180},
+                    {title: '操作', width: 170, toolbar: '#toolbar', fixed: 'right'}
+                ]]
+            });
+
+            $('#searchBtn').on('click', function(){
+                tableIns.reload({
+                    where: {
+                        keyword: $('input[name="keyword"]').val(),
+                        parent_id: $('#searchParentId').val()
+                    },
+                    page: {curr: 1}
+                });
+            });
+
+            $('#resetBtn').on('click', function(){
+                $('input[name="keyword"]').val('');
+                $('#searchParentId').val('');
+                form.render('select');
+                tableIns.reload({where: {}, page: {curr: 1}});
+            });
+
+            form.on('radio(functionType)', function(){
+                toggleFormBlocks($('.layui-layer-content').last());
+            });
+
+            $('#addBtn').on('click', function(){
+                var html = buildFormHtml();
+                layer.open({
+                    type: 1,
+                        closeBtn: 1,
+                    title: '新增功能',
+                    area: ['620px', '620px'],
+                    content: html,
+                    btn: ['确定', '取消'],
+                    success: function(layero){
+                        form.render();
+                        toggleFormBlocks(layero);
+                    },
+                    yes: function(index, layero){
+                        var formData = collectFormData(layero, 'add');
+                        if (!formData) {
+                            return;
+                        }
+                        postData('/admin/api/function', formData, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '新增成功', {icon: 1});
+                                layer.close(index);
+                                loadParentOptions();
+                                tableIns.reload({page: {curr: 1}});
+                            } else {
+                                layer.msg(res.msg || '新增失败', {icon: 2});
+                            }
+                        });
+                    }
+                });
+            });
+
+            table.on('tool(functionTable)', function(obj){
+                var data = obj.data;
+
+                if (obj.event === 'edit') {
+                    layer.open({
+                        type: 1,
+                        closeBtn: 1,
+                        title: '编辑功能',
+                        area: ['620px', '620px'],
+                        content: buildFormHtml(data),
+                        btn: ['确定', '取消'],
+                        success: function(layero){
+                            form.render();
+                            toggleFormBlocks(layero);
+                        },
+                        yes: function(index, layero){
+                            var formData = collectFormData(layero, 'update');
+                            if (!formData) {
+                                return;
+                            }
+                            postData('/admin/api/function', formData, function(res){
+                                if (res.code === 0) {
+                                    layer.msg(res.msg || '修改成功', {icon: 1});
+                                    layer.close(index);
+                                    loadParentOptions();
+                                    tableIns.reload();
+                                } else {
+                                    layer.msg(res.msg || '修改失败', {icon: 2});
+                                }
+                            });
+                        }
+                    });
+                }
+
+                if (obj.event === 'delete') {
+                    layer.confirm('确定要删除该功能吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/function', {action: 'delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                loadParentOptions();
+                                tableIns.reload({page: {curr: 1}});
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+
+            loadParentOptions();
+        });
+    </script>
+</body>
+</html>

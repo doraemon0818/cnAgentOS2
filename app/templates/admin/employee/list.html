@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字员工</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+    <style>
+        body {
+            padding: 15px;
+            background: transparent;
+        }
+        .search-bar, .table-container {
+            padding: 15px;
+            border-radius: 18px;
+        }
+        .type-badge, .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+        .type-ai {
+            background: rgba(88, 142, 255, 0.16);
+            color: #8eb9ff;
+        }
+        .type-normal {
+            background: rgba(61, 208, 174, 0.16);
+            color: #6ce3c9;
+        }
+        .status-on {
+            background: rgba(87, 218, 149, 0.16);
+            color: #6ee6a8;
+        }
+        .status-off {
+            background: rgba(255, 107, 107, 0.16);
+            color: #ff9898;
+        }
+        .bind-text {
+            color: #d8e5ff;
+        }
+        .hint-line {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #8ea6d1;
+            line-height: 1.8;
+        }
+        .section-box {
+            border: 1px solid rgba(111, 132, 255, 0.12);
+            border-radius: 16px;
+            padding: 16px 16px 2px;
+            margin-bottom: 14px;
+            background: rgba(17, 28, 56, 0.45);
+        }
+        .section-title {
+            margin-bottom: 12px;
+            color: #dbe7ff;
+            font-weight: 600;
+        }
+        .employee-tip {
+            font-size: 12px;
+            color: #9ab0db;
+            line-height: 1.8;
+            margin-top: 6px;
+        }
+        .employee-layer .layui-layer-content {
+            padding: 0 !important;
+            overflow: auto !important;
+        }
+        .employee-layer .layui-layer-btn {
+            padding: 10px 16px 12px !important;
+        }
+        .employee-layer #employeeForm {
+            padding-top: 16px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-inline" style="width: 320px;">
+                        <input type="text" name="keyword" placeholder="员工名称 / 别名 / 编码 / 描述" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" class="layui-btn layui-btn-normal" id="searchBtn">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="resetBtn">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="layui-btn-group" style="margin-bottom: 15px;">
+            <button type="button" class="layui-btn layui-btn-normal" id="addBtn">
+                <i class="layui-icon layui-icon-add-1"></i> 新增数字员工
+            </button>
+        </div>
+        <table class="layui-hide" id="employeeTable" lay-filter="employeeTable"></table>
+    </div>
+
+    <script type="text/html" id="typeTpl">
+        {{!# if(d.category === 'AI') { }}
+        <span class="type-badge type-ai">AI</span>
+        {{!# } else { }}
+        <span class="type-badge type-normal">普通</span>
+        {{!# } }}
+    </script>
+
+    <script type="text/html" id="bindTpl">
+        <span class="bind-text">{{!d.category === 'AI' ? (d.model_name || '系统默认模型') : (d.endpoint_name || '未绑定接口')}}</span>
+    </script>
+
+    <script type="text/html" id="statusTpl">
+        {{!# if(d.status === 1) { }}
+        <span class="status-badge status-on">启用</span>
+        {{!# } else { }}
+        <span class="status-badge status-off">停用</span>
+        {{!# } }}
+    </script>
+
+    <script type="text/html" id="toolbarTpl">
+        <button type="button" class="layui-btn layui-btn-sm" lay-event="edit">编辑</button>
+        <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">删除</button>
+    </script>
+
+    <script type="text/html" id="employeeFormTpl">
+        <form class="layui-form" id="employeeForm" style="padding:20px 18px 6px;">
+            <input type="hidden" name="id" value="{{!d.id || ''}}">
+
+            <div class="section-box">
+                <div class="section-title">基础信息</div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">员工名称</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="name" value="{{!d.name || ''}}" placeholder="例如：川小农" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">员工别名</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="alias" value="{{!d.alias || ''}}" placeholder="用户通过 @别名 调用" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">员工编码</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="code" value="{{!d.code || ''}}" placeholder="例如：employee_weather" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">员工分类</label>
+                            <div class="layui-input-block">
+                                <select name="category" id="employeeCategorySelect">
+                                    <option value="AI" {{!d.category === 'AI' || !d.category ? 'selected' : ''}}>AI</option>
+                                    <option value="普通" {{!d.category === '普通' ? 'selected' : ''}}>普通</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">排序值</label>
+                            <div class="layui-input-block">
+                                <input type="number" name="sort" value="{{!d.sort || 0}}" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md4">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">状态</label>
+                            <div class="layui-input-block">
+                                <input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" {{!d.status === 1 || !d.id ? 'checked' : ''}}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">描述</label>
+                    <div class="layui-input-block">
+                        <textarea name="description" class="layui-textarea" placeholder="记录该数字员工的用途、调用场景和服务说明">{{!d.description || ''}}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-box" id="aiSection">
+                <div class="section-title">AI 员工配置</div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">绑定模型</label>
+                    <div class="layui-input-block">
+                        <select name="model_id" id="employeeModelSelect"></select>
+                        <div class="employee-tip">不选择时，自动使用系统默认模型。</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">提示词</label>
+                    <div class="layui-input-block">
+                        <textarea name="prompt" class="layui-textarea" placeholder="配置该数字员工的专属 Prompt">{{!d.prompt || ''}}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-box" id="apiSection">
+                <div class="section-title">普通员工配置</div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">绑定接口</label>
+                    <div class="layui-input-block">
+                        <select name="endpoint_id" id="employeeEndpointSelect"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">参数名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="api_param_name" value="{{!d.api_param_name || ''}}" placeholder="例如：天气接口填写 city，随机音乐可留空" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">默认参数JSON</label>
+                    <div class="layui-input-block">
+                        <textarea name="api_params_json" class="layui-textarea" placeholder='例如：{"city":"北京市"}'>{{!d.api_params_json || '{}'}}</textarea>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">响应模板</label>
+                    <div class="layui-input-block">
+                        <textarea name="response_template" class="layui-textarea" placeholder="例如：为你推荐 {data.song} - {data.singer}">{{!d.response_template || ''}}</textarea>
+                        <div class="employee-tip">支持按 JSON 路径取值，例如：`{data.city}`、`{data.song}`、`{data.Music}`。</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-title">交互配置</div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">默认输入</label>
+                    <div class="layui-input-block">
+                        <textarea name="default_user_input" class="layui-textarea" placeholder="用户只输入 @别名 时，可使用这里的默认请求内容">{{!d.default_user_input || ''}}</textarea>
+                        <div class="hint-line">例如：`@音乐` 无需额外参数，可通过默认输入触发随机推荐；`@川小农` 可设置默认自我介绍。</div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </script>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'layer', 'jquery', 'form', 'laytpl'], function(){
+            var table = layui.table;
+            var layer = layui.layer;
+            var $ = layui.jquery;
+            var form = layui.form;
+            var laytpl = layui.laytpl;
+
+            var modelOptions = [];
+            var endpointOptions = [];
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.post(url, data, callback, 'json');
+            }
+
+            function loadFormOptions(callback) {
+                var remaining = 2;
+                function done() {
+                    remaining -= 1;
+                    if (remaining === 0 && typeof callback === 'function') {
+                        callback();
+                    }
+                }
+                $.get('/admin/api/model', {action: 'options'}, function(res){
+                    modelOptions = res.code === 0 ? (res.data || []) : [];
+                    done();
+                }, 'json');
+                $.get('/admin/api/interface', {action: 'options'}, function(res){
+                    endpointOptions = res.code === 0 ? (res.data || []) : [];
+                    done();
+                }, 'json');
+            }
+
+            function renderModelOptions(selectedId) {
+                var html = '<option value="">系统默认模型</option>';
+                modelOptions.forEach(function(item){
+                    var selected = String(item.id) === String(selectedId || '') ? ' selected' : '';
+                    var suffix = item.is_default === 1 ? '（默认）' : '';
+                    html += '<option value="' + item.id + '"' + selected + '>' + item.name + suffix + '</option>';
+                });
+                $('#employeeModelSelect').html(html);
+            }
+
+            function renderEndpointOptions(selectedId) {
+                var html = '<option value="">请选择接口服务</option>';
+                endpointOptions.forEach(function(item){
+                    var selected = String(item.id) === String(selectedId || '') ? ' selected' : '';
+                    html += '<option value="' + item.id + '"' + selected + '>' + item.name + ' [' + item.code + ']</option>';
+                });
+                $('#employeeEndpointSelect').html(html);
+            }
+
+            function toggleSections() {
+                var category = $('#employeeCategorySelect').val();
+                if (category === 'AI') {
+                    $('#aiSection').show();
+                    $('#apiSection').hide();
+                } else {
+                    $('#aiSection').hide();
+                    $('#apiSection').show();
+                }
+            }
+
+            var tableIns = table.render({
+                elem: '#employeeTable',
+                url: '/admin/api/employee',
+                method: 'get',
+                page: {limit: 20, limits: [10, 20, 50]},
+                cols: [[
+                    {field: 'id', title: 'ID', width: 70},
+                    {field: 'name', title: '员工名称', width: 130},
+                    {field: 'alias', title: '员工别名', width: 130},
+                    {field: 'code', title: '员工编码', width: 180},
+                    {field: 'category', title: '分类', width: 90, templet: '#typeTpl'},
+                    {field: 'bind_name', title: '绑定服务', minWidth: 180, templet: '#bindTpl'},
+                    {field: 'default_user_input', title: '默认输入', minWidth: 200},
+                    {field: 'status', title: '状态', width: 90, templet: '#statusTpl'},
+                    {field: 'update_at', title: '更新时间', width: 170},
+                    {title: '操作', width: 150, fixed: 'right', toolbar: '#toolbarTpl'}
+                ]],
+                parseData: function(res){
+                    return {code: res.code, msg: res.msg, count: res.count, data: res.data};
+                }
+            });
+
+            function collectFormData(layero, action) {
+                var data = {
+                    action: action,
+                    id: layero.find('input[name="id"]').val(),
+                    name: $.trim(layero.find('input[name="name"]').val()),
+                    alias: $.trim(layero.find('input[name="alias"]').val()),
+                    code: $.trim(layero.find('input[name="code"]').val()),
+                    category: layero.find('select[name="category"]').val(),
+                    model_id: layero.find('select[name="model_id"]').val(),
+                    endpoint_id: layero.find('select[name="endpoint_id"]').val(),
+                    prompt: $.trim(layero.find('textarea[name="prompt"]').val()),
+                    api_param_name: $.trim(layero.find('input[name="api_param_name"]').val()),
+                    api_params_json: $.trim(layero.find('textarea[name="api_params_json"]').val()) || '{}',
+                    response_template: $.trim(layero.find('textarea[name="response_template"]').val()),
+                    default_user_input: $.trim(layero.find('textarea[name="default_user_input"]').val()),
+                    description: $.trim(layero.find('textarea[name="description"]').val()),
+                    sort: $.trim(layero.find('input[name="sort"]').val()) || '0',
+                    status: layero.find('input[name="status"]').is(':checked') ? 1 : 0
+                };
+                if (!data.name || !data.alias || !data.code) {
+                    layer.msg('员工名称、别名、编码不能为空', {icon: 2});
+                    return null;
+                }
+                if (data.category === '普通' && !data.endpoint_id) {
+                    layer.msg('普通员工必须绑定接口服务', {icon: 2});
+                    return null;
+                }
+                return data;
+            }
+
+            function openForm(data) {
+                data = data || {category: 'AI', status: 1, sort: 0, api_params_json: '{}'};
+                loadFormOptions(function(){
+                    var width = Math.min(980, Math.max(760, $(window).width() - 48));
+                    var height = Math.min(760, $(window).height() - 56);
+                    layer.open({
+                        type: 1,
+                        closeBtn: 1,
+                        skin: 'employee-layer',
+                        title: data.id ? '编辑数字员工' : '新增数字员工',
+                        area: [width + 'px', height + 'px'],
+                        offset: '24px',
+                        content: laytpl($('#employeeFormTpl').html()).render(data),
+                        btn: ['保存', '取消'],
+                        success: function(layero, index){
+                            renderModelOptions(data.model_id);
+                            renderEndpointOptions(data.endpoint_id);
+                            form.render();
+                            toggleSections();
+                            layero.find('#employeeCategorySelect').on('change', function(){
+                                toggleSections();
+                            });
+                        },
+                        yes: function(index, layero){
+                            var formData = collectFormData(layero, data.id ? 'update' : 'add');
+                            if (!formData) {
+                                return;
+                            }
+                            postData('/admin/api/employee', formData, function(res){
+                                if (res.code === 0) {
+                                    layer.msg(res.msg || '保存成功', {icon: 1});
+                                    layer.close(index);
+                                    tableIns.reload();
+                                } else {
+                                    layer.msg(res.msg || '保存失败', {icon: 2});
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+
+            $('#searchBtn').on('click', function(){
+                tableIns.reload({
+                    where: {keyword: $('input[name="keyword"]').val()},
+                    page: {curr: 1}
+                });
+            });
+
+            $('#resetBtn').on('click', function(){
+                $('input[name="keyword"]').val('');
+                tableIns.reload({where: {}, page: {curr: 1}});
+            });
+
+            $('#addBtn').on('click', function(){
+                openForm(null);
+            });
+
+            table.on('tool(employeeTable)', function(obj){
+                var data = obj.data;
+                if (obj.event === 'edit') {
+                    $.get('/admin/api/employee', {action: 'detail', id: data.id}, function(res){
+                        if (res.code !== 0) {
+                            layer.msg(res.msg || '详情加载失败', {icon: 2});
+                            return;
+                        }
+                        openForm(res.data);
+                    }, 'json');
+                } else if (obj.event === 'delete') {
+                    layer.confirm('确定删除该数字员工吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/employee', {action: 'delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                tableIns.reload();
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

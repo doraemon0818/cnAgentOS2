@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瞭望采集</title>
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        :root {
+            --bg: #03111d;
+            --panel: rgba(5, 22, 36, 0.78);
+            --panel-strong: rgba(6, 26, 41, 0.94);
+            --border: rgba(0, 247, 255, 0.18);
+            --text: #eefeff;
+            --sub: #abd0d9;
+            --muted: #79a6b1;
+            --accent: #13d4ff;
+            --accent2: #00f7ff;
+            --success: #32d296;
+            --danger: #ff7588;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            padding: 28px;
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(0, 247, 255, 0.18), transparent 24%),
+                radial-gradient(circle at top right, rgba(19, 212, 255, 0.12), transparent 30%),
+                linear-gradient(135deg, #03121f 0%, #041a2b 56%, #051421 100%);
+        }
+        .page {
+            max-width: 1480px;
+            margin: 0 auto;
+        }
+        .hero {
+            background: linear-gradient(135deg, rgba(4, 18, 30, 0.96), rgba(5, 26, 41, 0.9));
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            box-shadow: 0 22px 60px rgba(0, 7, 15, 0.42), 0 0 0 1px rgba(20, 224, 255, 0.06);
+            padding: 34px 36px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(0, 247, 255, 0.12), transparent 50%, rgba(0, 247, 255, 0.08));
+            pointer-events: none;
+        }
+        .hero-top {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            align-items: flex-start;
+        }
+        .hero-title {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .hero-desc {
+            color: var(--sub);
+            line-height: 1.8;
+            max-width: 760px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(53, 214, 255, 0.12);
+            border: 1px solid rgba(53, 214, 255, 0.22);
+            color: #d8f8ff;
+            font-size: 13px;
+        }
+        .collect-box {
+            margin-top: 28px;
+            position: relative;
+            z-index: 1;
+            background: rgba(4, 19, 31, 0.68);
+            border: 1px solid rgba(0, 247, 255, 0.12);
+            border-radius: 24px;
+            padding: 24px;
+        }
+        .search-row {
+            display: grid;
+            grid-template-columns: 1fr 150px;
+            gap: 16px;
+            align-items: center;
+        }
+        .search-input {
+            position: relative;
+        }
+        .search-input input {
+            width: 100%;
+            height: 68px;
+            border-radius: 22px;
+            border: 1px solid rgba(0, 247, 255, 0.14);
+            background: rgba(4, 19, 31, 0.92);
+            color: var(--text);
+            padding: 0 24px 0 60px;
+            font-size: 20px;
+            outline: none;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+        }
+        .search-input i {
+            position: absolute;
+            left: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent2);
+            font-size: 22px;
+        }
+        .search-input input::placeholder { color: var(--muted); }
+        .collect-btn {
+            height: 68px;
+            border: none;
+            border-radius: 22px;
+            cursor: pointer;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #043349 0%, #0f7ea0 52%, #00f7ff 100%);
+            box-shadow: 0 0 0 1px rgba(0, 247, 255, 0.14), 0 16px 28px rgba(0, 92, 120, 0.28), inset 0 0 18px rgba(0, 247, 255, 0.12);
+        }
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--sub);
+            font-size: 14px;
+            margin: 22px 0 14px;
+        }
+        .source-switches {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .source-pill {
+            min-width: 170px;
+            padding: 14px 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 247, 255, 0.14);
+            background: rgba(5, 24, 38, 0.8);
+            cursor: pointer;
+            transition: 0.25s ease;
+        }
+        .source-pill.active {
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.12), rgba(10, 89, 120, 0.16));
+            border-color: rgba(0, 247, 255, 0.3);
+            box-shadow: 0 12px 28px rgba(0, 84, 112, 0.24);
+        }
+        .source-pill .name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .source-pill .meta {
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 10px;
+        }
+        .config-card {
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(14, 24, 49, 0.78);
+            border: 1px solid rgba(111, 132, 255, 0.14);
+        }
+        .config-card .title {
+            color: var(--sub);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .config-card input {
+            width: 100%;
+            height: 52px;
+            border-radius: 16px;
+            border: 1px solid rgba(111, 132, 255, 0.14);
+            background: rgba(10, 19, 41, 0.92);
+            color: var(--text);
+            padding: 0 16px;
+            font-size: 18px;
+            outline: none;
+        }
+        .config-card .tip {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .result-panel {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 18px;
+        }
+        .summary-panel, .result-list {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 18px 46px rgba(6, 11, 28, 0.28);
+            backdrop-filter: blur(14px);
+        }
+        .summary-panel { padding: 24px; }
+        .summary-metrics {
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .metric {
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(13, 24, 49, 0.8);
+            border: 1px solid rgba(111, 132, 255, 0.12);
+        }
+        .metric .name {
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+        .metric .value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .result-list {
+            padding: 22px;
+            min-height: 380px;
+        }
+        .result-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .result-count {
+            color: var(--sub);
+            font-size: 14px;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .news-card {
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(12, 22, 45, 0.82);
+            border: 1px solid rgba(111, 132, 255, 0.12);
+        }
+        .news-card .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .news-card .card-title a {
+            color: #f5f8ff;
+            text-decoration: none;
+        }
+        .news-card .card-title a:hover { color: #81e7ff; }
+        .news-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .news-summary {
+            color: var(--sub);
+            line-height: 1.8;
+            min-height: 70px;
+            font-size: 14px;
+        }
+        .empty-state, .loading-state {
+            height: 100%;
+            min-height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: var(--muted);
+            gap: 12px;
+        }
+        .hint {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+        @media (max-width: 1200px) {
+            .result-panel { grid-template-columns: 1fr; }
+            .cards { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 900px) {
+            body { padding: 16px; }
+            .search-row, .config-grid { grid-template-columns: 1fr; }
+            .hero-top { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="hero">
+            <div class="hero-top">
+                <div>
+                    <div class="hero-title">AI 瞭望采集中心</div>
+                    <div class="hero-desc">以搜索引擎式交互发起智能采集，动态切换采集源、配置采集页数与有效数量，并将采集结果实时写入 SQLite 数据仓库，支撑后续 AI 深度采集。</div>
+                </div>
+                <div class="badge"><i class="fas fa-satellite-dish"></i> 动态源规则 · 一键入库 · 后续可扩展批量采集</div>
+            </div>
+
+            <div class="collect-box">
+                <div class="search-row">
+                    <div class="search-input">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="keywordInput" placeholder="输入需要瞭望采集的关键字，例如：四川农业大学">
+                    </div>
+                    <button class="collect-btn" id="collectBtn"><i class="fas fa-bolt"></i> 开始采集</button>
+                </div>
+
+                <div class="section-label"><i class="fas fa-toggle-on"></i> 采集源选择</div>
+                <div class="source-switches" id="sourceSwitches"></div>
+
+                <div class="section-label"><i class="fas fa-sliders-h"></i> 采集参数配置</div>
+                <div class="config-grid">
+                    <div class="config-card">
+                        <div class="title">一次有效采集数量</div>
+                        <input type="number" id="limitInput" value="20" min="1" max="100">
+                        <div class="tip">采集结果达到数量上限后自动停止。</div>
+                    </div>
+                    <div class="config-card">
+                        <div class="title">采集页数</div>
+                        <input type="number" id="pageCountInput" value="2" min="1" max="10">
+                        <div class="tip">页数越多，系统会按分页步进继续抓取。</div>
+                    </div>
+                    <div class="config-card">
+                        <div class="title">分页步进</div>
+                        <input type="number" id="pageStepInput" value="10" min="1" max="50" readonly>
+                        <div class="tip">该参数来自采集源规则，与 URL 中的 `pn` 同步。</div>
+                    </div>
+                </div>
+                <div class="hint">说明：采集结果会自动保存到“数据仓库”，后续可继续做 AI 深度采集。</div>
+            </div>
+        </div>
+
+        <div class="result-panel">
+            <div class="summary-panel">
+                <div style="font-size:24px;font-weight:700;">执行摘要</div>
+                <div style="margin-top:8px;color:var(--sub);line-height:1.8;">当前页展示本次采集的实时结果，采集成功后已自动入库。</div>
+                <div class="summary-metrics">
+                    <div class="metric">
+                        <div class="name">当前采集源</div>
+                        <div class="value" id="summarySource">-</div>
+                    </div>
+                    <div class="metric">
+                        <div class="name">关键字</div>
+                        <div class="value" id="summaryKeyword">-</div>
+                    </div>
+                    <div class="metric">
+                        <div class="name">入库条数</div>
+                        <div class="value" id="summarySaved">0</div>
+                    </div>
+                    <div class="metric">
+                        <div class="name">采集页数</div>
+                        <div class="value" id="summaryPages">0</div>
+                    </div>
+                </div>
+            </div>
+            <div class="result-list">
+                <div class="result-head">
+                    <div style="font-size:24px;font-weight:700;">采集结果</div>
+                    <div class="result-count" id="resultCount">等待开始采集</div>
+                </div>
+                <div id="resultContainer" class="empty-state">
+                    <i class="fas fa-radar" style="font-size:36px;"></i>
+                    <div>选择采集源并输入关键字后开始采集</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            var sources = [];
+            var activeSourceId = null;
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function encodeForm(data) {
+                var params = [];
+                for (var key in data) {
+                    if (Object.prototype.hasOwnProperty.call(data, key)) {
+                        params.push(encodeURIComponent(key) + '=' + encodeURIComponent(data[key]));
+                    }
+                }
+                return params.join('&');
+            }
+
+            function fetchJson(url, options) {
+                return fetch(url, options).then(function(res){ return res.json(); });
+            }
+
+            function escapeHtml(text) {
+                return (text || '').replace(/[&<>"']/g, function(s){
+                    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s];
+                });
+            }
+
+            function setSummary(data) {
+                document.getElementById('summarySource').textContent = data.source ? data.source.name : '-';
+                document.getElementById('summaryKeyword').textContent = data.keyword || '-';
+                document.getElementById('summarySaved').textContent = data.saved_count || 0;
+                document.getElementById('summaryPages').textContent = data.page_count || 0;
+            }
+
+            function renderSources() {
+                var container = document.getElementById('sourceSwitches');
+                if (!sources.length) {
+                    container.innerHTML = '<div class="empty-state" style="min-height:auto;padding:30px 0;">暂无可用采集源</div>';
+                    return;
+                }
+                container.innerHTML = sources.map(function(item){
+                    var active = item.id === activeSourceId ? ' active' : '';
+                    return '' +
+                        '<div class="source-pill' + active + '" data-id="' + item.id + '">' +
+                        '  <div class="name">' + escapeHtml(item.name) + '</div>' +
+                        '  <div class="meta">默认页数 ' + item.default_page_count + ' · 默认数量 ' + item.default_limit + ' · 步进 ' + item.page_step + '</div>' +
+                        '</div>';
+                }).join('');
+                Array.prototype.forEach.call(container.querySelectorAll('.source-pill'), function(node){
+                    node.addEventListener('click', function(){
+                        activeSourceId = Number(this.getAttribute('data-id'));
+                        var selected = sources.find(function(item){ return item.id === activeSourceId; });
+                        if (selected) {
+                            document.getElementById('limitInput').value = selected.default_limit || 20;
+                            document.getElementById('pageCountInput').value = selected.default_page_count || 1;
+                            document.getElementById('pageStepInput').value = selected.page_step || 10;
+                        }
+                        renderSources();
+                    });
+                });
+            }
+
+            function renderResults(items) {
+                var container = document.getElementById('resultContainer');
+                if (!items || !items.length) {
+                    container.className = 'empty-state';
+                    container.innerHTML = '<i class="fas fa-box-open" style="font-size:36px;"></i><div>本次未采集到可入库的数据</div>';
+                    return;
+                }
+                container.className = 'cards';
+                container.innerHTML = items.map(function(item){
+                    return '' +
+                        '<div class="news-card">' +
+                        '  <div class="card-title"><a href="' + escapeHtml(item.url) + '" target="_blank">' + escapeHtml(item.title) + '</a></div>' +
+                        '  <div class="news-meta">' +
+                        '    <span><i class="fas fa-layer-group"></i> 第 ' + (item.page_no || 1) + ' 页</span>' +
+                        '    <span><i class="fas fa-globe-asia"></i> ' + escapeHtml(item.origin_site || '未知来源') + '</span>' +
+                        '    <span><i class="far fa-clock"></i> ' + escapeHtml(item.publish_time || '时间未知') + '</span>' +
+                        '  </div>' +
+                        '  <div class="news-summary">' + escapeHtml(item.summary || '暂无摘要') + '</div>' +
+                        '</div>';
+                }).join('');
+            }
+
+            function loadSources() {
+                fetchJson('/admin/api/surveillance/collect').then(function(res){
+                    sources = res.data || [];
+                    if (sources.length && !activeSourceId) {
+                        activeSourceId = sources[0].id;
+                        document.getElementById('limitInput').value = sources[0].default_limit || 20;
+                        document.getElementById('pageCountInput').value = sources[0].default_page_count || 1;
+                        document.getElementById('pageStepInput').value = sources[0].page_step || 10;
+                    }
+                    renderSources();
+                });
+            }
+
+            function startCollect() {
+                var keyword = document.getElementById('keywordInput').value.trim();
+                var limit = document.getElementById('limitInput').value || 20;
+                var pageCount = document.getElementById('pageCountInput').value || 1;
+                if (!activeSourceId) {
+                    alert('请先选择采集源');
+                    return;
+                }
+                if (!keyword) {
+                    alert('请输入关键字');
+                    return;
+                }
+
+                document.getElementById('resultCount').textContent = '采集中，请稍候...';
+                document.getElementById('resultContainer').className = 'loading-state';
+                document.getElementById('resultContainer').innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:36px;"></i><div>正在访问采集源并解析结果...</div>';
+
+                fetchJson('/admin/api/surveillance/collect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: encodeForm({
+                        _xsrf: getXsrfToken(),
+                        source_id: activeSourceId,
+                        keyword: keyword,
+                        limit: limit,
+                        page_count: pageCount
+                    })
+                }).then(function(res){
+                    if (res.code !== 0) {
+                        document.getElementById('resultCount').textContent = '采集失败';
+                        document.getElementById('resultContainer').className = 'empty-state';
+                        document.getElementById('resultContainer').innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:36px;color:var(--danger);"></i><div>' + escapeHtml(res.msg || '采集失败') + '</div>';
+                        return;
+                    }
+                    var data = res.data || {};
+                    setSummary(data);
+                    document.getElementById('resultCount').textContent = '共采集 ' + ((data.items || []).length) + ' 条，入库 ' + (data.saved_count || 0) + ' 条';
+                    renderResults(data.items || []);
+                }).catch(function(err){
+                    document.getElementById('resultCount').textContent = '采集失败';
+                    document.getElementById('resultContainer').className = 'empty-state';
+                    document.getElementById('resultContainer').innerHTML = '<i class="fas fa-exclamation-circle" style="font-size:36px;color:var(--danger);"></i><div>' + escapeHtml(err.message || '请求失败') + '</div>';
+                });
+            }
+
+            document.getElementById('collectBtn').addEventListener('click', startCollect);
+            document.getElementById('keywordInput').addEventListener('keydown', function(e){
+                if (e.key === 'Enter') {
+                    startCollect();
+                }
+            });
+
+            loadSources();
+        })();
+    </script>
+</body>
+</html>
