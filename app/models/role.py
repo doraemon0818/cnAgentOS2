@@ -116,7 +116,7 @@ class RoleRepository:
 				cursor = conn.execute(
 					"""
 					insert into roles(name,code,description,sort,status,is_system,create_at,update_at)
-					values(?,?,?,?,?,0,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,0,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(name, code, description, sort, status),
 				)
@@ -155,7 +155,7 @@ class RoleRepository:
 				conn.execute(
 					"""
 					update roles
-					set name=?,code=?,description=?,sort=?,status=?,update_at=datetime('now')
+					set name=?,code=?,description=?,sort=?,status=?,update_at=datetime('now','localtime')
 					where id=?
 					""",
 					(name, code, description, sort, status, role_id),

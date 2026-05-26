@@ -155,7 +155,7 @@ class FunctionRepository:
 				conn.execute(
 					"""
 					insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-					values(?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(parent_id, name, code, icon, url, function_type, sort, status),
 				)
@@ -203,7 +203,7 @@ class FunctionRepository:
 				conn.execute(
 					"""
 					update functions
-					set parent_id=?,name=?,code=?,icon=?,url=?,type=?,sort=?,status=?,update_at=datetime('now')
+					set parent_id=?,name=?,code=?,icon=?,url=?,type=?,sort=?,status=?,update_at=datetime('now','localtime')
 					where id=?
 					""",
 					(parent_id, name, code, icon, url, function_type, sort, status, function_id),

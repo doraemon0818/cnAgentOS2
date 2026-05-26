@@ -125,7 +125,7 @@ class WarehouseDeepTaskRepository:
                 """
                 insert into surveillance_deep_tasks(
                     batch_no,record_ids_json,total_count,status,create_at,update_at
-                ) values(?,?,?,'running',datetime('now'),datetime('now'))
+                ) values(?,?,?,'running',datetime('now','localtime'),datetime('now','localtime'))
                 """,
                 (batch_no, json.dumps(record_ids, ensure_ascii=False), len(record_ids)),
             )
@@ -137,7 +137,7 @@ class WarehouseDeepTaskRepository:
             conn.execute(
                 """
                 insert into surveillance_deep_logs(task_id,record_id,level,message,create_at)
-                values(?,?,?,?,datetime('now'))
+                values(?,?,?,?,datetime('now','localtime'))
                 """,
                 (task_id, record_id, level, message),
             )
@@ -149,7 +149,7 @@ class WarehouseDeepTaskRepository:
                 """
                 update surveillance_deep_tasks
                 set success_count=?,failed_count=?,total_tokens=?,avg_score=?,status=?,error_message=?,
-                    update_at=datetime('now')
+                    update_at=datetime('now','localtime')
                 where id=?
                 """,
                 (
@@ -187,7 +187,7 @@ class WarehouseDetailRepository:
             conn.execute(
                 """
                 update surveillance_records
-                set deep_status=3,deep_task_id=?,deep_error_message='',update_at=datetime('now')
+                set deep_status=3,deep_task_id=?,deep_error_message='',update_at=datetime('now','localtime')
                 where id=?
                 """,
                 (task_id, record_id),
@@ -199,7 +199,7 @@ class WarehouseDetailRepository:
             conn.execute(
                 """
                 update surveillance_records
-                set deep_status=2,deep_task_id=?,deep_error_message=?,update_at=datetime('now')
+                set deep_status=2,deep_task_id=?,deep_error_message=?,update_at=datetime('now','localtime')
                 where id=?
                 """,
                 (task_id, (error_message or "")[:500], record_id),
@@ -256,7 +256,7 @@ class WarehouseDetailRepository:
                         content_markdown=?,content_text=?,content_html=?,extract_engine=?,extract_status=?,
                         ai_summary=?,ai_keywords_json=?,ai_key_points_json=?,ai_entities_json=?,ai_sentiment=?,
                         ai_score=?,model_id=?,model_name=?,prompt_tokens=?,completion_tokens=?,total_tokens=?,
-                        response_ms=?,error_message=?,update_at=datetime('now')
+                        response_ms=?,error_message=?,update_at=datetime('now','localtime')
                     where id=?
                     """,
                     payload + (detail_id,),
@@ -270,7 +270,7 @@ class WarehouseDetailRepository:
                         ai_summary,ai_keywords_json,ai_key_points_json,ai_entities_json,ai_sentiment,ai_score,
                         model_id,model_name,prompt_tokens,completion_tokens,total_tokens,response_ms,error_message,
                         create_at,update_at
-                    ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                     """,
                     (record["id"],) + payload,
                 )
@@ -278,8 +278,8 @@ class WarehouseDetailRepository:
             conn.execute(
                 """
                 update surveillance_records
-                set deep_status=1,deep_collect_at=datetime('now'),deep_detail_id=?,deep_task_id=?,
-                    deep_error_message='',update_at=datetime('now')
+                set deep_status=1,deep_collect_at=datetime('now','localtime'),deep_detail_id=?,deep_task_id=?,
+                    deep_error_message='',update_at=datetime('now','localtime')
                 where id=?
                 """,
                 (detail_id, task_id, record["id"]),

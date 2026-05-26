@@ -1,9 +1,14 @@
 import json
+import asyncio
+import logging
 
 import tornado.web
 
 from app.controllers.base import BaseHandler
 from app.models.digital_employee import DigitalEmployeeRepository
+from app.models.weather_image import generate_weather_image
+
+logger = logging.getLogger(__name__)
 
 
 class EmployeeOptionsHandler(BaseHandler):
@@ -72,3 +77,32 @@ class EmployeeStreamHandler(BaseHandler):
         except Exception as exc:
             self.write("data: " + json.dumps({"type": "error", "message": str(exc)}, ensure_ascii=False) + "\n\n")
             await self.flush()
+
+
+class WeatherImageHandler(BaseHandler):
+    def check_xsrf_cookie(self):
+        pass
+
+    def _write_json(self, data):
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps(data, ensure_ascii=False))
+
+    @tornado.web.authenticated
+    async def post(self):
+        try:
+            body = json.loads(self.request.body.decode('utf-8'))
+            city = body.get("city", "")
+            weather_text = body.get("weather", "")
+            spots = body.get("spots", [])
+            if not city or not weather_text:
+                self._write_json({"code": 1, "msg": "城市和天气信息不能为空"})
+                return
+            loop = asyncio.get_event_loop()
+            image_url = await loop.run_in_executor(None, generate_weather_image, city, weather_text, spots)
+            if image_url:
+                self._write_json({"code": 0, "msg": "ok", "data": {"image_url": image_url}})
+            else:
+                self._write_json({"code": 1, "msg": "图像生成失败"})
+        except Exception as exc:
+            logger.error(f"Weather image generation error: {exc}")
+            self._write_json({"code": 1, "msg": str(exc)})

@@ -48,7 +48,7 @@ def _seed_functions(conn):
 			conn.execute(
 				"""
 				insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-				values(?,?,?,?,?,?,?,1,datetime('now'),datetime('now'))
+				values(?,?,?,?,?,?,?,1,datetime('now','localtime'),datetime('now','localtime'))
 				""",
 				(
 					item["parent_id"],
@@ -75,7 +75,7 @@ def _seed_functions(conn):
 		conn.execute(
 			"""
 			update functions
-			set sort=?, update_at=datetime('now')
+			set sort=?, update_at=datetime('now','localtime')
 			where parent_id=0 and code=? and coalesce(sort, 0)<>?
 			""",
 			(sort, code, sort),
@@ -99,7 +99,7 @@ def _seed_functions(conn):
 			conn.execute(
 				"""
 				insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-				values(?,?,?,?,?,2,?,1,datetime('now'),datetime('now'))
+				values(?,?,?,?,?,2,?,1,datetime('now','localtime'),datetime('now','localtime'))
 				""",
 				(
 					system_id,
@@ -123,7 +123,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-					values(?,?,?,?,?,2,?,1,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,2,?,1,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(
 						model_id,
@@ -148,7 +148,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-					values(?,?,?,?,?,2,?,1,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,2,?,1,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(
 						surveillance_id,
@@ -172,7 +172,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-					values(?,?,?,?,?,2,?,1,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,2,?,1,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(
 						warehouse_id,
@@ -196,7 +196,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-					values(?,?,?,?,?,2,?,1,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,2,?,1,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(
 						data_screen_id,
@@ -211,7 +211,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					update functions
-					set parent_id=?,name=?,icon=?,url=?,type=2,sort=?,update_at=datetime('now')
+					set parent_id=?,name=?,icon=?,url=?,type=2,sort=?,update_at=datetime('now','localtime')
 					where code=?
 					""",
 					(
@@ -236,7 +236,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-					values(?,?,?,?,?,2,?,1,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,2,?,1,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(
 						smart_public_opinion_id,
@@ -251,7 +251,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					update functions
-					set parent_id=?,name=?,icon=?,url=?,type=2,sort=?,update_at=datetime('now')
+					set parent_id=?,name=?,icon=?,url=?,type=2,sort=?,update_at=datetime('now','localtime')
 					where code=?
 					""",
 					(
@@ -276,7 +276,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-					values(?,?,?,?,?,2,?,1,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,2,?,1,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(
 						system_setting_id,
@@ -301,7 +301,7 @@ def _seed_functions(conn):
 				conn.execute(
 					"""
 					insert into functions(parent_id,name,code,icon,url,type,sort,status,create_at,update_at)
-					values(?,?,?,?,?,2,?,1,datetime('now'),datetime('now'))
+					values(?,?,?,?,?,2,?,1,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(
 						smart_service_id,
@@ -333,7 +333,7 @@ def _cleanup_legacy_functions(conn):
 				conn.execute(
 					"""
 					update functions
-					set parent_id=?, update_at=datetime('now')
+					set parent_id=?, update_at=datetime('now','localtime')
 					where id=?
 					""",
 					(new_id, child["id"]),
@@ -377,7 +377,7 @@ def _seed_surveillance_sources(conn):
 			insert into surveillance_sources(
 				name,code,description,entry_url_template,page_url_template,method,headers_json,params_json,
 				selectors_json,page_step,default_page_count,default_limit,status,create_at,update_at
-			) values(?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+			) values(?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
 			""",
 			(
 				"百度新闻采集源",
@@ -416,6 +416,44 @@ def _seed_api_endpoints(conn):
 			"status": 1,
 		},
 		{
+			"name": "网易云排行榜",
+			"code": "music_wy_top",
+			"url": "https://api.52vmy.cn/api/music/wy/top",
+			"method": "GET",
+			"response_format": "JSON",
+			"sample_url": "https://api.52vmy.cn/api/music/wy/top?t=1&n=20",
+			"default_qps": "每2秒最多4次，携带Token可无限制",
+			"auth_note": "默认QPS：每2秒最多4次，携带Token可无限制",
+			"remark": "获取网易云音乐排行榜歌曲列表，支持原创榜/新歌榜/飙升榜/热歌榜，返回歌曲数组天然支持上下首切换。",
+			"headers_json": "{}",
+			"params_schema_json": json.dumps([
+				{"name": "t", "label": "榜单", "required": 0, "default": "1", "placeholder": "1:原创榜/2:新歌榜/3:飙升榜/4:热歌榜"},
+				{"name": "n", "label": "数量", "required": 0, "default": "20", "placeholder": "返回数量"}
+			], ensure_ascii=False),
+			"body_template": "",
+			"timeout_seconds": 20,
+			"status": 1,
+		},
+		{
+			"name": "网易云音乐搜索",
+			"code": "music_wy_search",
+			"url": "https://apis.netstart.cn/music/search",
+			"method": "GET",
+			"response_format": "JSON",
+			"sample_url": "https://apis.netstart.cn/music/search?keywords=周杰伦&limit=30",
+			"default_qps": "注意频率控制",
+			"auth_note": "基于NeteaseCloudMusicApi开源项目，无需认证。",
+			"remark": "根据关键词搜索网易云音乐歌曲，支持歌手名、歌曲名、语种等搜索，返回免费可播放歌曲列表。",
+			"headers_json": json.dumps({"Referer": "https://music.163.com/", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}, ensure_ascii=False),
+			"params_schema_json": json.dumps([
+				{"name": "keywords", "label": "搜索关键词", "required": 1, "default": "", "placeholder": "歌手名、歌曲名或语种，如：日语歌、贾斯汀比伯、aespa"},
+				{"name": "limit", "label": "返回数量", "required": 0, "default": "30", "placeholder": "最多返回歌曲数量"}
+			], ensure_ascii=False),
+			"body_template": "",
+			"timeout_seconds": 30,
+			"status": 1,
+		},
+		{
 			"name": "三日天气查询",
 			"code": "weather_tian",
 			"url": "https://api.52vmy.cn/api/query/tian",
@@ -433,6 +471,26 @@ def _seed_api_endpoints(conn):
 			"timeout_seconds": 20,
 			"status": 1,
 		},
+		{
+			"name": "天气卡片背景图生成",
+			"code": "weather_image_gen",
+			"url": "https://aigc-api.aitoolcore.com/api/v1/images/generations",
+			"method": "POST",
+			"response_format": "JSON",
+			"sample_url": "https://aigc-api.aitoolcore.com/api/v1/images/generations",
+			"default_qps": "根据API限制",
+			"auth_note": "需要Bearer Token认证",
+			"remark": "AI图像生成API，用于生成天气卡片背景图，显示城市代表景点和当前天气联动效果，支持缓存避免重复生成",
+			"headers_json": json.dumps({"Authorization": "Bearer sk-aigc-ff2029014b09dab5e86d1a22c5e1b81db6bb4e1f"}, ensure_ascii=False),
+			"params_schema_json": json.dumps([
+				{"name": "model", "label": "模型", "required": 1, "default": "qwen-image-plus", "placeholder": "模型名称"},
+				{"name": "prompt", "label": "提示词", "required": 1, "default": "", "placeholder": "图像描述提示词"},
+				{"name": "n", "label": "数量", "required": 1, "default": "1", "placeholder": "生成图片数量"}
+			], ensure_ascii=False),
+			"body_template": "",
+			"timeout_seconds": 60,
+			"status": 1,
+		},
 	]
 
 	for item in default_items:
@@ -443,7 +501,7 @@ def _seed_api_endpoints(conn):
 				insert into api_endpoints(
 					name,code,url,method,response_format,sample_url,default_qps,auth_note,remark,
 					headers_json,params_schema_json,body_template,timeout_seconds,status,create_at,update_at
-				) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+				) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
 				""",
 				(
 					item["name"],
@@ -462,11 +520,38 @@ def _seed_api_endpoints(conn):
 					item["status"],
 				),
 			)
+		else:
+			conn.execute(
+				"""
+				update api_endpoints
+				set name=?,url=?,method=?,response_format=?,sample_url=?,default_qps=?,auth_note=?,remark=?,
+				    headers_json=?,params_schema_json=?,body_template=?,timeout_seconds=?,status=?,update_at=datetime('now','localtime')
+				where code=?
+				""",
+				(
+					item["name"],
+					item["url"],
+					item["method"],
+					item["response_format"],
+					item["sample_url"],
+					item["default_qps"],
+					item["auth_note"],
+					item["remark"],
+					item["headers_json"],
+					item["params_schema_json"],
+					item["body_template"],
+					item["timeout_seconds"],
+					item["status"],
+					item["code"],
+				),
+			)
 
 
 def _seed_digital_employees(conn):
 	weather_row = conn.execute("select id from api_endpoints where code='weather_tian'").fetchone()
 	music_row = conn.execute("select id from api_endpoints where code='music_wy_rand'").fetchone()
+	music_top_row = conn.execute("select id from api_endpoints where code='music_wy_top'").fetchone()
+	music_search_row = conn.execute("select id from api_endpoints where code='music_wy_search'").fetchone()
 	default_items = [
 		{
 			"name": "川小农",
@@ -506,13 +591,13 @@ def _seed_digital_employees(conn):
 			"code": "employee_music",
 			"category": "普通",
 			"model_id": None,
-			"endpoint_id": music_row["id"] if music_row else None,
-			"prompt": "",
-			"api_param_name": "",
+			"endpoint_id": music_search_row["id"] if music_search_row else (music_top_row["id"] if music_top_row else (music_row["id"] if music_row else None)),
+			"prompt": "你是音乐助手。根据用户的输入提取搜索关键词：\n- 如果用户说来首日语歌、日语音乐等，关键词为日语\n- 如果用户提到歌手名如贾斯汀比伯、aespa、周杰伦等，关键词为该歌手名\n- 如果用户提到语种如韩语歌、英文歌、日文歌等，关键词为该语种\n- 如果用户没有特定要求，关键词为热歌\n只返回关键词，不要其他内容。",
+			"api_param_name": "keywords",
 			"api_params_json": "{}",
-			"response_template": "为你随机推荐一首歌：{data.song} - {data.singer}\n封面：{data.cover}\n播放：{data.Music}",
-			"default_user_input": "random",
-			"description": "通过随机音乐接口返回一首歌曲，用户使用 @音乐 即可调用。",
+			"response_template": "",
+			"default_user_input": "热歌",
+			"description": "智能音乐助手，支持根据用户输入搜索特定语种、歌手的歌曲。用户使用 @音乐 来首日语歌 或 @音乐 贾斯汀比伯 即可调用。返回音乐卡片格式数据。",
 			"sort": 3,
 			"status": 1,
 		},
@@ -558,7 +643,7 @@ def _seed_digital_employees(conn):
 				insert into digital_employees(
 					name,alias,code,category,model_id,endpoint_id,prompt,api_param_name,api_params_json,
 					response_template,default_user_input,description,sort,status,create_at,update_at
-				) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+				) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
 				""",
 				(
 					item["name"],
@@ -592,7 +677,7 @@ def _seed_digital_employees(conn):
 					default_user_input=case when coalesce(default_user_input,'')='' then ? else default_user_input end,
 					description=case when coalesce(description,'')='' then ? else description end,
 					sort=case when coalesce(sort,0)=0 then ? else sort end,
-					update_at=datetime('now')
+					update_at=datetime('now','localtime')
 				where id=?
 				""",
 				(
@@ -634,7 +719,7 @@ def _seed_im_defaults(conn):
 				"""
 				insert into im_chat_servers(
 					name,code,protocol,base_url,health_url,weight,priority,status,last_health_status,last_error,remark,create_at,update_at
-				) values(?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+				) values(?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
 				""",
 				(
 					item["name"],
@@ -663,8 +748,8 @@ def _seed_im_defaults(conn):
 			"name": "音乐接口工具",
 			"code": "tool_music_endpoint",
 			"tool_type": "endpoint",
-			"endpoint_code": "music_wy_rand",
-			"description": "为数字员工提供随机音乐推荐能力。",
+			"endpoint_code": "music_wy_search",
+			"description": "为数字员工提供网易云音乐搜索能力，支持关键词搜索歌曲。",
 		},
 		{
 			"name": "校园知识顾问工具",
@@ -684,7 +769,7 @@ def _seed_im_defaults(conn):
 			conn.execute(
 				"""
 				insert into im_ai_tools(name,code,tool_type,endpoint_id,description,config_json,status,create_at,update_at)
-				values(?,?,?,?,?,'{}',1,datetime('now'),datetime('now'))
+				values(?,?,?,?,?,'{}',1,datetime('now','localtime'),datetime('now','localtime'))
 				""",
 				(item["name"], item["code"], item["tool_type"], endpoint_id, item["description"]),
 			)
@@ -705,7 +790,7 @@ def _seed_im_defaults(conn):
 		).fetchone()
 		if not exists:
 			conn.execute(
-				"insert into im_employee_tools(employee_id,tool_id,role_scope,create_at) values(?,?,?,datetime('now'))",
+				"insert into im_employee_tools(employee_id,tool_id,role_scope,create_at) values(?,?,?,datetime('now','localtime'))",
 				(employee_row["id"], tool_row["id"], role_scope),
 			)
 
@@ -718,7 +803,7 @@ def _seed_roles(conn):
 		cursor = conn.execute(
 			"""
 			insert into roles(name,code,description,sort,status,is_system,create_at,update_at)
-			values(?,?,?,?,?,?,datetime('now'),datetime('now'))
+			values(?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
 			""",
 			("超级管理员", "super_admin", "系统最高权限角色，拥有所有功能权限", 1, 1, 1),
 		)
@@ -741,7 +826,7 @@ def _seed_roles(conn):
 	).fetchone()
 	if admin_user_row:
 		conn.execute(
-			"update users set role=?, status=1, update_at=datetime('now') where username='admin'",
+			"update users set role=?, status=1, update_at=datetime('now','localtime') where username='admin'",
 			("超级管理员",),
 		)
 
@@ -755,7 +840,7 @@ def _seed_roles(conn):
 			conn.execute(
 				"""
 				update roles
-				set name=?,description=?,sort=?,status=1,update_at=datetime('now')
+				set name=?,description=?,sort=?,status=1,update_at=datetime('now','localtime')
 				where id=?
 				""",
 				(name, description, sort, exists["id"]),
@@ -764,7 +849,7 @@ def _seed_roles(conn):
 			conn.execute(
 				"""
 				insert into roles(name,code,description,sort,status,is_system,create_at,update_at)
-				values(?,?,?,?,?,?,datetime('now'),datetime('now'))
+				values(?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
 				""",
 				(name, code, description, sort, 1, is_system),
 			)
@@ -783,8 +868,8 @@ def init_db():
 				phone TEXT DEFAULT '',
 				role TEXT DEFAULT 'user',
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -800,8 +885,8 @@ def init_db():
 				type INTEGER DEFAULT 1,
 				sort INTEGER DEFAULT 0,
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -815,8 +900,8 @@ def init_db():
 				sort INTEGER DEFAULT 0,
 				status INTEGER DEFAULT 1,
 				is_system INTEGER DEFAULT 0,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -847,8 +932,8 @@ def init_db():
 				is_default INTEGER DEFAULT 0,
 				status INTEGER DEFAULT 1,
 				description TEXT DEFAULT '',
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -866,7 +951,7 @@ def init_db():
 				response_ms INTEGER DEFAULT 0,
 				success INTEGER DEFAULT 1,
 				error_message TEXT DEFAULT '',
-				create_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -887,8 +972,8 @@ def init_db():
 				default_page_count INTEGER DEFAULT 1,
 				default_limit INTEGER DEFAULT 20,
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -906,8 +991,8 @@ def init_db():
 				origin_site TEXT DEFAULT '',
 				publish_time TEXT DEFAULT '',
 				raw_json TEXT DEFAULT '{}',
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now')),
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
 				UNIQUE(source_id, keyword, url)
 			)
 			"""
@@ -942,8 +1027,8 @@ def init_db():
 				total_tokens INTEGER DEFAULT 0,
 				response_ms INTEGER DEFAULT 0,
 				error_message TEXT DEFAULT '',
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -960,8 +1045,8 @@ def init_db():
 				avg_score REAL DEFAULT 0,
 				status TEXT DEFAULT 'pending',
 				error_message TEXT DEFAULT '',
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -973,7 +1058,7 @@ def init_db():
 				record_id INTEGER,
 				level TEXT DEFAULT 'info',
 				message TEXT NOT NULL,
-				create_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -995,8 +1080,8 @@ def init_db():
 				body_template TEXT DEFAULT '',
 				timeout_seconds INTEGER DEFAULT 20,
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1018,8 +1103,8 @@ def init_db():
 				description TEXT DEFAULT '',
 				sort INTEGER DEFAULT 0,
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1035,8 +1120,8 @@ def init_db():
 				value REAL DEFAULT 0,
 				extra_json TEXT DEFAULT '{}',
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1048,7 +1133,7 @@ def init_db():
 				frequency INTEGER DEFAULT 1,
 				source_type TEXT DEFAULT 'chat',
 				source_id INTEGER,
-				create_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1065,8 +1150,8 @@ def init_db():
 				source_ids_json TEXT DEFAULT '[]',
 				model_name TEXT DEFAULT '',
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1082,8 +1167,8 @@ def init_db():
 				last_message_preview TEXT DEFAULT '',
 				last_intent TEXT DEFAULT '',
 				message_count INTEGER DEFAULT 0,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1105,7 +1190,7 @@ def init_db():
 				completion_tokens INTEGER DEFAULT 0,
 				total_tokens INTEGER DEFAULT 0,
 				response_ms INTEGER DEFAULT 0,
-				create_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1116,8 +1201,8 @@ def init_db():
 				user_low_id INTEGER NOT NULL,
 				user_high_id INTEGER NOT NULL,
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now')),
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
 				UNIQUE(user_low_id, user_high_id)
 			)
 			"""
@@ -1137,8 +1222,8 @@ def init_db():
 				last_message_type TEXT DEFAULT 'text',
 				last_message_at TEXT DEFAULT '',
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1152,7 +1237,7 @@ def init_db():
 				employee_id INTEGER,
 				role TEXT DEFAULT 'member',
 				status INTEGER DEFAULT 1,
-				joined_at TEXT NOT NULL DEFAULT(datetime('now'))
+				joined_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1165,8 +1250,8 @@ def init_db():
 				owner_user_id INTEGER NOT NULL,
 				notice TEXT DEFAULT '',
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1184,7 +1269,7 @@ def init_db():
 				content_text TEXT DEFAULT '',
 				file_id INTEGER,
 				extra_json TEXT DEFAULT '{}',
-				create_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1201,7 +1286,7 @@ def init_db():
 				content_text TEXT DEFAULT '',
 				file_id INTEGER,
 				extra_json TEXT DEFAULT '{}',
-				create_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1217,7 +1302,7 @@ def init_db():
 				size_bytes INTEGER DEFAULT 0,
 				relative_path TEXT NOT NULL,
 				upload_user_id INTEGER NOT NULL,
-				create_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1236,8 +1321,8 @@ def init_db():
 				last_health_status TEXT DEFAULT 'unknown',
 				last_error TEXT DEFAULT '',
 				remark TEXT DEFAULT '',
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1250,8 +1335,8 @@ def init_db():
 				content TEXT NOT NULL,
 				status INTEGER DEFAULT 1,
 				published_by INTEGER NOT NULL,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1266,8 +1351,8 @@ def init_db():
 				description TEXT DEFAULT '',
 				config_json TEXT DEFAULT '{}',
 				status INTEGER DEFAULT 1,
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
-				update_at TEXT NOT NULL DEFAULT(datetime('now'))
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
+				update_at TEXT NOT NULL DEFAULT(datetime('now','localtime'))
 			)
 			"""
 		)
@@ -1278,7 +1363,7 @@ def init_db():
 				employee_id INTEGER NOT NULL,
 				tool_id INTEGER NOT NULL,
 				role_scope TEXT DEFAULT 'all',
-				create_at TEXT NOT NULL DEFAULT(datetime('now')),
+				create_at TEXT NOT NULL DEFAULT(datetime('now','localtime')),
 				UNIQUE(employee_id, tool_id)
 			)
 			"""

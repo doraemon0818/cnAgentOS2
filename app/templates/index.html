@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>{{title}}</title>
     <style>
         :root {
@@ -113,7 +116,7 @@
         }
         .layout {
             display: grid;
-            grid-template-columns: 92px 360px 1fr;
+            grid-template-columns: 92px 280px 1fr;
             gap: 14px;
             height: 100%;
             min-height: 0;
@@ -259,7 +262,6 @@
         .workspace-scroll,
         .history-list,
         .chat-list,
-        .composer-bottom,
         .message-content pre {
             scrollbar-width: thin;
             scrollbar-color: rgba(35, 154, 201, 0.72) rgba(7, 21, 33, 0.96);
@@ -267,7 +269,6 @@
         .workspace-scroll::-webkit-scrollbar,
         .history-list::-webkit-scrollbar,
         .chat-list::-webkit-scrollbar,
-        .composer-bottom::-webkit-scrollbar,
         .message-content pre::-webkit-scrollbar {
             width: 10px;
             height: 10px;
@@ -275,7 +276,6 @@
         .workspace-scroll::-webkit-scrollbar-track,
         .history-list::-webkit-scrollbar-track,
         .chat-list::-webkit-scrollbar-track,
-        .composer-bottom::-webkit-scrollbar-track,
         .message-content pre::-webkit-scrollbar-track {
             background: rgba(7, 21, 33, 0.96);
             border-radius: 999px;
@@ -283,7 +283,6 @@
         .workspace-scroll::-webkit-scrollbar-thumb,
         .history-list::-webkit-scrollbar-thumb,
         .chat-list::-webkit-scrollbar-thumb,
-        .composer-bottom::-webkit-scrollbar-thumb,
         .message-content pre::-webkit-scrollbar-thumb {
             background: linear-gradient(180deg, rgba(23, 144, 194, 0.92), rgba(13, 92, 128, 0.96));
             border-radius: 999px;
@@ -292,7 +291,6 @@
         .workspace-scroll::-webkit-scrollbar-thumb:hover,
         .history-list::-webkit-scrollbar-thumb:hover,
         .chat-list::-webkit-scrollbar-thumb:hover,
-        .composer-bottom::-webkit-scrollbar-thumb:hover,
         .message-content pre::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(180deg, rgba(34, 169, 219, 0.96), rgba(16, 112, 153, 0.98));
         }
@@ -300,12 +298,6 @@
             font-size: 15px;
             font-weight: 700;
             margin-bottom: 12px;
-        }
-        .section-sub {
-            color: var(--ui-sub);
-            font-size: 12px;
-            line-height: 1.8;
-            margin-bottom: 10px;
         }
         .sidebar-card {
             padding: 16px;
@@ -331,46 +323,45 @@
         }
         .model-select {
             width: 100%;
-            height: 44px;
-            border-radius: 14px;
-            border: 1px solid rgba(0, 247, 255, 0.14);
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 247, 255, 0.08);
             background: rgba(4, 19, 31, 0.96);
             color: var(--ui-text);
-            padding: 0 42px 0 12px;
+            padding: 0 32px 0 12px;
             outline: none;
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
             cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(214,246,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+            color-scheme: dark;
+        }
+        .model-select:hover {
+            border-color: rgba(0, 247, 255, 0.2);
+            background-color: rgba(6, 28, 44, 0.98);
+        }
+        .model-select:focus {
+            border-color: rgba(0, 247, 255, 0.3);
+            box-shadow: 0 0 0 2px rgba(0, 247, 255, 0.05);
+        }
+        .model-select option {
+            background: #041726;
+            color: var(--ui-text);
+            padding: 6px 10px;
+        }
+        .model-select optgroup {
+            background: #041726;
+            color: var(--ui-text);
         }
         .select-wrap {
             position: relative;
-        }
-        .select-wrap::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            right: 16px;
-            width: 8px;
-            height: 8px;
-            border-right: 2px solid rgba(214, 246, 255, 0.88);
-            border-bottom: 2px solid rgba(214, 246, 255, 0.88);
-            transform: translateY(-65%) rotate(45deg);
-            pointer-events: none;
-        }
-        .prompt-list {
-            display: grid;
-            gap: 10px;
-        }
-        .prompt-item {
-            padding: 12px 14px;
-            border-radius: 16px;
-            background: rgba(5, 25, 39, 0.88);
-            border: 1px solid rgba(0, 247, 255, 0.1);
-            color: #cceef5;
-            cursor: pointer;
-            line-height: 1.7;
-            font-size: 13px;
         }
         .history-list {
             display: flex;
@@ -382,29 +373,26 @@
             padding-right: 4px;
         }
         .history-item {
-            padding: 14px;
-            border-radius: 16px;
-            background: rgba(5, 24, 37, 0.9);
-            border: 1px solid rgba(0, 247, 255, 0.08);
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: transparent;
+            border: none;
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 4px;
+            transition: background 0.15s;
+        }
+        .history-item:hover {
+            background: rgba(5, 28, 42, 0.6);
         }
         .history-item.active {
-            border-color: rgba(0, 247, 255, 0.3);
-            box-shadow: 0 0 0 1px rgba(0, 247, 255, 0.1), 0 12px 26px rgba(0, 84, 112, 0.18), inset 0 0 16px rgba(0, 247, 255, 0.06);
+            background: rgba(5, 38, 56, 0.7);
         }
         .history-title {
-            font-size: 14px;
-            font-weight: 700;
-            line-height: 1.6;
-            margin-bottom: 6px;
-        }
-        .history-preview {
-            font-size: 12px;
-            color: var(--ui-sub);
-            line-height: 1.4;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.5;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -481,18 +469,43 @@
             gap: 18px;
             padding: 20px 18px 12px;
         }
-        .empty-state {
+        .empty-prompts {
             margin: auto;
-            max-width: 760px;
-            padding: 34px 28px;
-            border-radius: 22px;
-            border: 1px dashed rgba(0, 247, 255, 0.18);
-            color: var(--ui-sub);
+            max-width: 900px;
             text-align: center;
-            line-height: 1.9;
+            padding: 40px 20px;
+        }
+        .empty-prompts-title {
+            color: var(--ui-text);
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 32px;
+        }
+        .empty-prompts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        .empty-prompt-item {
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(5, 28, 42, 0.6);
+            border: 1px solid rgba(0, 247, 255, 0.1);
+            color: var(--ui-sub);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .empty-prompt-item:hover {
+            background: rgba(5, 38, 56, 0.8);
+            border-color: rgba(0, 247, 255, 0.25);
+            color: var(--ui-text);
         }
         .message-row {
             display: flex;
+            position: relative;
         }
         .message-row.user {
             justify-content: flex-end;
@@ -502,26 +515,80 @@
         }
         .message {
             max-width: 88%;
-            border-radius: 22px;
-            padding: 16px 18px;
+            border-radius: 16px !important;
+            padding: 10px 14px !important;
             line-height: 1.85;
             word-break: break-word;
+            position: relative;
+        }
+        .message-row:hover .message-actions {
+            opacity: 1;
+        }
+        .message-row:hover .message-time {
+            opacity: 1;
+        }
+        .message-time {
+            position: absolute;
+            top: -20px;
+            font-size: 11px;
+            color: var(--ui-muted);
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .message-row.user .message-time {
+            right: 0;
+        }
+        .message-row.assistant .message-time {
+            left: 0;
+        }
+        .message-actions {
+            position: absolute;
+            bottom: -30px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .message-row.user .message-actions {
+            right: 0;
+        }
+        .message-row.assistant .message-actions {
+            left: 0;
+        }
+        .message-action-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(5, 24, 37, 0.8);
+            color: var(--ui-muted);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .message-action-btn:hover {
+            background: rgba(10, 40, 58, 0.9);
+            color: var(--ui-text);
+        }
+        .message-action-btn svg {
+            width: 13px;
+            height: 13px;
         }
         .message.user {
-            background: linear-gradient(135deg, rgba(4, 52, 74, 0.98), rgba(9, 121, 152, 0.96), rgba(0, 247, 255, 0.78));
+            background: linear-gradient(135deg, rgba(4, 52, 74, 0.98), rgba(9, 121, 152, 0.96), rgba(0, 247, 255, 0.78)) !important;
             color: #f3ffff;
             box-shadow: 0 0 0 1px rgba(0, 247, 255, 0.12), 0 14px 34px rgba(0, 90, 120, 0.24);
         }
         .message.assistant {
-            background: rgba(5, 24, 37, 0.96);
+            background: rgba(5, 24, 37, 0.96) !important;
             border: 1px solid rgba(0, 247, 255, 0.12);
             color: var(--ui-text);
         }
         .message-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
+            display: none;
         }
         .message-status {
             margin-bottom: 10px;
@@ -591,28 +658,101 @@
             background: rgba(5, 30, 47, 0.62);
             border-radius: 0 12px 12px 0;
         }
+        .weather-card-standalone {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            padding: 10px 0;
+        }
+        .weather-card-standalone .weather-card {
+            min-width: 340px;
+            max-width: 420px;
+        }
         .weather-card {
-            min-width: 280px;
-            padding: 16px 18px;
-            border-radius: 18px;
+            min-width: 340px;
+            max-width: 420px;
+            padding: 18px 20px;
+            border-radius: 16px;
             background: linear-gradient(135deg, rgba(33, 104, 150, 0.96), rgba(63, 163, 223, 0.92));
             color: #f6fdff;
             border: 1px solid rgba(183, 233, 255, 0.24);
             box-shadow: 0 18px 34px rgba(8, 54, 84, 0.22);
+            position: relative;
+            overflow: hidden;
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease-in-out;
+        }
+        .weather-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(33, 104, 150, 0.85), rgba(63, 163, 223, 0.80));
+            z-index: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .weather-card.has-background::before {
+            opacity: 0.6;
+        }
+        .weather-card > * {
+            position: relative;
+            z-index: 1;
+        }
+        .weather-card .bg-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            z-index: 0;
+        }
+        .weather-card::after {
+            display: none;
+        }
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            position: relative;
+            z-index: 1;
         }
         .weather-city {
-            font-size: 20px;
-            font-weight: 800;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .weather-city-icon {
+            width: 18px;
+            height: 18px;
+            opacity: 0.8;
+        }
+        .weather-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            line-height: 1;
         }
         .weather-main {
             display: flex;
             justify-content: space-between;
             gap: 12px;
             align-items: flex-end;
-            margin-top: 12px;
+            margin-top: 8px;
+            position: relative;
+            z-index: 1;
         }
         .weather-temp {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 800;
             line-height: 1;
         }
@@ -621,32 +761,98 @@
             color: rgba(246, 253, 255, 0.82);
             margin-top: 6px;
         }
+        .weather-temp-range {
+            font-size: 13px;
+            color: rgba(246, 253, 255, 0.7);
+            margin-top: 4px;
+        }
+        .weather-spots {
+            margin-top: 14px;
+            position: relative;
+            z-index: 1;
+        }
+        .weather-spots-title {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .weather-spots-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .weather-spot-tag {
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            font-size: 12px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            backdrop-filter: blur(4px);
+        }
+        .weather-spot-tag .spot-icon {
+            font-size: 14px;
+        }
         .weather-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(110px, 1fr));
-            gap: 8px;
-            margin-top: 14px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 16px;
+            position: relative;
+            z-index: 1;
         }
         .weather-item {
             padding: 10px 12px;
-            border-radius: 12px;
+            border-radius: 10px;
             background: rgba(255, 255, 255, 0.12);
             font-size: 12px;
-            line-height: 1.7;
+            line-height: 1.6;
+            backdrop-filter: blur(4px);
         }
         .weather-item strong {
             display: block;
-            font-size: 13px;
-            color: #ffffff;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            margin-bottom: 2px;
         }
         .music-card {
-            min-width: 300px;
+            width: 340px;
+            max-width: 100%;
             padding: 14px;
             border-radius: 18px;
             background: linear-gradient(135deg, rgba(14, 44, 62, 0.98), rgba(9, 88, 112, 0.96));
             border: 1px solid rgba(73, 220, 255, 0.2);
             box-shadow: 0 18px 34px rgba(4, 38, 56, 0.24);
             color: #effcff;
+            box-sizing: border-box;
+        }
+        .message:has(.music-card),
+        .message.music-message {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            max-width: 340px !important;
+            box-shadow: none !important;
+        }
+        .message:has(.music-card) .message-meta,
+        .message.music-message .message-meta,
+        .message:has(.music-card) .message-status,
+        .message.music-message .message-status,
+        .message:has(.music-card) .message-time,
+        .message.music-message .message-time,
+        .message:has(.music-card) .message-actions,
+        .message.music-message .message-actions {
+            display: none !important;
+        }
+        .message:has(.music-card) .message-content,
+        .message.music-message .message-content {
+            padding: 0 !important;
         }
         .music-card-top {
             display: flex;
@@ -730,14 +936,153 @@
         .music-audio {
             display: none;
         }
+        .music-progress-container {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .music-time-current,
+        .music-time-total {
+            font-size: 11px;
+            color: rgba(239, 252, 255, 0.7);
+            min-width: 32px;
+            text-align: center;
+        }
+        .music-progress-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+            position: relative;
+            cursor: pointer;
+        }
+        .music-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ee5ff, #00d9ff);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .music-progress-handle {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .music-progress-bar:hover .music-progress-handle {
+            opacity: 1;
+        }
+        .music-controls {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .music-control-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(46, 229, 255, 0.25);
+            border-radius: 50%;
+            background: rgba(9, 113, 141, 0.6);
+            color: #f9ffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .music-control-btn:hover:not([disabled]) {
+            background: rgba(0, 217, 255, 0.8);
+            border-color: rgba(46, 229, 255, 0.5);
+        }
+        .music-control-btn[disabled] {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .music-control-btn svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+        .music-play-btn {
+            min-width: 80px;
+            height: 36px;
+            padding: 0 16px;
+            border: 1px solid rgba(46, 229, 255, 0.3);
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(9, 113, 141, 0.96), rgba(0, 217, 255, 0.92));
+            color: #f9ffff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .music-play-btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .music-play-btn svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+        .music-volume-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 8px;
+        }
+        .music-volume-container svg {
+            width: 16px;
+            height: 16px;
+            color: rgba(239, 252, 255, 0.7);
+            flex-shrink: 0;
+        }
+        .music-volume-slider {
+            width: 70px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+        .music-volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+        .music-volume-slider::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
         .composer {
             border-top: 1px solid rgba(0, 247, 255, 0.08);
             padding: 14px 18px 18px;
             background: rgba(8, 19, 30, 0.98);
-        }
-        .composer-top {
-            margin-bottom: 10px;
-            max-width: 280px;
         }
         .composer-box {
             display: grid;
@@ -773,41 +1118,27 @@
             min-width: 92px;
             flex: 1;
         }
-        .composer-bottom {
+        .composer-employees {
             margin-top: 10px;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 2px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
-        .employee-select {
-            width: 100%;
-            height: 40px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 247, 255, 0.14);
-            background: rgba(4, 19, 31, 0.96);
-            color: var(--ui-text);
-            padding: 0 38px 0 12px;
-            outline: none;
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            cursor: pointer;
-        }
-        .prompt-list.compact {
-            display: flex;
-            gap: 10px;
-            flex-wrap: nowrap;
-        }
-        .prompt-list.compact .prompt-item {
-            min-width: 240px;
-            padding: 10px 12px;
+        .employee-tag {
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(5, 28, 42, 0.8);
+            border: 1px solid rgba(0, 247, 255, 0.15);
+            color: var(--ui-sub);
             font-size: 12px;
-            line-height: 1.6;
+            cursor: pointer;
+            transition: all 0.2s;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        }
+        .employee-tag:hover {
+            background: rgba(5, 40, 58, 0.9);
+            border-color: rgba(0, 247, 255, 0.35);
+            color: var(--ui-text);
         }
         .section-row {
             display: flex;
@@ -815,11 +1146,6 @@
             justify-content: space-between;
             gap: 12px;
             margin-bottom: 12px;
-        }
-        .section-count {
-            color: var(--ui-sub);
-            font-size: 12px;
-            font-weight: 600;
         }
         @media (max-width: 1080px) {
             .layout {
@@ -847,9 +1173,6 @@
             }
             .composer-side {
                 flex-direction: row;
-            }
-            .prompt-list.compact {
-                flex-wrap: wrap;
             }
             .message {
                 max-width: 100%;
@@ -918,17 +1241,14 @@
             <aside class="panel sidebar">
                 <div class="workspace-head">
                     <div class="workspace-title">智能问数</div>
-                    <div class="workspace-sub">面向数据分析、知识问答和数字员工协同的统一工作区。</div>
                     <div class="workspace-actions">
-                        <button class="primary-btn" type="button" onclick="startNewChat()">新建任务</button>
-                        <button class="ghost-btn" type="button" onclick="window.location.href='/im'">去智能聊天</button>
+                        <button class="primary-btn" type="button" onclick="startNewChat()">新对话</button>
                     </div>
                 </div>
 
                 <div class="workspace-scroll">
                     <div class="sidebar-card compact-card">
                         <div class="section-title">模型服务</div>
-                        <div class="section-sub">选择当前对话默认调用的模型。</div>
                         <div class="select-wrap">
                             <select class="model-select" id="modelSelect"></select>
                         </div>
@@ -936,10 +1256,8 @@
 
                     <div class="sidebar-card compact-card" style="flex:1; display:flex; flex-direction:column; min-height:280px;">
                         <div class="section-row">
-                            <div class="section-title" style="margin-bottom:0;">历史任务</div>
-                            <div class="section-count">最近会话</div>
+                            <div class="section-title" style="margin-bottom:0;">历史对话</div>
                         </div>
-                        <div class="section-sub">点击任务可回访历史问数结果与对话记录。</div>
                         <div class="history-list" id="historyList"></div>
                     </div>
                 </div>
@@ -948,24 +1266,20 @@
             <main class="panel chat-shell">
                 <div class="chat-header">
                     <div class="chat-title" id="chatTitle">新对话</div>
-                    <div class="chat-sub" id="chatSub">输入问题后，系统会自动识别普通问答、智能问数或数字员工调用。</div>
+                    <div class="chat-sub" id="chatSub">输入问题，支持普通问答、智能问数和 @数字员工 调用</div>
                 </div>
 
                 <div class="chat-list" id="chatList">
-                    <div class="empty-state" id="emptyState">
-                        开始一次新的任务。<br>
-                        可以直接提问数据问题、普通 AI 问题，或通过 `@数字员工` 发起协同分析。
+                    <div class="empty-prompts" id="emptyPrompts">
+                        <div class="empty-prompts-title">开始一次新的任务</div>
+                        <div class="empty-prompts-grid">
+                            <div class="empty-prompt-item" onclick="fillMessage('最新一条深度采集数据是什么？')">最新一条深度采集数据是什么？</div>
+                            <div class="empty-prompt-item" onclick="fillMessage('统计一下已深采的数据数量和未深采的数据数量')">统计一下已深采的数据数量和未深采的数量</div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="composer">
-                    <div class="composer-top">
-                        <div class="select-wrap">
-                            <select class="employee-select" id="employeeSelect">
-                                <option value="">选择数字员工</option>
-                            </select>
-                        </div>
-                    </div>
                     <div class="composer-box">
                         <div>
                             <textarea id="messageInput" placeholder="输入问题，支持普通问答、智能问数和 @数字员工 调用"></textarea>
@@ -975,9 +1289,7 @@
                             <button class="ghost-btn" type="button" onclick="clearComposer()">清空输入</button>
                         </div>
                     </div>
-                    <div class="composer-bottom">
-                        <div class="prompt-list compact" id="promptList"></div>
-                    </div>
+                    <div class="composer-employees" id="composerEmployees"></div>
                 </div>
             </main>
         </div>
@@ -999,6 +1311,27 @@
             });
         }
 
+        function escapeAttr(text) {
+            return String(text || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function copyMessage(btn) {
+            var content = btn.getAttribute('data-content') || '';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(content).then(function(){
+                    btn.setAttribute('title', '已复制');
+                    setTimeout(function(){ btn.setAttribute('title', '复制'); }, 1500);
+                });
+            }
+        }
+
+        function deleteMessage(btn) {
+            var row = btn.closest('.message-row');
+            if (row) {
+                row.remove();
+            }
+        }
+
         function getCookie(name) {
             var match = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
             return match ? decodeURIComponent(match[1]) : '';
@@ -1008,7 +1341,7 @@
             return getCookie('_xsrf');
         }
 
-        var BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+        var BEIJING_OFFSET_MS = 0;
 
         function parseRawDateTimeMatch(value) {
             var text = String(value || '').trim();
@@ -1018,12 +1351,22 @@
             return text.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
         }
 
+        function getBeijingTimeStr() {
+            var now = new Date();
+            return now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0') + ' ' +
+                String(now.getHours()).padStart(2, '0') + ':' +
+                String(now.getMinutes()).padStart(2, '0') + ':' +
+                String(now.getSeconds()).padStart(2, '0');
+        }
+
         function getBeijingNow() {
-            return new Date(Date.now() + BEIJING_OFFSET_MS);
+            return new Date();
         }
 
         function getBeijingDayStart(date) {
-            return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
         }
 
         function parseBeijingDate(text) {
@@ -1031,7 +1374,7 @@
             if (!match) {
                 return null;
             }
-            var timestamp = Date.UTC(
+            var date = new Date(
                 Number(match[1]),
                 Number(match[2]) - 1,
                 Number(match[3]),
@@ -1039,19 +1382,24 @@
                 Number(match[5] || 0),
                 Number(match[6] || 0)
             );
-            var date = new Date(timestamp + BEIJING_OFFSET_MS);
             return isNaN(date.getTime()) ? null : date;
         }
 
         function formatTime(text) {
             var date = parseBeijingDate(text);
-            if (!date) { return ''; }
-            var year = date.getUTCFullYear();
-            var month = String(date.getUTCMonth() + 1).padStart(2, '0');
-            var day = String(date.getUTCDate()).padStart(2, '0');
-            var hh = String(date.getUTCHours()).padStart(2, '0');
-            var mm = String(date.getUTCMinutes()).padStart(2, '0');
-            var ss = String(date.getUTCSeconds()).padStart(2, '0');
+            if (!date) {
+                var value = String(text || '').trim();
+                if (value) {
+                    return value.slice(0, 16);
+                }
+                return '';
+            }
+            var year = date.getFullYear();
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
+            var hh = String(date.getHours()).padStart(2, '0');
+            var mm = String(date.getMinutes()).padStart(2, '0');
+            var ss = String(date.getSeconds()).padStart(2, '0');
             return year + '-' + month + '-' + day + ' ' + hh + ':' + mm + ':' + ss;
         }
 
@@ -1064,16 +1412,16 @@
             }
             var now = getBeijingNow();
             var diffDays = Math.round((getBeijingDayStart(now) - getBeijingDayStart(date)) / 86400000);
-            var hh = String(date.getUTCHours()).padStart(2, '0');
-            var mm = String(date.getUTCMinutes()).padStart(2, '0');
+            var hh = String(date.getHours()).padStart(2, '0');
+            var mm = String(date.getMinutes()).padStart(2, '0');
             if (diffDays === 0) {
                 return hh + ':' + mm;
             }
             if (diffDays === 1) {
                 return '昨天';
             }
-            var month = String(date.getUTCMonth() + 1).padStart(2, '0');
-            var day = String(date.getUTCDate()).padStart(2, '0');
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
             return month + '-' + day;
         }
 
@@ -1094,15 +1442,19 @@
             }
             state.currentSessionId = null;
             document.getElementById('chatTitle').textContent = '新对话';
-            document.getElementById('chatSub').textContent = '输入问题后，系统会自动识别普通问答、智能问数或数字员工调用。';
+            document.getElementById('chatSub').textContent = '输入问题，支持普通问答、智能问数和 @数字员工 调用';
             renderSessions(state.sessions);
-            renderEmpty();
+            renderEmptyPrompts();
         }
 
-        function renderEmpty() {
+        function renderEmptyPrompts() {
             document.getElementById('chatList').innerHTML =
-                '<div class="empty-state" id="emptyState">' +
-                '开始一次新的任务。<br>可以直接提问数据问题、普通 AI 问题，或通过 `@数字员工` 发起协同分析。' +
+                '<div class="empty-prompts" id="emptyPrompts">' +
+                    '<div class="empty-prompts-title">开始一次新的任务</div>' +
+                    '<div class="empty-prompts-grid">' +
+                        '<div class="empty-prompt-item" onclick="fillMessage(\'最新一条深度采集数据是什么？\')">最新一条深度采集数据是什么？</div>' +
+                        '<div class="empty-prompt-item" onclick="fillMessage(\'统计一下已深采的数据数量和未深采的数据数量\')">统计一下已深采的数据数量和未深采的数量</div>' +
+                    '</div>' +
                 '</div>';
         }
 
@@ -1172,28 +1524,624 @@
             return html || '<p></p>';
         }
 
+        function getWeatherIcon(weatherText) {
+            var text = String(weatherText || '');
+            if (text.indexOf('晴') !== -1) return '☀️';
+            if (text.indexOf('多云') !== -1) return '⛅';
+            if (text.indexOf('阴') !== -1) return '☁️';
+            if (text.indexOf('小雨') !== -1 || text.indexOf('毛毛雨') !== -1) return '🌦️';
+            if (text.indexOf('中雨') !== -1) return '🌧️';
+            if (text.indexOf('大雨') !== -1 || text.indexOf('暴雨') !== -1) return '⛈️';
+            if (text.indexOf('雷') !== -1) return '⚡';
+            if (text.indexOf('雪') !== -1) return '❄️';
+            if (text.indexOf('雾') !== -1 || text.indexOf('霾') !== -1) return '🌫️';
+            if (text.indexOf('风') !== -1) return '💨';
+            return '️';
+        }
+
+        function getCitySpots(city) {
+            var cityMap = {
+                '北京': [
+                    {name: '故宫', icon: '🏯'},
+                    {name: '长城', icon: '🏔️'},
+                    {name: '天坛', icon: '🛕'},
+                    {name: '颐和园', icon: '🌳'}
+                ],
+                '上海': [
+                    {name: '外滩', icon: '🌃'},
+                    {name: '东方明珠', icon: '🗼'},
+                    {name: '豫园', icon: '🏮'},
+                    {name: '迪士尼', icon: '🏰'}
+                ],
+                '广州': [
+                    {name: '广州塔', icon: '🗼'},
+                    {name: '珠江夜游', icon: '🌊'},
+                    {name: '白云山', icon: '⛰️'},
+                    {name: '陈家祠', icon: '🏛️'}
+                ],
+                '深圳': [
+                    {name: '世界之窗', icon: '🌍'},
+                    {name: '欢乐谷', icon: '🎢'},
+                    {name: '大梅沙', icon: '🏖️'},
+                    {name: '莲花山', icon: '🌳'}
+                ],
+                '杭州': [
+                    {name: '西湖', icon: '🌊'},
+                    {name: '灵隐寺', icon: '⛩️'},
+                    {name: '雷峰塔', icon: '🗼'},
+                    {name: '宋城', icon: '🏯'}
+                ],
+                '成都': [
+                    {name: '大熊猫基地', icon: '🐼'},
+                    {name: '宽窄巷子', icon: '🏘️'},
+                    {name: '锦里', icon: '🏮'},
+                    {name: '武侯祠', icon: '🏛️'}
+                ],
+                '西安': [
+                    {name: '兵马俑', icon: '🗿'},
+                    {name: '大雁塔', icon: '🗼'},
+                    {name: '城墙', icon: '🏰'},
+                    {name: '华清池', icon: '♨️'}
+                ],
+                '南京': [
+                    {name: '中山陵', icon: '🏛️'},
+                    {name: '夫子庙', icon: '🏮'},
+                    {name: '明孝陵', icon: '🌳'},
+                    {name: '玄武湖', icon: '🌊'}
+                ],
+                '重庆': [
+                    {name: '洪崖洞', icon: '🏮'},
+                    {name: '解放碑', icon: '🗼'},
+                    {name: '磁器口', icon: '🏮'},
+                    {name: '长江索道', icon: '🚡'}
+                ],
+                '武汉': [
+                    {name: '黄鹤楼', icon: '🏯'},
+                    {name: '东湖', icon: '🌊'},
+                    {name: '户部巷', icon: '🏮'},
+                    {name: '武汉大学', icon: '🎓'}
+                ],
+                '长沙': [
+                    {name: '橘子洲', icon: '🍊'},
+                    {name: '岳麓山', icon: '⛰️'},
+                    {name: '太平街', icon: '🏮'},
+                    {name: '爱晚亭', icon: '🍁'}
+                ],
+                '苏州': [
+                    {name: '拙政园', icon: '🌳'},
+                    {name: '虎丘', icon: '🗼'},
+                    {name: '周庄', icon: '🏘️'},
+                    {name: '狮子林', icon: '🦁'}
+                ],
+                '厦门': [
+                    {name: '鼓浪屿', icon: '🏝️'},
+                    {name: '南普陀', icon: '⛩️'},
+                    {name: '环岛路', icon: '🛣️'},
+                    {name: '曾厝垵', icon: '🏘️'}
+                ],
+                '青岛': [
+                    {name: '栈桥', icon: '🌉'},
+                    {name: '崂山', icon: '⛰️'},
+                    {name: '八大关', icon: '🏘️'},
+                    {name: '金沙滩', icon: '🏖️'}
+                ],
+                '大理': [
+                    {name: '洱海', icon: '🌊'},
+                    {name: '古城', icon: '🏘️'},
+                    {name: '苍山', icon: '⛰️'},
+                    {name: '崇圣寺', icon: '⛩️'}
+                ],
+                '丽江': [
+                    {name: '古城', icon: '🏘️'},
+                    {name: '玉龙雪山', icon: '🏔️'},
+                    {name: '泸沽湖', icon: '🌊'},
+                    {name: '束河古镇', icon: '🏘️'}
+                ],
+                '三亚': [
+                    {name: '亚龙湾', icon: '🏖️'},
+                    {name: '天涯海角', icon: '🌅'},
+                    {name: '南山寺', icon: '⛩️'},
+                    {name: '蜈支洲岛', icon: '🏝️'}
+                ],
+                '雅安': [
+                    {name: '碧峰峡', icon: '🐼'},
+                    {name: '蒙顶山', icon: '⛰️'},
+                    {name: '上里古镇', icon: '🏘️'},
+                    {name: '牛背山', icon: '🌄'}
+                ],
+                '乐山': [
+                    {name: '乐山大佛', icon: '🗿'},
+                    {name: '峨眉山', icon: '⛰️'},
+                    {name: '东方佛都', icon: '⛩️'},
+                    {name: '嘉阳小火车', icon: '🚂'}
+                ],
+                '绵阳': [
+                    {name: '北川地震遗址', icon: '🏚️'},
+                    {name: '九皇山', icon: '⛰️'},
+                    {name: '李白故里', icon: '🏛️'},
+                    {name: '科技城', icon: '🔬'}
+                ],
+                '德阳': [
+                    {name: '三星堆', icon: '🗿'},
+                    {name: '绵竹年画村', icon: '🎨'},
+                    {name: '白马关', icon: '🏰'},
+                    {name: '石刻公园', icon: '🗿'}
+                ],
+                '宜宾': [
+                    {name: '蜀南竹海', icon: '🎋'},
+                    {name: '兴文石海', icon: '🗻'},
+                    {name: '李庄古镇', icon: '🏘️'},
+                    {name: '五粮液酒厂', icon: '🍶'}
+                ],
+                '泸州': [
+                    {name: '泸州老窖', icon: '🍶'},
+                    {name: '黄荆老林', icon: '🌳'},
+                    {name: '佛宝古镇', icon: '🏘️'},
+                    {name: '张坝桂圆林', icon: '🌳'}
+                ],
+                '南充': [
+                    {name: '阆中古城', icon: '🏯'},
+                    {name: '朱德故里', icon: '🏛️'},
+                    {name: '凌云山', icon: '⛰️'},
+                    {name: '嘉陵江', icon: '🌊'}
+                ],
+                '达州': [
+                    {name: '八台山', icon: '⛰️'},
+                    {name: '真佛山', icon: '⛩️'},
+                    {name: '宣汉巴山大峡谷', icon: '🏞️'},
+                    {name: '渠县汉阙', icon: '🏛️'}
+                ],
+                '自贡': [
+                    {name: '恐龙博物馆', icon: '🦕'},
+                    {name: '燊海井', icon: '⛏️'},
+                    {name: '仙市古镇', icon: '🏘️'},
+                    {name: '彩灯公园', icon: '🏮'}
+                ],
+                '内江': [
+                    {name: '大千园', icon: '🎨'},
+                    {name: '隆昌石牌坊', icon: '🏛️'},
+                    {name: '威远穹窿', icon: '⛰️'},
+                    {name: '古宇湖', icon: '🌊'}
+                ],
+                '遂宁': [
+                    {name: '广德寺', icon: '⛩️'},
+                    {name: '灵泉寺', icon: '⛩️'},
+                    {name: '死海', icon: '🌊'},
+                    {name: '宋瓷博物馆', icon: '🏺'}
+                ],
+                '广元': [
+                    {name: '剑门关', icon: '🏰'},
+                    {name: '皇泽寺', icon: '⛩️'},
+                    {name: '千佛崖', icon: '🗿'},
+                    {name: '翠云廊', icon: '🌳'}
+                ],
+                '巴中': [
+                    {name: '光雾山', icon: '🍁'},
+                    {name: '诺水河', icon: '🌊'},
+                    {name: '南龛摩崖', icon: '🗿'},
+                    {name: '川陕苏区', icon: '🏛️'}
+                ],
+                '眉山': [
+                    {name: '三苏祠', icon: '🏛️'},
+                    {name: '瓦屋山', icon: '⛰️'},
+                    {name: '柳江古镇', icon: '🏘️'},
+                    {name: '黑龙滩', icon: '🌊'}
+                ],
+                '资阳': [
+                    {name: '安岳石刻', icon: '🗿'},
+                    {name: '陈毅故里', icon: '🏛️'},
+                    {name: '花溪河', icon: '🌊'},
+                    {name: '半月山', icon: '⛰️'}
+                ],
+                '攀枝花': [
+                    {name: '二滩国家森林公园', icon: '🌳'},
+                    {name: '格萨拉', icon: '🌄'},
+                    {name: '红格温泉', icon: '♨️'},
+                    {name: '金沙江', icon: '🌊'}
+                ],
+                '贵阳': [
+                    {name: '黔灵山', icon: '⛰️'},
+                    {name: '甲秀楼', icon: '🏯'},
+                    {name: '青岩古镇', icon: '🏘️'},
+                    {name: '花溪公园', icon: '🌳'}
+                ],
+                '昆明': [
+                    {name: '滇池', icon: '🌊'},
+                    {name: '石林', icon: '🗻'},
+                    {name: '翠湖', icon: '🌊'},
+                    {name: '金马碧鸡坊', icon: '🏯'}
+                ],
+                '拉萨': [
+                    {name: '布达拉宫', icon: '🏯'},
+                    {name: '大昭寺', icon: '⛩️'},
+                    {name: '八廓街', icon: '🏘️'},
+                    {name: '纳木错', icon: '🌊'}
+                ],
+                '西宁': [
+                    {name: '塔尔寺', icon: '⛩️'},
+                    {name: '青海湖', icon: '🌊'},
+                    {name: '东关清真大寺', icon: '🕌'},
+                    {name: '日月山', icon: '⛰️'}
+                ],
+                '银川': [
+                    {name: '西夏王陵', icon: '🏛️'},
+                    {name: '沙湖', icon: '🌊'},
+                    {name: '镇北堡影视城', icon: '🎬'},
+                    {name: '贺兰山', icon: '⛰️'}
+                ],
+                '乌鲁木齐': [
+                    {name: '天山天池', icon: '🌊'},
+                    {name: '大巴扎', icon: '🏪'},
+                    {name: '红山公园', icon: '⛰️'},
+                    {name: '南山牧场', icon: '🌿'}
+                ],
+                '呼和浩特': [
+                    {name: '大召寺', icon: '⛩️'},
+                    {name: '昭君墓', icon: '🏛️'},
+                    {name: '塞上老街', icon: '🏘️'},
+                    {name: '哈素海', icon: '🌊'}
+                ],
+                '兰州': [
+                    {name: '黄河铁桥', icon: '🌉'},
+                    {name: '白塔山', icon: '⛰️'},
+                    {name: '甘肃省博物馆', icon: '🏛️'},
+                    {name: '五泉山', icon: '⛰️'}
+                ],
+                '太原': [
+                    {name: '晋祠', icon: '🏛️'},
+                    {name: '平遥古城', icon: '🏯'},
+                    {name: '双塔寺', icon: '🗼'},
+                    {name: '天龙山', icon: '⛰️'}
+                ],
+                '石家庄': [
+                    {name: '赵州桥', icon: '🌉'},
+                    {name: '正定古城', icon: '🏯'},
+                    {name: '西柏坡', icon: '🏛️'},
+                    {name: '苍岩山', icon: '⛰️'}
+                ],
+                '济南': [
+                    {name: '趵突泉', icon: '💧'},
+                    {name: '大明湖', icon: '🌊'},
+                    {name: '千佛山', icon: '⛰️'},
+                    {name: '黑虎泉', icon: '💧'}
+                ],
+                '郑州': [
+                    {name: '少林寺', icon: '⛩️'},
+                    {name: '龙门石窟', icon: '🗿'},
+                    {name: '嵩山', icon: '⛰️'},
+                    {name: '黄河风景区', icon: '🌊'}
+                ],
+                '合肥': [
+                    {name: '三河古镇', icon: '🏘️'},
+                    {name: '包公园', icon: '🌳'},
+                    {name: '李鸿章故居', icon: '🏛️'},
+                    {name: '巢湖', icon: '🌊'}
+                ],
+                '南昌': [
+                    {name: '滕王阁', icon: '🏯'},
+                    {name: '八一广场', icon: '🏛️'},
+                    {name: '庐山', icon: '⛰️'},
+                    {name: '鄱阳湖', icon: '🌊'}
+                ],
+                '福州': [
+                    {name: '三坊七巷', icon: '🏘️'},
+                    {name: '鼓山', icon: '⛰️'},
+                    {name: '西湖公园', icon: '🌊'},
+                    {name: '林则徐纪念馆', icon: '🏛️'}
+                ],
+                '南宁': [
+                    {name: '青秀山', icon: '⛰️'},
+                    {name: '德天瀑布', icon: '💧'},
+                    {name: '大明山', icon: '⛰️'},
+                    {name: '南湖公园', icon: '🌊'}
+                ],
+                '海口': [
+                    {name: '骑楼老街', icon: '🏘️'},
+                    {name: '火山口公园', icon: '🌋'},
+                    {name: '假日海滩', icon: '🏖️'},
+                    {name: '东寨港红树林', icon: '🌳'}
+                ],
+                '哈尔滨': [
+                    {name: '中央大街', icon: '🏘️'},
+                    {name: '圣索菲亚教堂', icon: '⛪'},
+                    {name: '冰雪大世界', icon: '❄️'},
+                    {name: '太阳岛', icon: '🏝️'}
+                ],
+                '长春': [
+                    {name: '伪满皇宫', icon: '🏯'},
+                    {name: '净月潭', icon: '🌊'},
+                    {name: '长影世纪城', icon: '🎬'},
+                    {name: '南湖公园', icon: '🌳'}
+                ],
+                '沈阳': [
+                    {name: '故宫', icon: '🏯'},
+                    {name: '北陵公园', icon: '🌳'},
+                    {name: '张氏帅府', icon: '🏛️'},
+                    {name: '中街', icon: '🏘️'}
+                ],
+                '大连': [
+                    {name: '星海广场', icon: '🌊'},
+                    {name: '老虎滩', icon: '🐯'},
+                    {name: '金石滩', icon: '🏖️'},
+                    {name: '滨海路', icon: '🛣️'}
+                ],
+                '天津': [
+                    {name: '古文化街', icon: '🏘️'},
+                    {name: '五大道', icon: '🏛️'},
+                    {name: '天津之眼', icon: '🎡'},
+                    {name: '意式风情街', icon: '🏘️'}
+                ],
+                '宁波': [
+                    {name: '天一阁', icon: '📚'},
+                    {name: '东钱湖', icon: '🌊'},
+                    {name: '溪口', icon: '⛰️'},
+                    {name: '老外滩', icon: '🌃'}
+                ],
+                '温州': [
+                    {name: '雁荡山', icon: '⛰️'},
+                    {name: '楠溪江', icon: '🌊'},
+                    {name: '江心屿', icon: '🏝️'},
+                    {name: '南麂列岛', icon: '🏝️'}
+                ],
+                '嘉兴': [
+                    {name: '南湖', icon: '🌊'},
+                    {name: '乌镇', icon: '🏘️'},
+                    {name: '西塘', icon: '🏘️'},
+                    {name: '月河街', icon: '🏘️'}
+                ],
+                '绍兴': [
+                    {name: '鲁迅故里', icon: '🏛️'},
+                    {name: '沈园', icon: '🌳'},
+                    {name: '兰亭', icon: '🖊️'},
+                    {name: '东湖', icon: '🌊'}
+                ],
+                '无锡': [
+                    {name: '鼋头渚', icon: '🌊'},
+                    {name: '灵山大佛', icon: '🗿'},
+                    {name: '拈花湾', icon: '⛩️'},
+                    {name: '惠山古镇', icon: '🏘️'}
+                ],
+                '常州': [
+                    {name: '恐龙园', icon: '🦕'},
+                    {name: '天宁寺', icon: '⛩️'},
+                    {name: '淹城', icon: '🏛️'},
+                    {name: '天目湖', icon: '🌊'}
+                ],
+                '南通': [
+                    {name: '狼山', icon: '⛰️'},
+                    {name: '濠河', icon: '🌊'},
+                    {name: '南通博物苑', icon: '🏛️'},
+                    {name: '水绘园', icon: '🌳'}
+                ],
+                '徐州': [
+                    {name: '云龙湖', icon: '🌊'},
+                    {name: '龟山汉墓', icon: '🗿'},
+                    {name: '彭祖园', icon: '🌳'},
+                    {name: '戏马台', icon: '🏛️'}
+                ],
+                '扬州': [
+                    {name: '瘦西湖', icon: '🌊'},
+                    {name: '个园', icon: '🌳'},
+                    {name: '何园', icon: '🌳'},
+                    {name: '东关街', icon: '🏘️'}
+                ],
+                '镇江': [
+                    {name: '金山寺', icon: '⛩️'},
+                    {name: '北固山', icon: '⛰️'},
+                    {name: '焦山', icon: '⛰️'},
+                    {name: '西津渡', icon: '🏘️'}
+                ],
+                '金华': [
+                    {name: '双龙洞', icon: '🕳️'},
+                    {name: '横店影视城', icon: '🎬'},
+                    {name: '诸葛八卦村', icon: '🏘️'},
+                    {name: '东阳木雕城', icon: '🎨'}
+                ],
+                '台州': [
+                    {name: '天台山', icon: '⛰️'},
+                    {name: '神仙居', icon: '⛰️'},
+                    {name: '国清寺', icon: '⛩️'},
+                    {name: '长屿洞天', icon: '🕳️'}
+                ],
+                '桂林': [
+                    {name: '漓江', icon: '🌊'},
+                    {name: '象鼻山', icon: '🐘'},
+                    {name: '阳朔', icon: '⛰️'},
+                    {name: '龙脊梯田', icon: '🌾'}
+                ],
+                '柳州': [
+                    {name: '柳侯公园', icon: '🌳'},
+                    {name: '程阳风雨桥', icon: '🌉'},
+                    {name: '鱼峰山', icon: '⛰️'},
+                    {name: '三江侗乡', icon: '🏘️'}
+                ],
+                '张家界': [
+                    {name: '武陵源', icon: '⛰️'},
+                    {name: '天门山', icon: '⛰️'},
+                    {name: '大峡谷玻璃桥', icon: '🌉'},
+                    {name: '黄龙洞', icon: '🕳️'}
+                ],
+                '凤凰': [
+                    {name: '凤凰古城', icon: '🏘️'},
+                    {name: '沱江', icon: '🌊'},
+                    {name: '沈从文故居', icon: '🏛️'},
+                    {name: '南华山', icon: '⛰️'}
+                ],
+                '黄山': [
+                    {name: '黄山风景区', icon: '⛰️'},
+                    {name: '宏村', icon: '🏘️'},
+                    {name: '西递', icon: '🏘️'},
+                    {name: '屯溪老街', icon: '🏘️'}
+                ],
+                '芜湖': [
+                    {name: '方特欢乐世界', icon: '🎢'},
+                    {name: '赭山', icon: '⛰️'},
+                    {name: '镜湖', icon: '🌊'},
+                    {name: '鸠兹古镇', icon: '🏘️'}
+                ],
+                '泉州': [
+                    {name: '开元寺', icon: '⛩️'},
+                    {name: '清源山', icon: '⛰️'},
+                    {name: '崇武古城', icon: '🏰'},
+                    {name: '洛阳桥', icon: '🌉'}
+                ],
+                '漳州': [
+                    {name: '南靖土楼', icon: '🏘️'},
+                    {name: '东山岛', icon: '🏝️'},
+                    {name: '云水谣', icon: '🌊'},
+                    {name: '火山岛', icon: '🌋'}
+                ],
+                '九江': [
+                    {name: '庐山', icon: '⛰️'},
+                    {name: '鄱阳湖', icon: '🌊'},
+                    {name: '浔阳楼', icon: '🏯'},
+                    {name: '白鹿洞书院', icon: '📚'}
+                ],
+                '景德镇': [
+                    {name: '古窑民俗博览区', icon: '🏺'},
+                    {name: '瑶里古镇', icon: '🏘️'},
+                    {name: '御窑厂', icon: '🏺'},
+                    {name: '浮梁古县衙', icon: '🏛️'}
+                ],
+                '洛阳': [
+                    {name: '龙门石窟', icon: '🗿'},
+                    {name: '白马寺', icon: '⛩️'},
+                    {name: '老君山', icon: '⛰️'},
+                    {name: '牡丹园', icon: '🌸'}
+                ],
+                '开封': [
+                    {name: '清明上河园', icon: '🏯'},
+                    {name: '开封府', icon: '🏛️'},
+                    {name: '大相国寺', icon: '⛩️'},
+                    {name: '龙亭公园', icon: '🌳'}
+                ],
+                '安阳': [
+                    {name: '殷墟', icon: '🏛️'},
+                    {name: '红旗渠', icon: '💧'},
+                    {name: '太行大峡谷', icon: '⛰️'},
+                    {name: '文字博物馆', icon: '📚'}
+                ],
+                '南阳': [
+                    {name: '卧龙岗', icon: '⛰️'},
+                    {name: '丹江口水库', icon: '🌊'},
+                    {name: '内乡衙', icon: '🏛️'},
+                    {name: '老界岭', icon: '⛰️'}
+                ],
+                '宜昌': [
+                    {name: '三峡大坝', icon: '💧'},
+                    {name: '三峡人家', icon: '🏘️'},
+                    {name: '清江画廊', icon: '🌊'},
+                    {name: '屈原故里', icon: '🏛️'}
+                ],
+                '襄阳': [
+                    {name: '古隆中', icon: '🏛️'},
+                    {name: '襄阳古城', icon: '🏰'},
+                    {name: '唐城', icon: '🏯'},
+                    {name: '米公祠', icon: '🖊️'}
+                ],
+                '十堰': [
+                    {name: '武当山', icon: '⛰️'},
+                    {name: '丹江口水库', icon: '🌊'},
+                    {name: '野人谷', icon: '🌲'},
+                    {name: '太极湖', icon: '🌊'}
+                ],
+                '恩施': [
+                    {name: '恩施大峡谷', icon: '⛰️'},
+                    {name: '腾龙洞', icon: '🕳️'},
+                    {name: '屏山峡谷', icon: '🌊'},
+                    {name: '土司城', icon: '🏛️'}
+                ],
+                '遵义': [
+                    {name: '遵义会议会址', icon: '🏛️'},
+                    {name: '赤水丹霞', icon: '🏞️'},
+                    {name: '茅台镇', icon: '🍶'},
+                    {name: '海龙屯', icon: '🏰'}
+                ],
+                '大理白族自治州': [
+                    {name: '洱海', icon: '🌊'},
+                    {name: '大理古城', icon: '🏘️'},
+                    {name: '苍山', icon: '⛰️'},
+                    {name: '崇圣寺三塔', icon: '⛩️'}
+                ],
+                '丽江古城': [
+                    {name: '大研古镇', icon: '🏘️'},
+                    {name: '玉龙雪山', icon: '🏔️'},
+                    {name: '束河古镇', icon: '🏘️'},
+                    {name: '黑龙潭', icon: '🌊'}
+                ]
+            };
+            var cityName = String(city || '');
+            for (var key in cityMap) {
+                if (cityName.indexOf(key) !== -1) {
+                    return cityMap[key];
+                }
+            }
+            return [
+                {name: '城市广场', icon: '🏛️'},
+                {name: '中央公园', icon: '🌳'},
+                {name: '博物馆', icon: '🏺'},
+                {name: '历史文化街区', icon: '🏘️'}
+            ];
+        }
+
+        function getWeatherRecommendation(weatherText) {
+            var text = String(weatherText || '');
+            if (text.indexOf('晴') !== -1) return '☀️ 适合出游';
+            if (text.indexOf('多云') !== -1) return '⛅ 适宜出行';
+            if (text.indexOf('阴') !== -1) return '☁️ 建议带伞';
+            if (text.indexOf('雨') !== -1) return '🌧️ 注意防雨';
+            if (text.indexOf('雪') !== -1) return '❄️ 注意保暖';
+            if (text.indexOf('雾') !== -1 || text.indexOf('霾') !== -1) return '🌫️ 注意防护';
+            return '🌤️ 正常出行';
+        }
+
         function renderWeatherCard(weather) {
             var current = weather && weather.current && typeof weather.current === 'object' ? weather.current : {};
             var city = weather.city || weather.province || '天气';
             var weatherText = weather.weather || weather.text || '天气未知';
             var temp = weather.temp || weather.temperature || '--';
+            var tempHigh = weather.temph || weather.high || weather.temp || '--';
             var tempLow = weather.tempn || weather.low || '--';
             var wind = weather.wind || weather.windDir || '--';
             var windSpeed = weather.windSpeed || weather.wind_speed || '--';
             var air = weather.air || weather.aqi || current.air || current.aqi || weather.airQuality || current.airQuality || '--';
+            var humidity = weather.humidity || weather.shidu || current.humidity || '--';
+            var icon = getWeatherIcon(weatherText);
+            var recommendation = getWeatherRecommendation(weatherText);
+            var spots = getCitySpots(city);
+            var tempRange = '';
+            if (String(tempHigh) !== '--' && String(tempLow) !== '--') {
+                tempRange = '<div class="weather-temp-range">' + escapeHtml(String(tempHigh)) + '° / ' + escapeHtml(String(tempLow)) + '°</div>';
+            }
+            var spotsHtml = '<div class="weather-spots">' +
+                '<div class="weather-spots-title">' + recommendation + ' · 推荐景点</div>' +
+                '<div class="weather-spots-list">' +
+                    spots.map(function(spot) {
+                        return '<span class="weather-spot-tag"><span class="spot-icon">' + spot.icon + '</span>' + escapeHtml(spot.name) + '</span>';
+                    }).join('') +
+                '</div>' +
+            '</div>';
             return '' +
                 '<div class="weather-card">' +
-                    '<div class="weather-city">' + escapeHtml(city) + '</div>' +
+                    '<div class="weather-header">' +
+                        '<div class="weather-city">' +
+                            '<svg class="weather-city-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>' +
+                            escapeHtml(city) +
+                        '</div>' +
+                        '<div class="weather-icon">' + icon + '</div>' +
+                    '</div>' +
                     '<div class="weather-main">' +
                         '<div>' +
                             '<div class="weather-temp">' + escapeHtml(String(temp)) + '°</div>' +
                             '<div class="weather-desc">' + escapeHtml(weatherText) + '</div>' +
+                            tempRange +
                         '</div>' +
-                        '<div class="weather-desc">低温 ' + escapeHtml(String(tempLow)) + '°</div>' +
                     '</div>' +
+                    spotsHtml +
                     '<div class="weather-grid">' +
                         '<div class="weather-item"><strong>风向风速</strong>' + escapeHtml(String(wind) + ' / ' + String(windSpeed)) + '</div>' +
                         '<div class="weather-item"><strong>空气质量</strong>' + escapeHtml(String(air)) + '</div>' +
+                        (humidity !== '--' ? '<div class="weather-item"><strong>湿度</strong>' + escapeHtml(String(humidity)) + '</div>' : '') +
                     '</div>' +
                 '</div>';
         }
@@ -1251,33 +2199,68 @@
             return null;
         }
 
+        function getProxyImageUrl(url) {
+            if (!url) return '';
+            if (url.indexOf('music.126.net') > -1 || url.indexOf('music.163.com') > -1) {
+                var proxyUrl = '/api/image/proxy?url=' + encodeURIComponent(url);
+                console.log('[ImageProxy] Converting to proxy:', url.substring(0, 50), '->', proxyUrl.substring(0, 80));
+                return proxyUrl;
+            }
+            return url;
+        }
+
         function renderMusicCard(card) {
             var title = card.song || card.name || card.title || '音乐推荐';
             var singer = card.singer || card.artist || card.author || '未知歌手';
             var cover = card.cover || card.pic || card.image || card.poster || '';
-            var source = card.source || card.platform || card.from || '音乐';
+            console.log('Music card debug:', { title, singer, cover, card });
+            var proxyCover = getProxyImageUrl(cover);
             var playUrl = card.Music || card.music || card.url || card.audio || card.play_url || '';
-            var coverHtml = cover
-                ? '<img src="' + escapeHtml(cover) + '" alt="' + escapeHtml(title) + '">'
+            var playlist = card.playlist || card.playlist_data || [];
+            var currentIndex = card.current_index || 0;
+            var coverHtml = proxyCover
+                ? '<img src="' + escapeHtml(proxyCover) + '" alt="' + escapeHtml(title) + '" onload="this.style.display=\'block\';var fb=this.nextElementSibling;if(fb)fb.style.display=\'none\';" onerror="this.style.display=\'none\';var fb=this.nextElementSibling;if(fb)fb.style.display=\'flex\';">' +
+                  '<div class="music-cover-fallback" style="display:none;">♪</div>'
                 : '<div class="music-cover-fallback">♪</div>';
             var playIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 6.5v11l9-5.5-9-5.5Z"></path></svg>';
+            var pauseIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6V4Zm8 0h4v16h-4V4Z"></path></svg>';
+            var prevIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 6h2v12H6V6Zm3.5 6 8.5 6V6l-8.5 6Z"></path></svg>';
+            var nextIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 18l8.5-6L6 6v12ZM16 6v12h2V6h-2Z"></path></svg>';
+            var volumeIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3Zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02ZM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77Z"></path></svg>';
             return '' +
-                '<div class="music-card">' +
+                '<div class="music-card" data-playlist=\'' + JSON.stringify(playlist).replace(/'/g, '&#39;') + '\' data-current-index="' + currentIndex + '">' +
                     '<div class="music-card-top">' +
                         '<div class="music-cover">' + coverHtml + '</div>' +
                         '<div class="music-info">' +
                             '<div class="music-title">' + escapeHtml(title) + '</div>' +
                             '<div class="music-artist">' + escapeHtml(singer) + '</div>' +
-                            '<div class="music-source">' + escapeHtml(source) + '</div>' +
                         '</div>' +
                     '</div>' +
-                    '<div class="music-actions">' +
+                    '<div class="music-progress-container">' +
+                        '<span class="music-time-current">0:00</span>' +
+                        '<div class="music-progress-bar">' +
+                            '<div class="music-progress-fill"></div>' +
+                            '<div class="music-progress-handle"></div>' +
+                        '</div>' +
+                        '<span class="music-time-total">0:00</span>' +
+                    '</div>' +
+                    '<div class="music-controls">' +
+                        '<button class="music-control-btn music-prev-btn" type="button"' + (playlist.length > 1 ? ' onclick="musicPrev(this)"' : ' disabled') + '>' +
+                            prevIcon +
+                        '</button>' +
                         '<button class="music-play-btn" type="button"' + (playUrl ? ' onclick="toggleMusicCardPlayback(this)"' : ' disabled') + '>' +
                             playIcon +
                             '<span class="music-play-label">' + (playUrl ? '播放' : '暂无音源') + '</span>' +
                         '</button>' +
-                        (playUrl ? '<audio class="music-audio" preload="none" src="' + escapeHtml(playUrl) + '" onended="resetMusicCardPlayback(this)"></audio>' : '') +
+                        '<button class="music-control-btn music-next-btn" type="button"' + (playlist.length > 1 ? ' onclick="musicNext(this)"' : ' disabled') + '>' +
+                            nextIcon +
+                        '</button>' +
+                        '<div class="music-volume-container">' +
+                            volumeIcon +
+                            '<input type="range" class="music-volume-slider" min="0" max="100" value="80" oninput="changeMusicVolume(this)">' +
+                        '</div>' +
                     '</div>' +
+                    (playUrl ? '<audio class="music-audio" preload="none" src="' + escapeHtml(playUrl) + '" onended="onMusicEnded(this)"></audio>' : '') +
                 '</div>';
         }
 
@@ -1285,27 +2268,196 @@
             var card = button && button.closest('.music-card');
             var audio = card ? card.querySelector('.music-audio') : null;
             var label = button ? button.querySelector('.music-play-label') : null;
+            var playIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 6.5v11l9-5.5-9-5.5Z"></path></svg>';
+            var pauseIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6V4Zm8 0h4v16h-4V4Z"></path></svg>';
             if (!audio || !label) {
                 return;
             }
             if (audio.paused) {
                 audio.play().then(function(){
                     label.textContent = '暂停';
+                    button.innerHTML = pauseIcon + '<span class="music-play-label">暂停</span>';
+                    startMusicProgressTracking(audio);
                 }).catch(function(){
                     label.textContent = '播放失败';
                 });
             } else {
                 audio.pause();
                 label.textContent = '播放';
+                button.innerHTML = playIcon + '<span class="music-play-label">播放</span>';
+                stopMusicProgressTracking(audio);
+            }
+        }
+
+        function formatMusicTime(seconds) {
+            if (!seconds || isNaN(seconds)) return '0:00';
+            var mins = Math.floor(seconds / 60);
+            var secs = Math.floor(seconds % 60);
+            return mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+
+        function startMusicProgressTracking(audio) {
+            if (!audio) return;
+            var updateProgress = function() {
+                if (audio.paused || audio.ended) {
+                    stopMusicProgressTracking(audio);
+                    return;
+                }
+                var card = audio.closest('.music-card');
+                if (!card) return;
+                var currentTime = audio.currentTime || 0;
+                var duration = audio.duration || 0;
+                var progressFill = card.querySelector('.music-progress-fill');
+                var progressHandle = card.querySelector('.music-progress-handle');
+                var timeCurrent = card.querySelector('.music-time-current');
+                var timeTotal = card.querySelector('.music-time-total');
+                if (progressFill && duration > 0) {
+                    var percent = (currentTime / duration) * 100;
+                    progressFill.style.width = percent + '%';
+                    if (progressHandle) {
+                        progressHandle.style.left = percent + '%';
+                    }
+                }
+                if (timeCurrent) {
+                    timeCurrent.textContent = formatMusicTime(currentTime);
+                }
+                if (timeTotal && duration > 0) {
+                    timeTotal.textContent = formatMusicTime(duration);
+                }
+                requestAnimationFrame(updateProgress);
+            };
+            audio._progressTimer = requestAnimationFrame(updateProgress);
+        }
+
+        function stopMusicProgressTracking(audio) {
+            if (audio && audio._progressTimer) {
+                cancelAnimationFrame(audio._progressTimer);
+                audio._progressTimer = null;
+            }
+        }
+
+        function onMusicEnded(audio) {
+            var card = audio && audio.closest('.music-card');
+            if (!card) return;
+            var playlistStr = card.getAttribute('data-playlist');
+            var currentIndex = parseInt(card.getAttribute('data-current-index') || '0', 10);
+            var playlist = [];
+            try {
+                playlist = JSON.parse(playlistStr || '[]');
+            } catch (e) {
+                playlist = [];
+            }
+            if (playlist.length > 1 && currentIndex < playlist.length - 1) {
+                musicNext(card.querySelector('.music-next-btn'));
+            } else {
+                resetMusicCardPlayback(audio);
             }
         }
 
         function resetMusicCardPlayback(audio) {
             var card = audio && audio.closest('.music-card');
-            var label = card ? card.querySelector('.music-play-label') : null;
+            var playBtn = card ? card.querySelector('.music-play-btn') : null;
+            var label = playBtn ? playBtn.querySelector('.music-play-label') : null;
+            var playIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 6.5v11l9-5.5-9-5.5Z"></path></svg>';
             if (label) {
                 label.textContent = '播放';
             }
+            if (playBtn) {
+                playBtn.innerHTML = playIcon + '<span class="music-play-label">播放</span>';
+            }
+            var progressFill = card ? card.querySelector('.music-progress-fill') : null;
+            var progressHandle = card ? card.querySelector('.music-progress-handle') : null;
+            var timeCurrent = card ? card.querySelector('.music-time-current') : null;
+            if (progressFill) progressFill.style.width = '0%';
+            if (progressHandle) progressHandle.style.left = '0%';
+            if (timeCurrent) timeCurrent.textContent = '0:00';
+            stopMusicProgressTracking(audio);
+        }
+
+        function changeMusicVolume(slider) {
+            var card = slider && slider.closest('.music-card');
+            var audio = card ? card.querySelector('.music-audio') : null;
+            if (audio) {
+                audio.volume = (parseInt(slider.value, 10) || 80) / 100;
+            }
+        }
+
+        function musicPrev(button) {
+            var card = button && button.closest('.music-card');
+            if (!card) return;
+            var playlistStr = card.getAttribute('data-playlist');
+            var currentIndex = parseInt(card.getAttribute('data-current-index') || '0', 10);
+            var playlist = [];
+            try {
+                playlist = JSON.parse(playlistStr || '[]');
+            } catch (e) {
+                playlist = [];
+            }
+            if (playlist.length <= 1) return;
+            var newIndex = currentIndex > 0 ? currentIndex - 1 : playlist.length - 1;
+            loadMusicTrack(card, playlist, newIndex);
+        }
+
+        function musicNext(button) {
+            var card = button && button.closest('.music-card');
+            if (!card) return;
+            var playlistStr = card.getAttribute('data-playlist');
+            var currentIndex = parseInt(card.getAttribute('data-current-index') || '0', 10);
+            var playlist = [];
+            try {
+                playlist = JSON.parse(playlistStr || '[]');
+            } catch (e) {
+                playlist = [];
+            }
+            if (playlist.length <= 1) return;
+            var newIndex = currentIndex < playlist.length - 1 ? currentIndex + 1 : 0;
+            loadMusicTrack(card, playlist, newIndex);
+        }
+
+        function loadMusicTrack(card, playlist, index) {
+            if (!card || !playlist || index < 0 || index >= playlist.length) return;
+            var track = playlist[index];
+            if (!track) return;
+            var audio = card.querySelector('.music-audio');
+            var playUrl = track.Music || track.music || track.url || track.audio || track.play_url || '';
+            if (!playUrl || !audio) return;
+            audio.src = playUrl;
+            audio.load();
+            card.setAttribute('data-current-index', index);
+            var titleEl = card.querySelector('.music-title');
+            var artistEl = card.querySelector('.music-artist');
+            var coverEl = card.querySelector('.music-cover');
+            if (titleEl) titleEl.textContent = track.song || track.name || track.title || '音乐推荐';
+            if (artistEl) artistEl.textContent = track.singer || track.artist || track.author || '未知歌手';
+            if (coverEl) {
+                var cover = track.cover || track.pic || track.image || track.poster || '';
+                var proxyCover = getProxyImageUrl(cover);
+                if (proxyCover) {
+                    coverEl.innerHTML = '<img src="' + escapeHtml(proxyCover) + '" alt="' + escapeHtml(track.song || track.name || track.title || '') + '" onload="this.style.display=\'block\';var fb=this.nextElementSibling;if(fb)fb.style.display=\'none\';" onerror="this.style.display=\'none\';var fb=this.nextElementSibling;if(fb)fb.style.display=\'flex\';">' +
+                        '<div class="music-cover-fallback" style="display:none;">♪</div>';
+                } else {
+                    coverEl.innerHTML = '<div class="music-cover-fallback">♪</div>';
+                }
+            }
+            resetMusicCardPlayback(audio);
+            var playBtn = card.querySelector('.music-play-btn');
+            if (playBtn) {
+                toggleMusicCardPlayback(playBtn);
+            }
+        }
+
+        function initMusicProgressBars() {
+            document.addEventListener('click', function(e) {
+                var progressBar = e.target.closest('.music-progress-bar');
+                if (!progressBar) return;
+                var card = progressBar.closest('.music-card');
+                var audio = card ? card.querySelector('.music-audio') : null;
+                if (!audio || !audio.duration) return;
+                var rect = progressBar.getBoundingClientRect();
+                var clickX = e.clientX - rect.left;
+                var percent = clickX / rect.width;
+                audio.currentTime = percent * audio.duration;
+            });
         }
 
         function buildMessageContentHtml(content, isMarkdown, extraData) {
@@ -1321,7 +2473,7 @@
         }
 
         function ensureChatReady() {
-            var empty = document.getElementById('emptyState');
+            var empty = document.getElementById('emptyPrompts');
             if (empty) {
                 empty.remove();
             }
@@ -1335,17 +2487,103 @@
 
         function createMessageElement(role, metaList, content, id, isMarkdown, extraData) {
             ensureChatReady();
+            var weatherCard = resolveWeatherCard(extraData);
+            if (weatherCard) {
+                var wrap = document.createElement('div');
+                wrap.className = 'message-row weather-card-row';
+                var cardContainer = document.createElement('div');
+                cardContainer.className = 'weather-card-standalone';
+                var cardHtml = renderWeatherCard(weatherCard);
+                cardContainer.innerHTML = cardHtml;
+                wrap.appendChild(cardContainer);
+                document.getElementById('chatList').appendChild(wrap);
+                scrollToBottom();
+                var city = weatherCard.city || weatherCard.province || '天气';
+                var weatherText = weatherCard.weather || weatherCard.text || '天气未知';
+                var spots = getCitySpots(city);
+                fetchWeatherImage(cardContainer, city, weatherText, spots);
+                return wrap;
+            }
+            var musicCard = resolveMusicCard(extraData);
+            var isMusic = !!musicCard;
             var wrap = document.createElement('div');
             wrap.className = 'message-row ' + role;
+            var timeText = '';
+            if (metaList && metaList.length > 1) {
+                timeText = metaList[metaList.length - 1];
+            }
             wrap.innerHTML =
-                '<div class="message ' + role + '"' + (id ? ' id="' + id + '"' : '') + '>' +
+                '<div class="message ' + role + (isMusic ? ' music-message' : '') + '"' + (id ? ' id="' + id + '"' : '') + '>' +
                     '<div class="message-meta">' + buildMetaHtml(metaList) + '</div>' +
                     '<div class="message-status"></div>' +
                     '<div class="message-content">' + buildMessageContentHtml(content, isMarkdown, extraData) + '</div>' +
+                    '<div class="message-time">' + escapeHtml(timeText) + '</div>' +
+                    '<div class="message-actions">' +
+                        '<button class="message-action-btn" title="复制" onclick="copyMessage(this)" data-content="' + escapeAttr(content) + '">' +
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>' +
+                        '</button>' +
+                        '<button class="message-action-btn" title="删除" onclick="deleteMessage(this)">' +
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
+                        '</button>' +
+                    '</div>' +
                 '</div>';
             document.getElementById('chatList').appendChild(wrap);
             scrollToBottom();
             return wrap;
+        }
+
+        function fetchWeatherImage(cardContainer, city, weatherText, spots) {
+            var weatherCard = cardContainer.querySelector('.weather-card');
+            if (!weatherCard) return;
+            var loadingDiv = document.createElement('div');
+            loadingDiv.className = 'bg-loading';
+            loadingDiv.textContent = '正在生成背景图...';
+            weatherCard.appendChild(loadingDiv);
+            fetch('/api/weather/image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    city: city,
+                    weather: weatherText,
+                    spots: spots
+                })
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(result) {
+                console.log('Weather image API response:', result);
+                if (result.code === 0 && result.data && result.data.image_url) {
+                    var imageUrl = result.data.image_url;
+                    console.log('Setting background image:', imageUrl);
+                    var img = new Image();
+                    img.onload = function() {
+                        weatherCard.style.backgroundImage = 'url(' + imageUrl + ')';
+                        weatherCard.classList.add('has-background');
+                        console.log('Background image loaded successfully');
+                    };
+                    img.onerror = function() {
+                        console.error('Failed to load background image:', imageUrl);
+                    };
+                    img.src = imageUrl;
+                } else {
+                    console.warn('Weather image API returned error:', result.msg);
+                }
+                if (loadingDiv.parentNode) {
+                    loadingDiv.parentNode.removeChild(loadingDiv);
+                }
+            })
+            .catch(function(error) {
+                console.error('Weather image generation failed:', error);
+                if (loadingDiv.parentNode) {
+                    loadingDiv.parentNode.removeChild(loadingDiv);
+                }
+            });
         }
 
         function setMessageStatus(id, text) {
@@ -1364,6 +2602,13 @@
         function setMessageContent(id, content, isMarkdown, extraData) {
             var node = document.getElementById(id);
             if (!node) { return; }
+            var musicCard = resolveMusicCard(extraData);
+            var isMusic = !!musicCard;
+            if (isMusic) {
+                node.classList.add('music-message');
+            } else {
+                node.classList.remove('music-message');
+            }
             node.querySelector('.message-content').innerHTML = buildMessageContentHtml(content, isMarkdown, extraData);
             scrollToBottom();
         }
@@ -1389,25 +2634,18 @@
             if (data.response_ms) {
                 meta.push(data.response_ms + 'ms');
             }
+            meta.push(formatTime(data.create_at || getBeijingTimeStr()));
             return meta;
         }
 
         function renderEmployees(list) {
             state.employees = list || [];
-            var employeeSelect = document.getElementById('employeeSelect');
-            var employeeOptions = '<option value="">选择数字员工</option>';
+            var container = document.getElementById('composerEmployees');
+            var html = '';
             state.employees.forEach(function(item){
-                employeeOptions += '<option value="' + escapeHtml(item.alias) + '">@' + escapeHtml(item.alias) + '</option>';
+                html += '<span class="employee-tag" onclick="fillMessage(\'@' + escapeHtml(item.alias) + ' \')">@' + escapeHtml(item.alias) + '</span>';
             });
-            employeeSelect.innerHTML = employeeOptions;
-
-            var prompts = [
-                '最新一条深度采集数据是什么？',
-                '统计一下已深采的数据数量和未深采的数据数量'
-            ];
-            document.getElementById('promptList').innerHTML = prompts.slice(0, 2).map(function(text){
-                return '<div class="prompt-item" onclick="fillMessage(\'' + text.replace(/'/g, "\\'") + '\')">' + escapeHtml(text) + '</div>';
-            }).join('');
+            container.innerHTML = html;
         }
 
         function renderModels(list) {
@@ -1435,24 +2673,16 @@
             state.sessions.forEach(function(item){
                 var active = Number(item.id) === Number(state.currentSessionId);
                 html += '<div class="history-item' + (active ? ' active' : '') + '" onclick="openSession(' + item.id + ')">';
-                html += '<div class="history-title">' + escapeHtml(item.title || '未命名任务') + '</div>';
-                html += '<div class="history-preview">' + escapeHtml(item.last_message_preview || '暂无消息摘要') + '</div>';
+                html += '<div class="history-title">' + escapeHtml(item.title || '新对话') + '</div>';
                 html += '<div class="history-meta">';
-                html += '<div class="history-meta-text">';
-                if (item.model_name) {
-                    html += '<span>' + escapeHtml(item.model_name) + '</span>';
-                }
-                if (item.last_intent) {
-                    html += '<span>' + escapeHtml(item.last_intent) + '</span>';
-                }
-                html += '<span>' + escapeHtml(formatSessionTime(item.update_at)) + '</span>';
+                html += '<span>' + formatSessionTime(item.update_at || item.create_at) + '</span>';
+                html += '<button class="history-delete-btn" onclick="event.stopPropagation(); deleteSession(' + item.id + ')" title="删除">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
+                    '</button>';
                 html += '</div>';
-                html += '<button class="history-delete-btn" type="button" title="删除会话" onclick="deleteSession(event, ' + item.id + ')">';
-                html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>';
-                html += '</button>';
-                html += '</div></div>';
+                html += '</div>';
             });
-            document.getElementById('historyList').innerHTML = html || '<div class="section-sub">还没有历史任务，先发起一次对话吧。</div>';
+            document.getElementById('historyList').innerHTML = html || '<div style="color:var(--ui-muted);font-size:12px;text-align:center;padding:20px;">暂无历史对话</div>';
         }
 
         function refreshSessions() {
@@ -1465,10 +2695,7 @@
                 });
         }
 
-        async function deleteSession(event, sessionId) {
-            if (event) {
-                event.stopPropagation();
-            }
+        async function deleteSession(sessionId) {
             if (!window.confirm('确认删除这条历史会话吗？')) {
                 return;
             }
@@ -1548,12 +2775,15 @@
                         state.currentModelId = Number(session.model_id);
                         document.getElementById('modelSelect').value = session.model_id;
                     }
-                    document.getElementById('chatTitle').textContent = session.title || '历史任务';
-                    document.getElementById('chatSub').textContent = '创建于 ' + formatTime(session.create_at) + '，最近更新 ' + formatTime(session.update_at);
+                    document.getElementById('chatTitle').textContent = session.title || '历史对话';
+                    var createAtFormatted = formatTime(session.create_at);
+                    var updateAtFormatted = formatTime(session.update_at);
+                    console.log('Session time debug:', { create_at: session.create_at, update_at: session.update_at, createAtFormatted, updateAtFormatted });
+                    document.getElementById('chatSub').textContent = '创建于 ' + createAtFormatted + '，最近更新 ' + updateAtFormatted;
                     document.getElementById('chatList').innerHTML = '';
                     (data.messages || []).forEach(renderStoredMessage);
                     if (!(data.messages || []).length) {
-                        renderEmpty();
+                        renderEmptyPrompts();
                     }
                     renderSessions(state.sessions);
                     scrollToBottom();
@@ -1679,17 +2909,10 @@
                 sendMessage();
             }
         });
-        document.getElementById('employeeSelect').addEventListener('change', function(){
-            var alias = (this.value || '').trim();
-            if (!alias) {
-                return;
-            }
-            fillMessage('@' + alias + ' ');
-            this.value = '';
-        });
         document.getElementById('modelSelect').addEventListener('change', function(){
             state.currentModelId = Number(this.value || 0) || null;
         });
+        initMusicProgressBars();
 
         bootstrap();
     </script>

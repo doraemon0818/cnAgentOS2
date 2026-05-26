@@ -10,7 +10,7 @@ from tornado.httpserver import HTTPServer
 # from app.controllers.base import BaseHandler
 # 引入auth-controller层
 from app.controllers.auth import LoginHandler,LogoutHandler,RegisterHandler
-from app.controllers.chat import UserChatBootstrapHandler,UserChatSessionHandler,UserChatStreamHandler
+from app.controllers.chat import UserChatBootstrapHandler,UserChatSessionHandler,UserChatStreamHandler,ImageProxyHandler
 from app.controllers.im import IMApiHandler, IMIndexHandler, IMStreamHandler, IMUploadHandler
 from app.controllers.home import IndexHandler
 # 引入admin-controller层
@@ -44,7 +44,7 @@ from app.controllers.admin_data_screen import (
 	AdminOpinionApiHandler,
 	AdminOpinionAnalyzeStreamHandler,
 )
-from app.controllers.employee import EmployeeOptionsHandler,EmployeeChatHandler,EmployeeStreamHandler
+from app.controllers.employee import EmployeeOptionsHandler,EmployeeChatHandler,EmployeeStreamHandler,WeatherImageHandler
 # 引入db-auth层
 from app.models.db import init_db
 
@@ -114,6 +114,8 @@ def make_app():
 		(r"/api/employee/options",EmployeeOptionsHandler),
 		(r"/api/employee/chat",EmployeeChatHandler),
 		(r"/api/employee/stream",EmployeeStreamHandler),
+		(r"/api/weather/image",WeatherImageHandler),
+		(r"/api/image/proxy",ImageProxyHandler),
 		(r"/admin/login",AdminLoginHandler),
 		(r"/admin/logout",AdminLogoutHandler),
 		(r"/admin",AdminIndexHandler),

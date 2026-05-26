@@ -55,7 +55,7 @@ class UserChatSessionRepository:
                 """
                 insert into user_chat_sessions(
                     user_id,username,title,model_id,model_name,last_message_preview,last_intent,message_count,create_at,update_at
-                ) values(?,?,?,?,?,'','',0,datetime('now'),datetime('now'))
+                ) values(?,?,?,?,?,'','',0,datetime('now','localtime'),datetime('now','localtime'))
                 """,
                 (user_id, username, title, model_id, model_name),
             )
@@ -127,7 +127,7 @@ class UserChatSessionRepository:
                 conn.execute(
                     """
                     update user_chat_sessions
-                    set last_message_preview=?,last_intent=?,model_id=?,model_name=?,message_count=?,update_at=datetime('now')
+                    set last_message_preview=?,last_intent=?,model_id=?,model_name=?,message_count=?,update_at=datetime('now','localtime')
                     where id=?
                     """,
                     (last_message_preview, last_intent, model_id, model_name, count_value, session_id),
@@ -136,7 +136,7 @@ class UserChatSessionRepository:
                 conn.execute(
                     """
                     update user_chat_sessions
-                    set title=?,last_message_preview=?,last_intent=?,model_id=?,model_name=?,message_count=?,update_at=datetime('now')
+                    set title=?,last_message_preview=?,last_intent=?,model_id=?,model_name=?,message_count=?,update_at=datetime('now','localtime')
                     where id=?
                     """,
                     (title, last_message_preview, last_intent, model_id, model_name, count_value, session_id),
@@ -198,7 +198,7 @@ class UserChatSessionRepository:
                 insert into user_chat_messages(
                     session_id,user_id,role,message_type,intent,model_id,model_name,content_text,content_markdown,
                     extra_json,prompt_tokens,completion_tokens,total_tokens,response_ms,create_at
-                ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
+                ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                 """,
                 (
                     session_id,

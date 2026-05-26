@@ -149,7 +149,7 @@ class ApiEndpointRepository:
                     update api_endpoints
                     set name=?,code=?,url=?,method=?,response_format=?,sample_url=?,default_qps=?,auth_note=?,
                         remark=?,headers_json=?,params_schema_json=?,body_template=?,timeout_seconds=?,status=?,
-                        update_at=datetime('now')
+                        update_at=datetime('now','localtime')
                     where id=?
                     """,
                     payload + (endpoint_id,),
@@ -160,7 +160,7 @@ class ApiEndpointRepository:
                     insert into api_endpoints(
                         name,code,url,method,response_format,sample_url,default_qps,auth_note,remark,
                         headers_json,params_schema_json,body_template,timeout_seconds,status,create_at,update_at
-                    ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                     """,
                     payload,
                 )

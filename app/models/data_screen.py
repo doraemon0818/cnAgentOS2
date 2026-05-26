@@ -91,7 +91,7 @@ class DataScreenNodeRepository:
                 conn.execute(
                     """
                     update data_screen_nodes
-                    set name=?,code=?,lat=?,lng=?,category=?,value=?,extra_json=?,status=?,update_at=datetime('now')
+                    set name=?,code=?,lat=?,lng=?,category=?,value=?,extra_json=?,status=?,update_at=datetime('now','localtime')
                     where id=?
                     """,
                     payload + (node_id,),
@@ -101,7 +101,7 @@ class DataScreenNodeRepository:
                     """
                     insert into data_screen_nodes(
                         name,code,lat,lng,category,value,extra_json,status,create_at,update_at
-                    ) values(?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                     """,
                     payload,
                 )
@@ -154,7 +154,7 @@ class DataScreenWordCloudRepository:
                 conn.execute(
                     """
                     insert into data_screen_wordcloud(word,frequency,source_type,source_id,create_at)
-                    values(?,?,?,?,datetime('now'))
+                    values(?,?,?,?,datetime('now','localtime'))
                     """,
                     (word, frequency, source_type, source_id),
                 )
@@ -176,7 +176,7 @@ class DataScreenWordCloudRepository:
                     conn.execute(
                         """
                         insert into data_screen_wordcloud(word,frequency,source_type,source_id,create_at)
-                        values(?,?,?,?,datetime('now'))
+                        values(?,?,?,?,datetime('now','localtime'))
                         """,
                         (word, count, source_type, source_id),
                     )

@@ -289,7 +289,7 @@ class UserRepository:
 				if not fields:
 					return False
 
-				fields.append("update_at=datetime('now')")
+				fields.append("update_at=datetime('now','localtime')")
 				params.append(user_id)
 
 				sql = f"update users set {','.join(fields)} where id=?"
@@ -312,7 +312,7 @@ class UserRepository:
 				if not user_row:
 					return False
 				conn.execute(
-					"update users set password_hash=?, salt=?, update_at=datetime('now') where id=?",
+					"update users set password_hash=?, salt=?, update_at=datetime('now','localtime') where id=?",
 					(password_hash, salt.hex(), user_id)
 				)
 			return True

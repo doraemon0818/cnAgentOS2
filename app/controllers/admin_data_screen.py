@@ -598,7 +598,7 @@ class OpinionAnalysisService:
                 """
                 insert into public_opinion_analysis(
                     title,content,sentiment,score,keywords_json,source_type,source_ids_json,model_name,status,create_at,update_at
-                ) values(?,?,?,?,?,'auto',?,?,1,datetime('now'),datetime('now'))
+                ) values(?,?,?,?,?,'auto',?,?,1,datetime('now','localtime'),datetime('now','localtime'))
                 """,
                 (
                     analysis["title"],

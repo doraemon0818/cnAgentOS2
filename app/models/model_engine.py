@@ -240,7 +240,7 @@ class ModelEngineRepository:
 	def _set_default(conn, model_id: int):
 		conn.execute("update model_services set is_default=0")
 		conn.execute(
-			"update model_services set is_default=1, update_at=datetime('now') where id=?",
+			"update model_services set is_default=1, update_at=datetime('now','localtime') where id=?",
 			(model_id,),
 		)
 
@@ -284,7 +284,7 @@ class ModelEngineRepository:
 					update model_services
 					set name=?,provider=?,base_url=?,api_path=?,api_key=?,model_name=?,system_prompt=?,
 						temperature=?,max_tokens=?,timeout_seconds=?,enable_sse=?,status=?,description=?,
-						update_at=datetime('now')
+						update_at=datetime('now','localtime')
 					where id=?
 					""",
 					(
@@ -312,7 +312,7 @@ class ModelEngineRepository:
 					insert into model_services(
 						name,provider,base_url,api_path,api_key,model_name,system_prompt,
 						temperature,max_tokens,timeout_seconds,enable_sse,is_default,status,description,create_at,update_at
-					) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+					) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
 					""",
 					(
 						name,
@@ -371,7 +371,7 @@ class ModelEngineRepository:
 				insert into model_usage_logs(
 					model_id,model_name,request_preview,response_preview,prompt_tokens,
 					completion_tokens,total_tokens,response_ms,success,error_message,create_at
-				) values(?,?,?,?,?,?,?,?,?,?,datetime('now'))
+				) values(?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
 				""",
 				(
 					model_id,

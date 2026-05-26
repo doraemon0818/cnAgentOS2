@@ -183,7 +183,7 @@ class SurveillanceSourceRepository:
                     update surveillance_sources
                     set name=?,code=?,description=?,entry_url_template=?,page_url_template=?,method=?,
                         headers_json=?,params_json=?,selectors_json=?,page_step=?,default_page_count=?,
-                        default_limit=?,status=?,update_at=datetime('now')
+                        default_limit=?,status=?,update_at=datetime('now','localtime')
                     where id=?
                     """,
                     payload + (source_id,),
@@ -195,7 +195,7 @@ class SurveillanceSourceRepository:
                         name,code,description,entry_url_template,page_url_template,method,
                         headers_json,params_json,selectors_json,page_step,default_page_count,
                         default_limit,status,create_at,update_at
-                    ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                     """,
                     payload,
                 )
@@ -341,7 +341,7 @@ class SurveillanceRecordRepository:
                     conn.execute(
                         """
                         update surveillance_records
-                        set title=?,summary=?,origin_site=?,publish_time=?,raw_json=?,update_at=datetime('now')
+                        set title=?,summary=?,origin_site=?,publish_time=?,raw_json=?,update_at=datetime('now','localtime')
                         where id=?
                         """,
                         (
@@ -359,7 +359,7 @@ class SurveillanceRecordRepository:
                         insert into surveillance_records(
                             source_id,source_name,keyword,page_no,title,url,summary,origin_site,publish_time,
                             raw_json,create_at,update_at
-                        ) values(?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+                        ) values(?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                         """,
                         (
                             source_id,

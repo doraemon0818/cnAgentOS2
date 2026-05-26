@@ -131,3 +131,62 @@ class UserChatStreamHandler(UserChatBaseHandler):
         except Exception as exc:
             self.write("data: " + json.dumps({"type": "error", "message": str(exc)}, ensure_ascii=False) + "\n\n")
             await self.flush()
+
+
+class ImageProxyHandler(BaseHandler):
+    async def get(self):
+        import urllib.parse
+        url = urllib.parse.unquote(self.get_argument("url", ""))
+        print(f"[ImageProxy] Request received, URL: {url[:100]}...")
+        if not url or not url.startswith("http"):
+            self.set_status(400)
+            self.write("Invalid URL")
+            return
+        allowed_domains = [
+            "p2.music.126.net",
+            "p1.music.126.net",
+            "music.126.net",
+            "music.163.com",
+        ]
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        print(f"[ImageProxy] Parsed domain: {parsed.netloc}")
+        if parsed.netloc not in allowed_domains:
+            self.set_status(403)
+            self.write(f"Domain not allowed: {parsed.netloc}")
+            return
+        try:
+            import requests
+            headers = {
+                "Referer": "https://music.163.com/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache"
+            }
+            print(f"[ImageProxy] Fetching image from: {url[:80]}...")
+            response = requests.get(
+                url,
+                headers=headers,
+                timeout=15,
+                verify=False,
+                allow_redirects=True
+            )
+            print(f"[ImageProxy] Response status: {response.status_code}")
+            if response.status_code != 200:
+                self.set_status(response.status_code)
+                self.write(f"Failed to fetch image: {response.status_code}")
+                return
+            content_type = response.headers.get("Content-Type", "image/jpeg")
+            self.set_header("Content-Type", content_type)
+            self.set_header("Cache-Control", "public, max-age=86400")
+            image_data = response.content
+            print(f"[ImageProxy] Success! Image size: {len(image_data)} bytes, Content-Type: {content_type}")
+            self.write(image_data)
+        except Exception as exc:
+            import traceback
+            print(f"[ImageProxy] Error: {exc}")
+            traceback.print_exc()
+            self.set_status(500)
+            self.write(f"Proxy error: {str(exc)}")

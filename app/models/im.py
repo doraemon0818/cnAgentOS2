@@ -41,6 +41,22 @@ def _content_preview(content_type: str, content_text: str, extra: Optional[Dict]
         return f"[表情] {content_text}"
     if content_type == "notice":
         return f"[公告] {_clip_text(content_text, 80)}"
+    music_card = extra.get("music_card")
+    if music_card and isinstance(music_card, dict):
+        song = music_card.get("song") or ""
+        singer = music_card.get("singer") or ""
+        if song and singer:
+            return f"🎵 {song} - {singer}"
+        if song:
+            return f"🎵 {song}"
+    weather_card = extra.get("weather_card")
+    if weather_card and isinstance(weather_card, dict):
+        city = weather_card.get("city") or weather_card.get("address") or ""
+        weather = weather_card.get("weather") or ""
+        if city and weather:
+            return f"🌤 {city} {weather}"
+        if city:
+            return f"🌤 {city}"
     return _clip_text(content_text, 80)
 
 
@@ -165,7 +181,7 @@ class IMRepository:
         conn.execute(
             """
             update im_conversation_members
-            set last_read_at=datetime('now')
+            set last_read_at=datetime('now','localtime')
             where conversation_id=? and user_id=? and member_type=? and status=1
             """,
             (conversation_id, user_id, IMRepository.MEMBER_USER),
@@ -303,7 +319,7 @@ class IMRepository:
         conn.execute(
             """
             update im_conversations
-            set last_message_preview=?,last_sender_name=?,last_message_type=?,last_message_at=datetime('now'),update_at=datetime('now')
+            set last_message_preview=?,last_sender_name=?,last_message_type=?,last_message_at=datetime('now','localtime'),update_at=datetime('now','localtime')
             where id=?
             """,
             (preview, sender_name, content_type, conversation_id),
@@ -381,7 +397,7 @@ class IMRepository:
                 conn.execute(
                     """
                     insert into im_conversation_members(conversation_id,member_type,user_id,employee_id,role,status,joined_at)
-                    values(?,?,?,?,?,?,datetime('now'))
+                    values(?,?,?,?,?,?,datetime('now','localtime'))
                     """,
                     (conversation_id, IMRepository.MEMBER_USER, member_user_id, None, role, 1),
                 )
@@ -397,7 +413,7 @@ class IMRepository:
             return
         conversation_id = int(row["id"])
         conn.execute(
-            "update im_conversations set status=-1,update_at=datetime('now') where id=?",
+            "update im_conversations set status=-1,update_at=datetime('now','localtime') where id=?",
             (conversation_id,),
         )
         conn.execute(
@@ -501,7 +517,7 @@ class IMRepository:
                         target_user_id=?,
                         action_user_id=0,
                         action_at='',
-                        update_at=datetime('now')
+                        update_at=datetime('now','localtime')
                     where id=?
                     """,
                     (IMRepository.FRIEND_PENDING, user_id, friend_user_id, row["id"]),
@@ -513,7 +529,7 @@ class IMRepository:
                     insert into im_friendships(
                         user_low_id,user_high_id,status,requester_user_id,target_user_id,action_user_id,action_at,create_at,update_at
                     )
-                    values(?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+                    values(?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                     """,
                     (user_low_id, user_high_id, IMRepository.FRIEND_PENDING, user_id, friend_user_id, 0, ""),
                 )
@@ -573,8 +589,8 @@ class IMRepository:
                 update im_friendships
                 set status=?,
                     action_user_id=?,
-                    action_at=datetime('now'),
-                    update_at=datetime('now')
+                    action_at=datetime('now','localtime'),
+                    update_at=datetime('now','localtime')
                 where id=?
                 """,
                 (IMRepository.FRIEND_ACCEPTED, user_id, row["id"]),
@@ -596,8 +612,8 @@ class IMRepository:
                 update im_friendships
                 set status=?,
                     action_user_id=?,
-                    action_at=datetime('now'),
-                    update_at=datetime('now')
+                    action_at=datetime('now','localtime'),
+                    update_at=datetime('now','localtime')
                 where id=?
                 """,
                 (IMRepository.FRIEND_REJECTED, user_id, row["id"]),
@@ -621,8 +637,8 @@ class IMRepository:
                     requester_user_id=?,
                     target_user_id=?,
                     action_user_id=?,
-                    action_at=datetime('now'),
-                    update_at=datetime('now')
+                    action_at=datetime('now','localtime'),
+                    update_at=datetime('now','localtime')
                 where id=?
                 """,
                 (IMRepository.FRIEND_DELETED, user_id, friend_user_id, user_id, row["id"]),
@@ -645,7 +661,7 @@ class IMRepository:
             conversation_id = int(row["id"])
             if int(row["status"] or 0) != 1:
                 conn.execute(
-                    "update im_conversations set status=1,update_at=datetime('now') where id=?",
+                    "update im_conversations set status=1,update_at=datetime('now','localtime') where id=?",
                     (conversation_id,),
                 )
             IMRepository._sync_private_conversation_members(conn, conversation_id, user_id, other_user_id)
@@ -655,7 +671,7 @@ class IMRepository:
             """
             insert into im_conversations(
                 chat_type,name,owner_user_id,private_key,last_message_at,status,create_at,update_at
-            ) values(?,?,?,?,datetime('now'),1,datetime('now'),datetime('now'))
+            ) values(?,?,?,?,datetime('now','localtime'),1,datetime('now','localtime'),datetime('now','localtime'))
             """,
             (IMRepository.CHAT_PRIVATE, "", user_id, private_key),
         )
@@ -681,7 +697,7 @@ class IMRepository:
             """
             insert into im_conversations(
                 chat_type,name,owner_user_id,employee_id,private_key,last_message_at,status,create_at,update_at
-            ) values(?,?,?,?,?,datetime('now'),1,datetime('now'),datetime('now'))
+            ) values(?,?,?,?,?,datetime('now','localtime'),1,datetime('now','localtime'),datetime('now','localtime'))
             """,
             (IMRepository.CHAT_EMPLOYEE, employee["name"], user_id, employee_id, private_key),
         )
@@ -689,14 +705,14 @@ class IMRepository:
         conn.execute(
             """
             insert into im_conversation_members(conversation_id,member_type,user_id,employee_id,role,status,joined_at)
-            values(?,?,?,?,?,?,datetime('now'))
+            values(?,?,?,?,?,?,datetime('now','localtime'))
             """,
             (conversation_id, IMRepository.MEMBER_USER, user_id, None, "owner", 1),
         )
         conn.execute(
             """
             insert into im_conversation_members(conversation_id,member_type,user_id,employee_id,role,status,joined_at)
-            values(?,?,?,?,?,?,datetime('now'))
+            values(?,?,?,?,?,?,datetime('now','localtime'))
             """,
             (conversation_id, IMRepository.MEMBER_EMPLOYEE, None, employee_id, "assistant", 1),
         )
@@ -737,7 +753,7 @@ class IMRepository:
                 """
                 insert into im_conversations(
                     chat_type,name,owner_user_id,last_message_at,status,create_at,update_at
-                ) values(?,?,?,datetime('now'),1,datetime('now'),datetime('now'))
+                ) values(?,?,?,datetime('now','localtime'),1,datetime('now','localtime'),datetime('now','localtime'))
                 """,
                 (IMRepository.CHAT_GROUP, name, user_id),
             )
@@ -745,7 +761,7 @@ class IMRepository:
             group_cursor = conn.execute(
                 """
                 insert into im_groups(conversation_id,name,owner_user_id,notice,status,create_at,update_at)
-                values(?,?,?,'',1,datetime('now'),datetime('now'))
+                values(?,?,?,'',1,datetime('now','localtime'),datetime('now','localtime'))
                 """,
                 (conversation_id, name, user_id),
             )
@@ -756,7 +772,7 @@ class IMRepository:
                 conn.execute(
                     """
                     insert into im_conversation_members(conversation_id,member_type,user_id,employee_id,role,status,joined_at)
-                    values(?,?,?,?,?,?,datetime('now'))
+                    values(?,?,?,?,?,?,datetime('now','localtime'))
                     """,
                     (
                         conversation_id,
@@ -774,7 +790,7 @@ class IMRepository:
                 conn.execute(
                     """
                     insert into im_conversation_members(conversation_id,member_type,user_id,employee_id,role,status,joined_at)
-                    values(?,?,?,?,?,?,datetime('now'))
+                    values(?,?,?,?,?,?,datetime('now','localtime'))
                     """,
                     (conversation_id, IMRepository.MEMBER_EMPLOYEE, None, employee_id, "assistant", 1),
                 )
@@ -942,7 +958,7 @@ class IMRepository:
             cursor = conn.execute(
                 """
                 insert into im_files(file_hash,original_name,storage_name,file_ext,mime_type,size_bytes,relative_path,upload_user_id,create_at)
-                values(?,?,?,?,?,?,?,?,datetime('now'))
+                values(?,?,?,?,?,?,?,?,datetime('now','localtime'))
                 """,
                 (file_hash, original_name, storage_name, ext.lower(), mime_type, int(size_bytes or 0), relative_path, int(upload_user_id)),
             )
@@ -972,6 +988,10 @@ class IMRepository:
                 weather_payload = payload.get("data") if isinstance(payload.get("data"), dict) else payload
                 if isinstance(weather_payload, dict):
                     extra["weather_card"] = weather_payload
+            if isinstance(payload, dict) and ("音乐" in employee.get("alias", "") or "音乐" in employee.get("name", "")):
+                music_payload = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+                if isinstance(music_payload, dict):
+                    extra["music_card"] = music_payload
         return extra
 
     @staticmethod
@@ -1053,7 +1073,7 @@ class IMRepository:
                     insert into im_private_messages(
                         conversation_id,sender_type,sender_user_id,sender_employee_id,receiver_user_id,receiver_employee_id,
                         content_type,content_text,file_id,extra_json,create_at
-                    ) values(?,?,?,?,?,?,?,?,?,?,datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                     """,
                     (
                         conversation_id,
@@ -1092,14 +1112,15 @@ class IMRepository:
                             request_text = f"用户发送了表情：{content_text}"
                         else:
                             request_text = content_text
-                        reply = IMRepository._call_employee_reply(employee["alias"], request_text)
-                        reply_extra = {"employee_alias": employee["alias"]}
+                        reply_result = IMRepository._call_employee_reply(employee["alias"], request_text)
+                        reply = reply_result["content"]
+                        reply_extra = IMRepository._build_employee_reply_extra(employee, reply_result)
                         reply_cursor = conn.execute(
                             """
                             insert into im_private_messages(
                                 conversation_id,sender_type,sender_user_id,sender_employee_id,receiver_user_id,receiver_employee_id,
                                 content_type,content_text,file_id,extra_json,create_at
-                            ) values(?,?,?,?,?,?,?,?,?,?,datetime('now'))
+                            ) values(?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                             """,
                             (
                                 conversation_id,
@@ -1144,7 +1165,7 @@ class IMRepository:
                 """
                 insert into im_group_messages(
                     conversation_id,group_id,sender_type,sender_user_id,sender_employee_id,content_type,content_text,file_id,extra_json,create_at
-                ) values(?,?,?,?,?,?,?,?,?,datetime('now'))
+                ) values(?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                 """,
                 (
                     conversation_id,
@@ -1202,7 +1223,7 @@ class IMRepository:
             # 当前调用链主要在异步 Handler 内，避免在模型层里嵌套事件循环。
             raise RuntimeError("请使用异步聊天接口发送数字员工消息")
         result = asyncio.run(coroutine)
-        return result["content"]
+        return result
 
     @staticmethod
     def _handle_group_employee_reply(conn, user_id: int, conversation_id: int, group_id: int, content_text: str):
@@ -1232,16 +1253,18 @@ class IMRepository:
             return None
 
         try:
-            reply_text = IMRepository._sync_employee_reply(selected["alias"], content_text)
+            reply_result = IMRepository._sync_employee_reply(selected["alias"], content_text)
+            reply_text = reply_result["content"]
         except Exception as exc:
-            reply_text = f"数字员工响应失败：{exc}"
+            reply_result = {"content": f"数字员工响应失败：{exc}"}
+            reply_text = reply_result["content"]
 
-        extra = {"employee_alias": selected["alias"]}
+        extra = IMRepository._build_employee_reply_extra(selected, reply_result)
         cursor = conn.execute(
             """
             insert into im_group_messages(
                 conversation_id,group_id,sender_type,sender_user_id,sender_employee_id,content_type,content_text,file_id,extra_json,create_at
-            ) values(?,?,?,?,?,?,?,?,?,datetime('now'))
+            ) values(?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
             """,
             (
                 conversation_id,
@@ -1323,13 +1346,13 @@ class IMRepository:
             if not group_row:
                 return False, "群聊不存在"
             conn.execute(
-                "update im_groups set notice=?,update_at=datetime('now') where id=?",
+                "update im_groups set notice=?,update_at=datetime('now','localtime') where id=?",
                 (content, group_id),
             )
             conn.execute(
                 """
                 insert into im_announcements(group_id,title,content,status,published_by,create_at,update_at)
-                values(?,?,?,?,?,datetime('now'),datetime('now'))
+                values(?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                 """,
                 (group_id, title, content, 1, publish_user_id),
             )
@@ -1338,7 +1361,7 @@ class IMRepository:
                 """
                 insert into im_group_messages(
                     conversation_id,group_id,sender_type,sender_user_id,sender_employee_id,content_type,content_text,file_id,extra_json,create_at
-                ) values(?,?,?,?,?,?,?,?,?,datetime('now'))
+                ) values(?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                 """,
                 (group_row["conversation_id"], group_id, IMRepository.SENDER_SYSTEM, publish_user_id, None, IMRepository.CONTENT_NOTICE, content, None, json.dumps(extra, ensure_ascii=False)),
             )
@@ -1351,8 +1374,8 @@ class IMRepository:
             row = conn.execute("select conversation_id from im_groups where id=?", (group_id,)).fetchone()
             if not row:
                 return False, "群聊不存在"
-            conn.execute("update im_groups set status=?,update_at=datetime('now') where id=?", (int(status), group_id))
-            conn.execute("update im_conversations set status=?,update_at=datetime('now') where id=?", (int(status), row["conversation_id"]))
+            conn.execute("update im_groups set status=?,update_at=datetime('now','localtime') where id=?", (int(status), group_id))
+            conn.execute("update im_conversations set status=?,update_at=datetime('now','localtime') where id=?", (int(status), row["conversation_id"]))
         return True, "群状态更新成功"
 
     @staticmethod
@@ -1468,7 +1491,7 @@ class IMRepository:
                 conn.execute(
                     """
                     update im_chat_servers
-                    set name=?,code=?,protocol=?,base_url=?,health_url=?,weight=?,priority=?,status=?,remark=?,update_at=datetime('now')
+                    set name=?,code=?,protocol=?,base_url=?,health_url=?,weight=?,priority=?,status=?,remark=?,update_at=datetime('now','localtime')
                     where id=?
                     """,
                     payload + (int(server_id),),
@@ -1478,7 +1501,7 @@ class IMRepository:
                     """
                     insert into im_chat_servers(
                         name,code,protocol,base_url,health_url,weight,priority,status,last_health_status,last_error,remark,create_at,update_at
-                    ) values(?,?,?,?,?,?,?,?, 'unknown','',?,datetime('now'),datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?, 'unknown','',?,datetime('now','localtime'),datetime('now','localtime'))
                     """,
                     payload,
                 )
@@ -1577,7 +1600,7 @@ class IMRepository:
                 conn.execute(
                     """
                     update im_ai_tools
-                    set name=?,code=?,tool_type=?,endpoint_id=?,description=?,config_json=?,status=?,update_at=datetime('now')
+                    set name=?,code=?,tool_type=?,endpoint_id=?,description=?,config_json=?,status=?,update_at=datetime('now','localtime')
                     where id=?
                     """,
                     payload + (int(tool_id),),
@@ -1587,7 +1610,7 @@ class IMRepository:
                 cursor = conn.execute(
                     """
                     insert into im_ai_tools(name,code,tool_type,endpoint_id,description,config_json,status,create_at,update_at)
-                    values(?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+                    values(?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                     """,
                     payload,
                 )
@@ -1598,7 +1621,7 @@ class IMRepository:
                 conn.execute(
                     """
                     insert into im_employee_tools(employee_id,tool_id,role_scope,create_at)
-                    values(?,?,?,datetime('now'))
+                    values(?,?,?,datetime('now','localtime'))
                     """,
                     (employee_id, current_tool_id, "all"),
                 )
@@ -1642,7 +1665,7 @@ class IMAsyncService:
                     insert into im_private_messages(
                         conversation_id,sender_type,sender_user_id,sender_employee_id,receiver_user_id,receiver_employee_id,
                         content_type,content_text,file_id,extra_json,create_at
-                    ) values(?,?,?,?,?,?,?,?,?,?,datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                     """,
                     (
                         int(conversation_id),
@@ -1671,7 +1694,7 @@ class IMAsyncService:
                     """
                     insert into im_group_messages(
                         conversation_id,group_id,sender_type,sender_user_id,sender_employee_id,content_type,content_text,file_id,extra_json,create_at
-                    ) values(?,?,?,?,?,?,?,?,?,datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                     """,
                     (
                         int(conversation_id),
@@ -1754,7 +1777,7 @@ class IMAsyncService:
                     insert into im_private_messages(
                         conversation_id,sender_type,sender_user_id,sender_employee_id,receiver_user_id,receiver_employee_id,
                         content_type,content_text,file_id,extra_json,create_at
-                    ) values(?,?,?,?,?,?,?,?,?,?,datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                     """,
                     (
                         conversation_id,
@@ -1822,7 +1845,7 @@ class IMAsyncService:
                 """
                 insert into im_group_messages(
                     conversation_id,group_id,sender_type,sender_user_id,sender_employee_id,content_type,content_text,file_id,extra_json,create_at
-                ) values(?,?,?,?,?,?,?,?,?,datetime('now'))
+                ) values(?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
                 """,
                 (
                     conversation_id,

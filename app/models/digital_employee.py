@@ -210,7 +210,7 @@ class DigitalEmployeeRepository:
                     update digital_employees
                     set name=?,alias=?,code=?,category=?,model_id=?,endpoint_id=?,prompt=?,api_param_name=?,
                         api_params_json=?,response_template=?,default_user_input=?,description=?,sort=?,status=?,
-                        update_at=datetime('now')
+                        update_at=datetime('now','localtime')
                     where id=?
                     """,
                     payload + (employee_id,),
@@ -221,7 +221,7 @@ class DigitalEmployeeRepository:
                     insert into digital_employees(
                         name,alias,code,category,model_id,endpoint_id,prompt,api_param_name,api_params_json,
                         response_template,default_user_input,description,sort,status,create_at,update_at
-                    ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'),datetime('now'))
+                    ) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                     """,
                     payload,
                 )
@@ -274,13 +274,29 @@ class DigitalEmployeeRepository:
         params = _safe_json_loads(employee.get("api_params_json"), {})
         request_text = DigitalEmployeeRepository._get_employee_request_text(employee, user_text)
         param_name = (employee.get("api_param_name") or "").strip()
-        if param_name and request_text:
+        is_music = "音乐" in employee.get("alias", "") or "音乐" in employee.get("name", "")
+        
+        if is_music and request_text and param_name:
+            keyword = DigitalEmployeeRepository._extract_music_keyword(request_text)
+            params[param_name] = keyword
+        elif param_name and request_text:
             params[param_name] = request_text
+        elif param_name and not request_text and employee.get("default_user_input"):
+            params[param_name] = employee.get("default_user_input")
+            
         if param_name and not params.get(param_name):
             raise RuntimeError(f"请使用 @{employee['alias']} 后补充参数内容")
 
+        if is_music:
+            params.setdefault("limit", "30")
+
         result = ApiEndpointRepository.call_endpoint(endpoint, params=params)
         payload = result.get("json") if result.get("json") is not None else {"text": result.get("text", "")}
+        
+        if is_music:
+            keyword = DigitalEmployeeRepository._extract_music_keyword(request_text) if request_text else "热歌"
+            payload = DigitalEmployeeRepository._normalize_music_payload(payload, keyword)
+        
         content = _render_template(employee.get("response_template") or "", payload)
         if not content:
             content = json.dumps(payload, ensure_ascii=False, indent=2)
@@ -290,6 +306,225 @@ class DigitalEmployeeRepository:
             "status_code": result.get("status_code"),
             "content_type": result.get("content_type"),
         }
+
+    @staticmethod
+    def _extract_music_keyword(text: str) -> str:
+        """从用户输入中提取音乐搜索关键词"""
+        text = (text or "").strip()
+        if not text:
+            return "热歌"
+        
+        # 移除常见的前缀词
+        prefixes = ["来首", "播放", "听", "找", "搜索", "查找"]
+        for prefix in prefixes:
+            if text.startswith(prefix):
+                text = text[len(prefix):].strip()
+                break
+        
+        # 移除后缀词
+        suffixes = ["的歌", "的歌曲", "的音乐", "的歌单", "歌", "歌曲", "音乐"]
+        for suffix in suffixes:
+            if text.endswith(suffix):
+                text = text[:-len(suffix)].strip()
+                break
+        
+        # 如果处理后为空，返回热歌作为默认关键词
+        if not text:
+            return "热歌"
+
+        return text
+
+    @staticmethod
+    def _filter_music_by_keyword(data: list, keyword: str) -> list:
+        if not keyword or not data:
+            return data
+        
+        kw = keyword.lower().strip()
+        japanese_re = re.compile(r'[\u3040-\u309f\u30a0-\u30ff]')
+        korean_re = re.compile(r'[\uac00-\ud7af]')
+        
+        lang_map = {"日语": "ja", "日文": "ja", "日本": "ja", "韩语": "ko", "韩文": "ko", "韩国": "ko", "英语": "en", "英文": "en"}
+        lang = lang_map.get(kw)
+        
+        if lang:
+            def lang_match(item):
+                song = (item.get("song") or "").lower()
+                singer = (item.get("singer") or item.get("sing") or "").lower()
+                combined = song + " " + singer
+                if lang == "ja":
+                    return bool(japanese_re.search(combined))
+                elif lang == "ko":
+                    return bool(korean_re.search(combined))
+                elif lang == "en":
+                    has_ascii = bool(re.search(r'[a-zA-Z]', combined))
+                    no_cjk = not bool(re.search(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]', combined))
+                    return has_ascii and no_cjk
+                return True
+            filtered = [item for item in data if lang_match(item)]
+            if filtered:
+                return filtered
+            return data
+        
+        result = []
+        for item in data:
+            song = (item.get("song") or "").lower()
+            singer = (item.get("singer") or item.get("sing") or "").lower()
+            if kw in song or kw in singer:
+                result.append(item)
+        return result if result else data
+
+    @staticmethod
+    def _refresh_music_cover(song_id: int, existing_cover: str = "") -> str:
+        """通过网易云音乐API刷新歌曲封面URL"""
+        if not song_id or not str(song_id).isdigit():
+            return existing_cover
+        try:
+            import requests
+            url = f"https://music.163.com/api/song/detail?id={song_id}&ids=[{song_id}]"
+            headers = {
+                "Referer": "https://music.163.com/",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Cookie": "appver=2.0.2"
+            }
+            response = requests.get(url, headers=headers, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                songs = data.get("songs", [])
+                if songs and isinstance(songs, list):
+                    album = songs[0].get("album") or {}
+                    new_cover = album.get("picUrl") or album.get("pic_url") or album.get("coverImgUrl") or ""
+                    if new_cover:
+                        print(f"[MusicCover] Refreshed cover for song {song_id}: {new_cover[:60]}...")
+                        return new_cover
+        except Exception as e:
+            print(f"[MusicCover] Failed to refresh cover for song {song_id}: {e}")
+        return existing_cover
+
+    @staticmethod
+    def _normalize_music_payload(payload: Dict, keyword: str = None) -> Dict:
+        """标准化音乐API返回的数据格式，支持按关键词本地过滤"""
+        if not isinstance(payload, dict):
+            return payload
+        
+        search_result = payload.get("result")
+        if isinstance(search_result, dict) and "songs" in search_result:
+            songs = search_result.get("songs") or []
+            free_songs = [s for s in songs if s.get("fee") in (0, 8)]
+
+            def _search_norm(s):
+                s_id = s.get("id")
+                artists = [_a.get("name", "") for _a in (s.get("artists") or s.get("ar") or []) if _a.get("name")]
+                album = s.get("album") or s.get("al") or {}
+                cover = album.get("picUrl") or ""
+                if not cover and s.get("artists"):
+                    first_artist = s["artists"][0] if isinstance(s["artists"], list) and s["artists"] else {}
+                    cover = first_artist.get("img1v1Url") or ""
+                if not cover and s.get("ar"):
+                    first_artist = s["ar"][0] if isinstance(s["ar"], list) and s["ar"] else {}
+                    cover = first_artist.get("img1v1Url") or ""
+                if not cover:
+                    cover = album.get("pic_url") or album.get("coverImgUrl") or ""
+                cover = DigitalEmployeeRepository._refresh_music_cover(s_id, cover)
+                return {
+                    "song": s.get("name") or "未知歌曲",
+                    "singer": " / ".join(artists) if artists else "未知歌手",
+                    "music": f"https://music.163.com/song/media/outer/url?id={s_id}.mp3" if s_id else "",
+                    "cover": cover,
+                }
+
+            playlist = [_search_norm(s) for s in free_songs]
+
+            if keyword and keyword != "random" and keyword != "热歌":
+                playlist = DigitalEmployeeRepository._filter_music_by_keyword(playlist, keyword)
+
+            normalized = {
+                "song": playlist[0]["song"] if playlist else "未知歌曲",
+                "singer": playlist[0]["singer"] if playlist else "未知歌手",
+                "music": playlist[0]["music"] if playlist else "",
+                "cover": playlist[0]["cover"] if playlist else "",
+                "source": "网易云音乐搜索",
+                "playlist": playlist,
+                "current_index": 0,
+                "songCount": search_result.get("songCount", len(songs)),
+                "freeCount": len(free_songs),
+            }
+            if "data" in payload:
+                payload["data"] = normalized
+            else:
+                payload.update(normalized)
+            return payload
+        
+        data = payload.get("data")
+        if data is None and isinstance(payload, dict) and any(k in payload for k in ("song", "singer", "Music", "music")):
+            data = payload
+        
+        def _normalize_item(item):
+            if not isinstance(item, dict):
+                return None
+            return {
+                "song": item.get("song") or item.get("name") or item.get("title") or "未知歌曲",
+                "singer": item.get("singer") or item.get("artist") or item.get("author") or item.get("sing") or "未知歌手",
+                "music": item.get("music") or item.get("Music") or item.get("url") or item.get("audio") or item.get("play_url") or "",
+                "cover": item.get("cover") or item.get("pic") or item.get("image") or item.get("poster") or "",
+            }
+        
+        if isinstance(data, dict):
+            if "Music" in data and "music" not in data:
+                data["music"] = data["Music"]
+            
+            normalized = {
+                "song": data.get("song") or data.get("name") or data.get("title") or "未知歌曲",
+                "singer": data.get("singer") or data.get("artist") or data.get("author") or data.get("sing") or "未知歌手",
+                "music": data.get("music") or data.get("Music") or data.get("url") or data.get("audio") or data.get("play_url") or "",
+                "cover": data.get("cover") or data.get("pic") or data.get("image") or data.get("poster") or "",
+                "source": data.get("source") or data.get("platform") or data.get("from") or "音乐",
+            }
+            
+            playlist = data.get("playlist") or data.get("playlist_data") or []
+            if isinstance(playlist, list) and len(playlist) > 0:
+                normalized_playlist = [_normalize_item(item) for item in playlist]
+                normalized_playlist = [item for item in normalized_playlist if item is not None]
+                
+                if keyword and keyword != "random" and keyword != "热歌":
+                    normalized_playlist = DigitalEmployeeRepository._filter_music_by_keyword(normalized_playlist, keyword)
+                
+                normalized["playlist"] = normalized_playlist
+                normalized["current_index"] = data.get("current_index") or 0
+                
+                if normalized_playlist:
+                    normalized["song"] = normalized_playlist[0]["song"]
+                    normalized["singer"] = normalized_playlist[0]["singer"]
+                    normalized["music"] = normalized_playlist[0]["music"]
+                    normalized["cover"] = normalized_playlist[0]["cover"]
+            
+            if "data" in payload:
+                payload["data"] = normalized
+            else:
+                payload.update(normalized)
+        elif isinstance(data, list):
+            if len(data) > 0 and isinstance(data[0], dict):
+                normalized_playlist = [_normalize_item(item) for item in data]
+                normalized_playlist = [item for item in normalized_playlist if item is not None]
+                
+                if keyword and keyword != "random" and keyword != "热歌":
+                    normalized_playlist = DigitalEmployeeRepository._filter_music_by_keyword(normalized_playlist, keyword)
+                
+                first_item = normalized_playlist[0] if normalized_playlist else _normalize_item(data[0])
+                normalized = {
+                    "song": first_item.get("song") or "未知歌曲",
+                    "singer": first_item.get("singer") or "未知歌手",
+                    "music": first_item.get("music") or "",
+                    "cover": first_item.get("cover") or "",
+                    "source": first_item.get("source") or first_item.get("platform") or first_item.get("from") or "音乐",
+                    "playlist": normalized_playlist,
+                    "current_index": 0,
+                }
+                if "data" in payload:
+                    payload["data"] = normalized
+                else:
+                    payload.update(normalized)
+        
+        return payload
 
     @staticmethod
     async def chat_once(message: str):
@@ -346,17 +581,25 @@ class DigitalEmployeeRepository:
 
         api_result = DigitalEmployeeRepository._resolve_api_content(employee, user_text)
         weather_card = None
+        music_card = None
         payload = api_result["payload"]
         if isinstance(payload, dict) and ("天气" in employee.get("alias", "") or "天气" in employee.get("name", "")):
             weather_payload = payload.get("data") if isinstance(payload.get("data"), dict) else payload
             if isinstance(weather_payload, dict):
                 weather_card = weather_payload
+                if "city" not in weather_card and user_text:
+                    weather_card["city"] = user_text.strip()
+        if isinstance(payload, dict) and ("音乐" in employee.get("alias", "") or "音乐" in employee.get("name", "")):
+            music_payload = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+            if isinstance(music_payload, dict):
+                music_card = music_payload
         return {
             "employee": employee,
             "category": employee["category"],
             "content": api_result["content"],
             "payload": payload,
             "weather_card": weather_card,
+            "music_card": music_card,
             "status_code": api_result["status_code"],
             "content_type": api_result["content_type"],
         }
@@ -424,17 +667,25 @@ class DigitalEmployeeRepository:
 
         api_result = DigitalEmployeeRepository._resolve_api_content(employee, user_text)
         weather_card = None
+        music_card = None
         payload = api_result["payload"]
         if isinstance(payload, dict) and ("天气" in employee.get("alias", "") or "天气" in employee.get("name", "")):
             weather_payload = payload.get("data") if isinstance(payload.get("data"), dict) else payload
             if isinstance(weather_payload, dict):
                 weather_card = weather_payload
+                if "city" not in weather_card and user_text:
+                    weather_card["city"] = user_text.strip()
+        if isinstance(payload, dict) and ("音乐" in employee.get("alias", "") or "音乐" in employee.get("name", "")):
+            music_payload = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+            if isinstance(music_payload, dict):
+                music_card = music_payload
         yield {
             "type": "done",
             "employee": {"name": employee["name"], "alias": employee["alias"], "category": employee["category"]},
             "content": api_result["content"],
             "payload": payload,
             "weather_card": weather_card,
+            "music_card": music_card,
             "status_code": api_result["status_code"],
             "content_type": api_result["content_type"],
         }

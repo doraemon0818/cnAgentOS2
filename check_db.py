@@ -1,15 +1,19 @@
-from app.models.db import get_connection
+import sqlite3, datetime
+conn = sqlite3.connect('database/app.db')
+conn.row_factory = sqlite3.Row
 
-conn = get_connection()
+# Check current SQLite time vs actual time
+r = conn.execute("select datetime('now') as utc_now, datetime('now','localtime') as local_now").fetchone()
+print(f"UTC now (SQLite):  {r['utc_now']}")
+print(f"Local now (SQLite): {r['local_now']}")
+print(f"Python now (local): {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"Python now (UTC):   {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}")
 
-total = conn.execute('select count(*) as total from user_chat_messages').fetchone()['total']
-user_count = conn.execute("select count(*) as total from user_chat_messages where role='user'").fetchone()['total']
+# Check a recent record
+r2 = conn.execute("select id, create_at, update_at from api_endpoints order by id desc limit 1").fetchone()
+if r2:
+    print(f"\nLatest api_endpoint: create_at={r2['create_at']}, update_at={r2['update_at']}")
 
-print(f'Total messages: {total}')
-print(f'User messages: {user_count}')
-
-rows = conn.execute('select role, content_text from user_chat_messages order by id desc limit 5').fetchall()
-print('Last 5 messages:')
-for r in rows:
-    content = r[1][:50] if r[1] else ''
-    print(f'  role={r[0]}, content={content}...')
+r3 = conn.execute("select id, create_at, update_at from digital_employees order by id desc limit 1").fetchone()
+if r3:
+    print(f"Latest employee: create_at={r3['create_at']}, update_at={r3['update_at']}")
