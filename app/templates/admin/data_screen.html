@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+    <script src="{{ static_url('echarts/echarts.min.js') }}"></script>
+    <script src="{{ static_url('echarts/echarts-gl.min.js') }}"></script>
+    <style>
+        body { padding: 15px; background: transparent; }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 15px;
+        }
+        .summary-card {
+            padding: 18px;
+            border-radius: 18px;
+        }
+        .summary-label {
+            color: #96abd3;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .summary-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f5f8ff;
+        }
+        .summary-sub {
+            margin-top: 8px;
+            color: #9fb5de;
+            font-size: 12px;
+        }
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .chart-panel {
+            padding: 15px;
+            border-radius: 18px;
+        }
+        .panel-title {
+            color: #e6efff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-container {
+            width: 100%;
+            height: 280px;
+        }
+        .globe-container {
+            width: 100%;
+            height: 520px;
+        }
+        .keyword-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .keyword-tag {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(88, 142, 255, 0.14);
+            color: #a7c4ff;
+            font-size: 12px;
+        }
+        .scroll-list {
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 10px;
+        }
+        .scroll-list-inner {
+            animation: scrollUp 20s linear infinite;
+        }
+        .scroll-list-inner:hover {
+            animation-play-state: paused;
+        }
+        .scroll-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(111, 132, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .scroll-item .item-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 10px;
+            font-size: 13px;
+            color: #c8d8f5;
+        }
+        .scroll-item .item-source {
+            color: #9fc0ff;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .scroll-item .item-time {
+            color: #79aebb;
+            font-size: 12px;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+        @keyframes scrollUp {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+        .refresh-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        @media (max-width: 1400px) {
+            .content-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 1000px) {
+            .content-grid { grid-template-columns: 1fr; }
+            .summary-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">用户总数</div>
+            <div class="summary-value" id="statUsers">0</div>
+            <div class="summary-sub">注册用户数量</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">对话次数</div>
+            <div class="summary-value" id="statChat">0</div>
+            <div class="summary-sub">用户对话消息总数</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">采集数据</div>
+            <div class="summary-value" id="statSurveillance">0</div>
+            <div class="summary-sub">瞭望采集记录数</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">深度采集</div>
+            <div class="summary-value" id="statDeep">0</div>
+            <div class="summary-sub">AI深度采集完成数</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">模型调用</div>
+            <div class="summary-value" id="statModel">0</div>
+            <div class="summary-sub">模型API调用次数</div>
+        </div>
+    </div>
+
+    <div class="refresh-bar">
+        <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" id="refreshWordcloudBtn">
+            <i class="layui-icon layui-icon-refresh"></i> 刷新词云
+        </button>
+        <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" id="autoRefreshBtn">
+            <i class="layui-icon layui-icon-refresh-3"></i> 自动刷新
+        </button>
+    </div>
+
+    <div class="content-grid">
+        <div class="chart-panel">
+            <div class="panel-title"><i class="fas fa-cloud"></i> 实时词云</div>
+            <div id="wordcloudChart" class="chart-container"></div>
+            <div class="keyword-tags" id="keywordTags"></div>
+        </div>
+
+        <div class="chart-panel">
+            <div class="panel-title"><i class="fas fa-globe-americas"></i> 数据地球</div>
+            <div id="globeChart" class="globe-container"></div>
+        </div>
+
+        <div class="chart-panel">
+            <div class="panel-title"><i class="fas fa-chart-line"></i> 数据趋势</div>
+            <div id="trendChart" class="chart-container"></div>
+            <div class="panel-title" style="margin-top:15px;"><i class="fas fa-chart-bar"></i> 数据源分布</div>
+            <div id="sourceChart" class="chart-container" style="height:220px;"></div>
+        </div>
+    </div>
+
+    <div class="content-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="chart-panel">
+            <div class="panel-title"><i class="fas fa-chart-pie"></i> 情感分布</div>
+            <div id="sentimentChart" class="chart-container"></div>
+        </div>
+        <div class="chart-panel">
+            <div class="panel-title"><i class="fas fa-stream"></i> 实时数据滚动</div>
+            <div class="scroll-list" id="scrollList">
+                <div class="scroll-list-inner" id="scrollListInner"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['jquery', 'layer'], function(){
+            var $ = layui.jquery;
+            var layer = layui.layer;
+            var autoRefreshTimer = null;
+
+            // 检查echarts是否正确加载
+            if(typeof echarts === 'undefined') {
+                console.error('ECharts library not loaded!');
+                layer.msg('图表库加载失败，请刷新页面', {icon: 2});
+                return;
+            }
+
+            var wordcloudChart, globeChart, trendChart, sourceChart, sentimentChart;
+            
+            try {
+                wordcloudChart = echarts.init(document.getElementById('wordcloudChart'));
+                globeChart = echarts.init(document.getElementById('globeChart'));
+                trendChart = echarts.init(document.getElementById('trendChart'));
+                sourceChart = echarts.init(document.getElementById('sourceChart'));
+                sentimentChart = echarts.init(document.getElementById('sentimentChart'));
+                console.log('Charts initialized successfully');
+            } catch(e) {
+                console.error('Failed to initialize charts:', e);
+                layer.msg('图表初始化失败: ' + e.message, {icon: 2});
+                return;
+            }
+
+            function animateNumber(selector, target) {
+                var $el = $(selector);
+                var current = parseInt($el.text()) || 0;
+                if(current === target) return;
+                var step = Math.ceil(Math.abs(target - current) / 30);
+                var timer = setInterval(function(){
+                    if(current < target) {
+                        current = Math.min(current + step, target);
+                    } else {
+                        current = Math.max(current - step, target);
+                    }
+                    $el.text(current);
+                    if(current === target) clearInterval(timer);
+                }, 30);
+            }
+
+            function loadStats() {
+                $.get('/admin/api/data/screen?action=stats', function(res){
+                    if(res.code === 0) {
+                        var d = res.data;
+                        animateNumber('#statUsers', d.user_count);
+                        animateNumber('#statChat', d.chat_message_count);
+                        animateNumber('#statSurveillance', d.surveillance_record_count);
+                        animateNumber('#statDeep', d.deep_detail_count);
+                        animateNumber('#statModel', d.model_total_calls);
+                    }
+                }, 'json');
+            }
+
+            function loadWordcloud() {
+                $.get('/admin/api/data/screen?action=wordcloud&limit=60', function(res){
+                    console.log('Wordcloud API response:', res);
+                    if(res.code === 0 && res.data && res.data.length > 0) {
+                        var data = res.data.map(function(d){
+                            return { name: d.word, value: d.value };
+                        });
+                        wordcloudChart.setOption({
+                            tooltip: { show: true },
+                            series: [{
+                                type: 'treemap',
+                                width: '100%',
+                                height: '100%',
+                                roam: false,
+                                nodeClick: false,
+                                breadcrumb: { show: false },
+                                label: {
+                                    show: true,
+                                    formatter: '{b}',
+                                    fontSize: 12,
+                                    color: '#e6efff'
+                                },
+                                itemStyle: {
+                                    borderColor: 'rgba(6, 24, 38, 0.82)',
+                                    borderWidth: 2,
+                                    gapWidth: 2,
+                                    borderRadius: 6
+                                },
+                                levels: [
+                                    { itemStyle: { borderWidth: 0, gapWidth: 2 } }
+                                ],
+                                data: data.slice(0, 30)
+                            }]
+                        });
+
+                        var tagsHtml = '';
+                        res.data.slice(0, 15).forEach(function(d){
+                            tagsHtml += '<span class="keyword-tag">' + d.word + ' (' + d.value + ')</span>';
+                        });
+                        $('#keywordTags').html(tagsHtml);
+                    } else {
+                        console.log('Wordcloud data is empty or API error:', res);
+                        // 显示空状态提示
+                        wordcloudChart.setOption({
+                            title: {
+                                text: '暂无数据',
+                                left: 'center',
+                                top: 'center',
+                                textStyle: {
+                                    color: '#79aebb',
+                                    fontSize: 16
+                                }
+                            }
+                        });
+                    }
+                }, 'json').fail(function(xhr, status, error) {
+                    console.error('Wordcloud API request failed:', status, error);
+                });
+            }
+
+            function loadGlobe() {
+                $.get('/admin/api/data/screen?action=wordcloud&limit=30', function(res){
+                    var keywords = res.data || [];
+                    
+                    // 使用 Fibonacci 球面均匀分布算法生成节点
+                    var nodeCount = 36; // 节点数量适中
+                    var goldenRatio = (1 + Math.sqrt(5)) / 2;
+                    var nodes = [];
+                    var lines = [];
+                    
+                    // 生成均匀分布的节点（经纬度格式）
+                    for(var i = 0; i < nodeCount; i++) {
+                        var theta = 2 * Math.PI * i / goldenRatio;
+                        var phi = Math.acos(1 - 2 * (i + 0.5) / nodeCount);
+                        
+                        // 转换为经纬度
+                        var lng = (theta / Math.PI * 180) - 180;
+                        var lat = (phi / Math.PI * 180) - 90;
+                        
+                        nodes.push([lng, lat, 50]);
+                    }
+                    
+                    // 连接相邻节点形成网格（计算球面距离）
+                    for(var i = 0; i < nodeCount; i++) {
+                        var minDist = Infinity;
+                        var nearest = -1;
+                        for(var j = 0; j < nodeCount; j++) {
+                            if(i === j) continue;
+                            // 简化的球面距离计算
+                            var dlng = nodes[i][0] - nodes[j][0];
+                            var dlat = nodes[i][1] - nodes[j][1];
+                            var dist = Math.sqrt(dlng*dlng + dlat*dlat);
+                            if(dist < minDist) {
+                                minDist = dist;
+                                nearest = j;
+                            }
+                        }
+                        if(nearest >= 0) {
+                            lines.push([nodes[i], nodes[nearest]]);
+                        }
+                        
+                        // 连接第二近的节点
+                        var secondMin = Infinity;
+                        var secondNearest = -1;
+                        for(var j = 0; j < nodeCount; j++) {
+                            if(i === j || j === nearest) continue;
+                            var dlng = nodes[i][0] - nodes[j][0];
+                            var dlat = nodes[i][1] - nodes[j][1];
+                            var dist = Math.sqrt(dlng*dlng + dlat*dlat);
+                            if(dist < secondMin) {
+                                secondMin = dist;
+                                secondNearest = j;
+                            }
+                        }
+                        if(secondNearest >= 0) {
+                            lines.push([nodes[i], nodes[secondNearest]]);
+                        }
+                    }
+                    
+                    // 将关键词分配到节点
+                    var labelData = [];
+                    var colors = ['#13d4ff', '#6d7cff', '#32d296', '#ffbc5e', '#ff6b7a', '#a55cff'];
+                    
+                    if(keywords.length > 0) {
+                        for(var i = 0; i < Math.min(keywords.length, nodeCount); i++) {
+                            var kw = keywords[i];
+                            var node = nodes[i];
+                            var maxVal = keywords[0].value || 1;
+                            var fontSize = 11 + (kw.value / maxVal) * 14;
+                            
+                            labelData.push({
+                                name: kw.word,
+                                value: node,
+                                fontSize: fontSize,
+                                color: colors[i % colors.length]
+                            });
+                        }
+                    }
+
+                    // 3D镂空地球配置 - 地球表面与背景同色实现镂空效果
+                    globeChart.setOption({
+                        backgroundColor: 'transparent',
+                        globe: {
+                            globeRadius: 100,
+                            environment: '#000510',
+                            baseTexture: null,
+                            heightTexture: null,
+                            displacementScale: 0,
+                            shading: 'lambert',
+                            itemStyle: {
+                                color: '#000510',
+                                opacity: 1,
+                                borderWidth: 0
+                            },
+                            emphasis: {
+                                itemStyle: {
+                                    color: '#000510',
+                                    opacity: 1
+                                }
+                            },
+                            light: {
+                                ambient: {
+                                    intensity: 0.5
+                                },
+                                main: {
+                                    intensity: 0.5
+                                }
+                            },
+                            viewControl: {
+                                autoRotate: true,
+                                autoRotateSpeed: 0.5,
+                                distance: 280,
+                                minDistance: 200,
+                                maxDistance: 450,
+                                damping: 0.8,
+                                rotateSensitivity: 1,
+                                alpha: 20,
+                                beta: 30
+                            }
+                        },
+                        series: [
+                            // 网格线
+                            {
+                                type: 'lines3D',
+                                coordinateSystem: 'globe',
+                                effect: {
+                                    show: true,
+                                    period: 4,
+                                    trailWidth: 2,
+                                    trailLength: 0.5,
+                                    trailOpacity: 0.6,
+                                    trailColor: '#13d4ff'
+                                },
+                                lineStyle: {
+                                    width: 1,
+                                    color: 'rgba(19, 212, 255, 0.25)',
+                                    curveness: 0
+                                },
+                                blendMode: 'lighter',
+                                data: lines.map(function(line) {
+                                    return {
+                                        coords: line
+                                    };
+                                })
+                            },
+                            // 节点 - 使用亮色突出镂空感
+                            {
+                                type: 'scatter3D',
+                                coordinateSystem: 'globe',
+                                symbolSize: 8,
+                                itemStyle: {
+                                    color: '#35d6ff',
+                                    opacity: 1,
+                                    shadowBlur: 10,
+                                    shadowColor: 'rgba(53, 214, 255, 0.8)'
+                                },
+                                blendMode: 'lighter',
+                                data: nodes.map(function(node) {
+                                    return {
+                                        value: node
+                                    };
+                                })
+                            },
+                            // 关键词标签 - 吸附在节点旁边
+                            {
+                                type: 'scatter3D',
+                                coordinateSystem: 'globe',
+                                symbolSize: 4,
+                                itemStyle: {
+                                    color: '#ffffff',
+                                    opacity: 0.8
+                                },
+                                label: {
+                                    show: true,
+                                    formatter: function(params) {
+                                        return labelData[params.dataIndex] ? labelData[params.dataIndex].name : '';
+                                    },
+                                    fontSize: function(params) {
+                                        return labelData[params.dataIndex] ? labelData[params.dataIndex].fontSize : 12;
+                                    },
+                                    color: '#ffffff',
+                                    backgroundColor: 'rgba(6, 24, 38, 0.8)',
+                                    padding: [3, 6],
+                                    borderRadius: 4,
+                                    textBorderColor: 'rgba(53, 214, 255, 0.5)',
+                                    textBorderWidth: 1,
+                                    distance: 10
+                                },
+                                blendMode: 'lighter',
+                                data: labelData.map(function(item) {
+                                    return {
+                                        name: item.name,
+                                        value: item.value,
+                                        fontSize: item.fontSize,
+                                        color: item.color
+                                    };
+                                })
+                            }
+                        ]
+                    });
+                }, 'json').fail(function(xhr, status, error) {
+                    console.error('Globe API request failed:', status, error);
+                });
+            }
+
+            function loadTrend() {
+                $.get('/admin/api/data/screen?action=trend&days=7', function(res){
+                    if(res.code === 0) {
+                        var dates = res.data.map(function(d){ return d.date.substring(5); });
+                        var surveillanceData = res.data.map(function(d){ return d.surveillance; });
+                        var chatData = res.data.map(function(d){ return d.chat; });
+                        trendChart.setOption({
+                            tooltip: { trigger: 'axis' },
+                            legend: { data: ['采集数据', '对话数据'], textStyle: { color: '#b7dbe5' } },
+                            grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                            xAxis: {
+                                type: 'category', data: dates,
+                                axisLine: { lineStyle: { color: 'rgba(30, 228, 255, 0.2)' } },
+                                axisLabel: { color: '#79aebb' }
+                            },
+                            yAxis: {
+                                type: 'value',
+                                splitLine: { lineStyle: { color: 'rgba(111, 132, 255, 0.08)' } },
+                                axisLabel: { color: '#79aebb' }
+                            },
+                            series: [
+                                {
+                                    name: '采集数据', type: 'line', smooth: true, data: surveillanceData,
+                                    itemStyle: { color: '#13d4ff' },
+                                    areaStyle: {
+                                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                            { offset: 0, color: 'rgba(19, 212, 255, 0.3)' },
+                                            { offset: 1, color: 'rgba(19, 212, 255, 0)' }
+                                        ])
+                                    }
+                                },
+                                {
+                                    name: '对话数据', type: 'line', smooth: true, data: chatData,
+                                    itemStyle: { color: '#32d296' },
+                                    areaStyle: {
+                                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                            { offset: 0, color: 'rgba(50, 210, 150, 0.3)' },
+                                            { offset: 1, color: 'rgba(50, 210, 150, 0)' }
+                                        ])
+                                    }
+                                }
+                            ]
+                        });
+                    }
+                }, 'json');
+            }
+
+            function loadSourceDistribution() {
+                $.get('/admin/api/data/screen?action=source_distribution', function(res){
+                    if(res.code === 0) {
+                        sourceChart.setOption({
+                            tooltip: { trigger: 'item' },
+                            series: [{
+                                type: 'pie',
+                                radius: ['40%', '70%'],
+                                center: ['50%', '50%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: { borderRadius: 5, borderColor: 'rgba(6, 24, 38, 0.82)', borderWidth: 2 },
+                                label: { show: false },
+                                emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold', color: '#ecfcff' } },
+                                labelLine: { show: false },
+                                data: res.data.map(function(d, i){
+                                    var colors = ['#13d4ff','#6d7cff','#32d296','#ffbc5e','#ff6b7a','#a55cff','#5b6dff','#16b78e','#ff7a59','#2fb9ff'];
+                                    return { value: d.value, name: d.name, itemStyle: { color: colors[i % colors.length] } };
+                                })
+                            }]
+                        });
+                    }
+                }, 'json');
+            }
+
+            function loadSentiment() {
+                $.get('/admin/api/data/screen?action=sentiment_distribution', function(res){
+                    if(res.code === 0) {
+                        var data = res.data.map(function(d){
+                            var colorMap = {'正面': '#32d296', '负面': '#ff6b7a', '中性': '#ffbc5e'};
+                            return {
+                                value: d.count,
+                                name: d.sentiment,
+                                itemStyle: { color: colorMap[d.sentiment] || '#6d7cff' }
+                            };
+                        });
+                        sentimentChart.setOption({
+                            tooltip: { trigger: 'item' },
+                            series: [{
+                                type: 'pie',
+                                radius: ['40%', '70%'],
+                                center: ['50%', '50%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: { borderRadius: 5, borderColor: 'rgba(6, 24, 38, 0.82)', borderWidth: 2 },
+                                label: { show: true, position: 'outside', color: '#b7dbe5' },
+                                data: data
+                            }]
+                        });
+                    }
+                }, 'json');
+            }
+
+            function loadScrollData() {
+                $.get('/admin/api/data/screen?action=trend&days=1', function(res){
+                    $.get('/admin/api/data/screen?action=source_distribution', function(res2){
+                        var items = [];
+                        if(res2.code === 0) {
+                            res2.data.forEach(function(d){
+                                items.push({ title: d.name + ' 采集 ' + d.value + ' 条数据', source: d.name, time: new Date().toLocaleTimeString() });
+                            });
+                        }
+                        if(res.code === 0 && res.data.length > 0) {
+                            var last = res.data[res.data.length - 1];
+                            items.push({ title: '当日采集 ' + last.surveillance + ' 条，对话 ' + last.chat + ' 条', source: '统计', time: last.date });
+                        }
+                        if(items.length === 0) {
+                            items = [
+                                { title: '等待数据采集...', source: '系统', time: new Date().toLocaleTimeString() }
+                            ];
+                        }
+                        var html = '';
+                        for(var i = 0; i < 3; i++) {
+                            items.forEach(function(item){
+                                html += '<div class="scroll-item">';
+                                html += '<span class="item-title">' + item.title + '</span>';
+                                html += '<span class="item-source">' + item.source + '</span>';
+                                html += '<span class="item-time">' + item.time + '</span>';
+                                html += '</div>';
+                            });
+                        }
+                        $('#scrollListInner').html(html);
+                    }, 'json');
+                }, 'json');
+            }
+
+            function loadAll() {
+                loadStats();
+                loadWordcloud();
+                loadGlobe();
+                loadTrend();
+                loadSourceDistribution();
+                loadSentiment();
+                loadScrollData();
+            }
+
+            loadAll();
+
+            $('#refreshWordcloudBtn').on('click', function(){
+                layer.msg('正在刷新词云数据...', {icon: 16, time: 0});
+                $.post('/admin/api/data/screen', { action: 'refresh_wordcloud' }, function(res){
+                    layer.closeAll();
+                    if(res.code === 0) {
+                        layer.msg(res.msg || '词云数据已刷新', {icon: 1});
+                        loadWordcloud();
+                    } else {
+                        layer.msg(res.msg || '刷新失败', {icon: 2});
+                    }
+                }, 'json');
+            });
+
+            $('#autoRefreshBtn').on('click', function(){
+                if(autoRefreshTimer) {
+                    clearInterval(autoRefreshTimer);
+                    autoRefreshTimer = null;
+                    $(this).html('<i class="layui-icon layui-icon-refresh-3"></i> 自动刷新');
+                    layer.msg('已关闭自动刷新', {icon: 1});
+                } else {
+                    autoRefreshTimer = setInterval(loadAll, 30000);
+                    $(this).html('<i class="layui-icon layui-icon-ok"></i> 停止刷新');
+                    layer.msg('已开启自动刷新（30秒）', {icon: 1});
+                }
+            });
+
+            $(window).on('resize', function(){
+                wordcloudChart.resize();
+                globeChart.resize();
+                trendChart.resize();
+                sourceChart.resize();
+                sentimentChart.resize();
+            });
+        });
+    </script>
+</body>
+</html>

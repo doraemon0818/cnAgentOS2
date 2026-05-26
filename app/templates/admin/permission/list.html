@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>权限管理</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f2f2f2;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .search-bar, .table-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .search-bar { margin-bottom: 15px; }
+        .search-bar .layui-form-label {
+            width: 90px;
+            white-space: nowrap;
+        }
+        .layui-table th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 500;
+        }
+        .layui-btn-group { margin-bottom: 15px; }
+        .status-tag, .system-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .status-on { background: #e6f7e6; color: #52c41a; }
+        .status-off { background: #fff1f0; color: #ff4d4f; }
+        .system-tag { background: #fff7e6; color: #fa8c16; }
+        .tip-text { color: #999; font-size: 12px; }
+    </style>
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+</head>
+<body>
+    <div class="search-bar">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">角色</label>
+                    <div class="layui-input-inline" style="width: 180px;">
+                        <select name="role_id" id="searchRoleId">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">一级模块</label>
+                    <div class="layui-input-inline" style="width: 180px;">
+                        <select name="parent_id" id="searchParentId">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-inline" style="width: 220px;">
+                        <input type="text" name="keyword" placeholder="角色 / 功能名称 / 编码" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" class="layui-btn layui-btn-normal" id="searchBtn">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="resetBtn">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="layui-btn-group">
+            <button type="button" class="layui-btn layui-btn-normal" id="addBtn">
+                <i class="layui-icon layui-icon-add-1"></i> 新增权限
+            </button>
+        </div>
+
+        <table class="layui-hide" id="permissionTable" lay-filter="permissionTable"></table>
+
+        <script type="text/html" id="statusTpl">
+            {{!# if(d.function_status === 1) { }}
+                <span class="status-tag status-on">启用</span>
+            {{!# } else { }}
+                <span class="status-tag status-off">停用</span>
+            {{!# } }}
+        </script>
+
+        <script type="text/html" id="systemTpl">
+            {{!# if(d.is_system === 1) { }}
+                <span class="system-tag">系统角色</span>
+            {{!# } else { }}
+                <span>-</span>
+            {{!# } }}
+        </script>
+
+        <script type="text/html" id="toolbar">
+            <div class="layui-btn-container">
+                {{!# if(d.is_system !== 1) { }}
+                <button class="layui-btn layui-btn-sm" lay-event="edit">
+                    <i class="layui-icon layui-icon-edit"></i> 编辑
+                </button>
+                <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">
+                    <i class="layui-icon layui-icon-delete"></i> 删除
+                </button>
+                {{!# } else { }}
+                <span class="tip-text">超级管理员权限不单独维护</span>
+                {{!# } }}
+            </div>
+        </script>
+    </div>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'layer', 'form', 'jquery'], function(){
+            var table = layui.table;
+            var layer = layui.layer;
+            var form = layui.form;
+            var $ = layui.jquery;
+
+            var roleOptions = [];
+            var functionTree = [];
+            var currentPermissionLayero = null;
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.post(url, data, callback, 'json');
+            }
+
+            function getEditableRoles() {
+                return roleOptions.filter(function(item){
+                    return item.is_system !== 1;
+                });
+            }
+
+            function loadRoleOptions(callback) {
+                $.get('/admin/api/role', {action: 'options'}, function(res){
+                    if (res.code !== 0) {
+                        layer.msg(res.msg || '加载角色失败', {icon: 2});
+                        return;
+                    }
+                    roleOptions = res.data || [];
+                    var searchHtml = '<option value="">全部</option>';
+                    for (var i = 0; i < roleOptions.length; i++) {
+                        searchHtml += '<option value="' + roleOptions[i].id + '">' + roleOptions[i].name + '</option>';
+                    }
+                    $('#searchRoleId').html(searchHtml);
+                    form.render('select');
+                    if (callback) {
+                        callback();
+                    }
+                }, 'json');
+            }
+
+            function loadFunctionTree(callback) {
+                $.get('/admin/api/function', {action: 'tree'}, function(res){
+                    if (res.code !== 0) {
+                        layer.msg(res.msg || '加载功能树失败', {icon: 2});
+                        return;
+                    }
+                    functionTree = res.data || [];
+                    var searchHtml = '<option value="">全部</option>';
+                    for (var i = 0; i < functionTree.length; i++) {
+                        searchHtml += '<option value="' + functionTree[i].id + '">' + functionTree[i].name + '</option>';
+                    }
+                    $('#searchParentId').html(searchHtml);
+                    form.render('select');
+                    if (callback) {
+                        callback();
+                    }
+                }, 'json');
+            }
+
+            function buildPermissionFormHtml(data) {
+                data = data || {
+                    old_role_id: '',
+                    old_function_id: '',
+                    role_id: '',
+                    parent_id: functionTree.length ? functionTree[0].id : '',
+                    function_id: ''
+                };
+
+                var roles = getEditableRoles();
+                var roleHtml = '<option value="">请选择角色</option>';
+                for (var i = 0; i < roles.length; i++) {
+                    var roleSelected = String(data.role_id) === String(roles[i].id) ? ' selected' : '';
+                    roleHtml += '<option value="' + roles[i].id + '"' + roleSelected + '>' + roles[i].name + '</option>';
+                }
+
+                var parentHtml = '<option value="">请选择一级模块</option>';
+                for (var j = 0; j < functionTree.length; j++) {
+                    var parentSelected = String(data.parent_id) === String(functionTree[j].id) ? ' selected' : '';
+                    parentHtml += '<option value="' + functionTree[j].id + '"' + parentSelected + '>' + functionTree[j].name + '</option>';
+                }
+
+                return '' +
+                    '<form class="layui-form" id="permissionForm" style="padding:20px;">' +
+                    '  <input type="hidden" name="old_role_id" value="' + (data.old_role_id || '') + '">' +
+                    '  <input type="hidden" name="old_function_id" value="' + (data.old_function_id || '') + '">' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">角色</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <select name="role_id">' + roleHtml + '</select>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">一级模块</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <select name="parent_id" lay-filter="permissionParentSelect">' + parentHtml + '</select>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="layui-form-item">' +
+                    '    <label class="layui-form-label">二级功能</label>' +
+                    '    <div class="layui-input-block">' +
+                    '      <select name="function_id" id="permissionFunctionId">' +
+                    '        <option value="">请先选择一级模块</option>' +
+                    '      </select>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="tip-text">二级联动：先选择一级模块，再选择当前模块或其下属二级功能。</div>' +
+                    '</form>';
+            }
+
+            function renderFunctionSelect(layero, parentId, selectedFunctionId) {
+                var selectNode = layero.find('#permissionFunctionId');
+                var html = '<option value="">请选择功能</option>';
+                var parent = null;
+
+                for (var i = 0; i < functionTree.length; i++) {
+                    if (String(functionTree[i].id) === String(parentId)) {
+                        parent = functionTree[i];
+                        break;
+                    }
+                }
+
+                if (!parent) {
+                    selectNode.html(html);
+                    form.render('select');
+                    return;
+                }
+
+                var parentSelected = String(selectedFunctionId) === String(parent.id) ? ' selected' : '';
+                html += '<option value="' + parent.id + '"' + parentSelected + '>当前一级模块：' + parent.name + '</option>';
+
+                var children = parent.children || [];
+                for (var j = 0; j < children.length; j++) {
+                    var child = children[j];
+                    var childSelected = String(selectedFunctionId) === String(child.id) ? ' selected' : '';
+                    html += '<option value="' + child.id + '"' + childSelected + '>' + child.name + '</option>';
+                }
+
+                selectNode.html(html);
+                form.render('select');
+            }
+
+            function collectPermissionFormData(layero, action) {
+                var formData = {
+                    action: action,
+                    old_role_id: layero.find('input[name="old_role_id"]').val(),
+                    old_function_id: layero.find('input[name="old_function_id"]').val(),
+                    role_id: layero.find('select[name="role_id"]').val(),
+                    function_id: layero.find('select[name="function_id"]').val()
+                };
+
+                if (!formData.role_id || !formData.function_id) {
+                    layer.msg('角色和功能不能为空', {icon: 2});
+                    return null;
+                }
+                return formData;
+            }
+
+            form.on('select(permissionParentSelect)', function(data){
+                if (currentPermissionLayero) {
+                    renderFunctionSelect(currentPermissionLayero, data.value, '');
+                }
+            });
+
+            var tableIns = table.render({
+                elem: '#permissionTable',
+                url: '/admin/api/permission',
+                method: 'get',
+                page: {limit: 20, limits: [10, 20, 50, 100]},
+                cols: [[
+                    {field: 'role_name', title: '角色名称', width: 160},
+                    {field: 'role_code', title: '角色编码', width: 160},
+                    {field: 'parent_name', title: '一级模块', width: 150},
+                    {field: 'function_name', title: '功能名称', width: 160},
+                    {field: 'function_code', title: '功能编码', width: 160},
+                    {field: 'url', title: '功能路由', minWidth: 220},
+                    {field: 'function_status', title: '状态', width: 100, templet: '#statusTpl'},
+                    {field: 'is_system', title: '系统角色', width: 110, templet: '#systemTpl'},
+                    {title: '操作', width: 240, toolbar: '#toolbar', fixed: 'right'}
+                ]]
+            });
+
+            $('#searchBtn').on('click', function(){
+                tableIns.reload({
+                    where: {
+                        role_id: $('#searchRoleId').val(),
+                        parent_id: $('#searchParentId').val(),
+                        keyword: $('input[name="keyword"]').val()
+                    },
+                    page: {curr: 1}
+                });
+            });
+
+            $('#resetBtn').on('click', function(){
+                $('#searchRoleId').val('');
+                $('#searchParentId').val('');
+                $('input[name="keyword"]').val('');
+                form.render('select');
+                tableIns.reload({where: {}, page: {curr: 1}});
+            });
+
+            $('#addBtn').on('click', function(){
+                currentPermissionLayero = null;
+                var defaultParentId = functionTree.length ? functionTree[0].id : '';
+
+                layer.open({
+                    type: 1,
+                        closeBtn: 1,
+                    title: '新增权限',
+                    area: ['560px', '380px'],
+                    content: buildPermissionFormHtml({parent_id: defaultParentId}),
+                    btn: ['确定', '取消'],
+                    success: function(layero){
+                        currentPermissionLayero = layero;
+                        form.render();
+                        if (defaultParentId) {
+                            renderFunctionSelect(layero, defaultParentId, '');
+                        }
+                    },
+                    yes: function(index, layero){
+                        var formData = collectPermissionFormData(layero, 'add');
+                        if (!formData) {
+                            return;
+                        }
+                        postData('/admin/api/permission', formData, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '新增成功', {icon: 1});
+                                layer.close(index);
+                                tableIns.reload({page: {curr: 1}});
+                            } else {
+                                layer.msg(res.msg || '新增失败', {icon: 2});
+                            }
+                        });
+                    },
+                    end: function(){
+                        currentPermissionLayero = null;
+                    }
+                });
+            });
+
+            table.on('tool(permissionTable)', function(obj){
+                var data = obj.data;
+
+                if (obj.event === 'edit') {
+                    layer.open({
+                        type: 1,
+                        closeBtn: 1,
+                        title: '编辑权限',
+                        area: ['560px', '380px'],
+                        content: buildPermissionFormHtml({
+                            old_role_id: data.role_id,
+                            old_function_id: data.function_id,
+                            role_id: data.role_id,
+                            parent_id: data.parent_id,
+                            function_id: data.function_id
+                        }),
+                        btn: ['确定', '取消'],
+                        success: function(layero){
+                            currentPermissionLayero = layero;
+                            form.render();
+                            renderFunctionSelect(layero, data.parent_id, data.function_id);
+                        },
+                        yes: function(index, layero){
+                            var formData = collectPermissionFormData(layero, 'update');
+                            if (!formData) {
+                                return;
+                            }
+                            postData('/admin/api/permission', formData, function(res){
+                                if (res.code === 0) {
+                                    layer.msg(res.msg || '修改成功', {icon: 1});
+                                    layer.close(index);
+                                    tableIns.reload();
+                                } else {
+                                    layer.msg(res.msg || '修改失败', {icon: 2});
+                                }
+                            });
+                        },
+                        end: function(){
+                            currentPermissionLayero = null;
+                        }
+                    });
+                }
+
+                if (obj.event === 'delete') {
+                    layer.confirm('确定要删除该权限映射吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/permission', {
+                            action: 'delete',
+                            role_id: data.role_id,
+                            function_id: data.function_id
+                        }, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                tableIns.reload({page: {curr: 1}});
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+
+            loadRoleOptions();
+            loadFunctionTree();
+        });
+    </script>
+</body>
+</html>

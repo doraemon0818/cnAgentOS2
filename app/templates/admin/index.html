@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f2f2f2;
+        }
+
+        .layui-layout-admin .layui-header {
+            background: #393D49;
+            box-shadow: 0 1px 4px rgba(0,21,41,.08);
+        }
+
+        .layui-layout-admin .layui-header .layui-logo {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+            background: #393D49;
+            box-shadow: none;
+        }
+
+        .layui-layout-admin .layui-header .layui-logo i {
+            margin-right: 8px;
+        }
+
+        .layui-layout-admin .layui-header .layui-nav .layui-nav-item a {
+            color: #fff;
+        }
+
+        .layui-layout-admin .layui-header .layui-nav .layui-nav-item a:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .layui-layout-admin .layui-side {
+            top: 60px;
+            background: #393D49;
+        }
+
+        .layui-layout-admin .layui-side .layui-nav {
+            background: transparent;
+        }
+
+        .layui-layout-admin .layui-side .layui-nav .layui-nav-item a {
+            color: rgba(255,255,255,0.8);
+            padding-left: 30px;
+        }
+
+        .layui-layout-admin .layui-side .layui-nav .layui-nav-item a:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .layui-layout-admin .layui-side .layui-nav .layui-nav-item.layui-this a {
+            color: #fff;
+            background: #009688;
+        }
+
+        .layui-layout-admin .layui-side .layui-nav .layui-nav-item .layui-nav-child a {
+            padding-left: 50px;
+        }
+
+        .layui-layout-admin .layui-body {
+            top: 60px;
+            left: 200px;
+            background: #f2f2f2;
+        }
+
+        .layui-layout-admin .layui-footer {
+            left: 200px;
+            background: #fff;
+            border-top: 1px solid #e6e6e6;
+        }
+
+        .admin-tabs {
+            background: #fff;
+            padding: 0 15px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .admin-tabs .layui-tab-title {
+            border: none;
+        }
+
+        .admin-tabs .layui-tab-title li {
+            margin: 0 5px;
+            padding: 0 15px;
+        }
+
+        .admin-tabs .layui-tab-title li.layui-this {
+            background: #f2f2f2;
+        }
+
+        .admin-tabs .layui-tab-title li .layui-tab-close {
+            font-size: 14px;
+        }
+
+        .admin-tabs .layui-tab-content {
+            padding: 0;
+        }
+
+        .admin-tabs .layui-tab-item iframe {
+            width: 100%;
+            height: calc(100vh - 150px);
+            border: none;
+        }
+
+        .breadcrumb {
+            padding: 10px 15px;
+            background: #fff;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .breadcrumb .layui-breadcrumb {
+            font-size: 14px;
+        }
+
+        .welcome-page {
+            padding: 30px;
+        }
+
+        .welcome-page .welcome-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+
+        .welcome-page .welcome-card h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .welcome-page .welcome-card p {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-card .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            margin-right: 20px;
+        }
+
+        .stat-card .stat-info h3 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .stat-info p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .bg-blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .bg-green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .bg-orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .bg-purple { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+
+        @media (max-width: 768px) {
+            .layui-layout-admin .layui-side {
+                left: -200px;
+            }
+            .layui-layout-admin .layui-body {
+                left: 0;
+            }
+            .layui-layout-admin .layui-footer {
+                left: 0;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+</head>
+<body>
+    <div class="layui-layout layui-layout-admin">
+        <div class="layui-header">
+            <div class="layui-logo layui-hide-xs layui-bg-black">
+                <i class="fas fa-robot"></i>AI智能瞭望系统
+            </div>
+            <ul class="layui-nav layui-layout-left">
+                <li class="layui-nav-item layui-hide-xs"><a href="javascript:;" id="refreshBtn"><i class="layui-icon layui-icon-refresh"></i> 刷新</a></li>
+            </ul>
+            <ul class="layui-nav layui-layout-right">
+                <li class="layui-nav-item layui-hide-xs">
+                    <a href="javascript:;">
+                        <i class="layui-icon layui-icon-username"></i>
+                        欢迎：{{username}}
+                    </a>
+                </li>
+                <li class="layui-nav-item">
+                    <a href="javascript:;" id="logoutBtn">
+                        <i class="layui-icon layui-icon-logout"></i> 退出
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="layui-side layui-bg-black">
+            <div class="layui-side-scroll">
+                <ul class="layui-nav layui-nav-tree" lay-filter="adminMenu" lay-accordion="true">
+                    <li class="layui-nav-item layui-this">
+                        <a href="javascript:;" data-url="/admin/welcome" data-title="首页">
+                            <i class="layui-icon layui-icon-home"></i>
+                            <span>首页</span>
+                        </a>
+                    </li>
+                    {% for menu in menus %}
+                    <li class="layui-nav-item">
+                        {% if menu.get("children") %}
+                        <a href="javascript:;">
+                            <i class="layui-icon {{ menu.get('icon') or 'layui-icon-app' }}"></i>
+                            <span>{{ menu["name"] }}</span>
+                        </a>
+                        <dl class="layui-nav-child">
+                            {% for child in menu["children"] %}
+                            <dd><a href="javascript:;" data-url="{{ child.get('url') or '#' }}" data-title="{{ child['name'] }}">{{ child["name"] }}</a></dd>
+                            {% end %}
+                        </dl>
+                        {% else %}
+                        <a href="javascript:;" data-url="{{ menu.get('url') or '#' }}" data-title="{{ menu['name'] }}">
+                            <i class="layui-icon {{ menu.get('icon') or 'layui-icon-app' }}"></i>
+                            <span>{{ menu["name"] }}</span>
+                        </a>
+                        {% end %}
+                    </li>
+                    {% end %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="layui-body">
+            <div class="layui-tab admin-tabs" lay-filter="adminTabs" lay-allowclose="true">
+                <ul class="layui-tab-title">
+                    <li class="layui-this" lay-id="/admin/welcome">首页</li>
+                </ul>
+                <div class="layui-tab-content">
+                    <div class="layui-tab-item layui-show">
+                        <iframe src="/admin/welcome" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-footer">
+            <div style="text-align: center; color: #666; font-size: 14px;">
+                © 2026 AI智能瞭望与智能问数系统 - 管理后台
+            </div>
+        </div>
+    </div>
+
+    <form id="logoutForm" action="/admin/logout" method="post" style="display:none;">
+        {% module xsrf_form_html() %}
+    </form>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['element', 'layer', 'jquery'], function(){
+            var element = layui.element;
+            var layer = layui.layer;
+            var $ = layui.jquery;
+
+            element.init();
+
+            function openAdminTab(url, title) {
+                if (url === '#' || !url) {
+                    layer.msg('功能开发中，敬请期待', {icon: 0});
+                    return;
+                }
+
+                var tabId = url;
+                var existTab = false;
+
+                $('.layui-tab-title li').each(function(){
+                    if ($(this).attr('lay-id') === tabId) {
+                        element.tabChange('adminTabs', tabId);
+                        existTab = true;
+                        return false;
+                    }
+                });
+
+                if (!existTab) {
+                    element.tabAdd('adminTabs', {
+                        title: title,
+                        content: '<iframe src="' + url + '" frameborder="0"></iframe>',
+                        id: tabId
+                    });
+                    element.tabChange('adminTabs', tabId);
+                }
+            }
+
+            window.openAdminTab = openAdminTab;
+            window.element = element;
+
+            $(document).on('click', '[data-url]', function(){
+                var url = $(this).data('url');
+                var title = $(this).data('title');
+                openAdminTab(url, title);
+            });
+
+            $('#refreshBtn').on('click', function(){
+                var currentIframe = $('.layui-tab-item.layui-show iframe');
+                if (currentIframe.length > 0) {
+                    currentIframe.attr('src', currentIframe.attr('src'));
+                }
+            });
+
+            $('#logoutBtn').on('click', function(){
+                layer.confirm('确定要退出登录吗？', {icon: 3, title: '提示'}, function(index){
+                    $('#logoutForm').submit();
+                    layer.close(index);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

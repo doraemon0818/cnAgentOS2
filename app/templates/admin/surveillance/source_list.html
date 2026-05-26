@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>采集源管理</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f2f2f2;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .search-bar, .table-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .search-bar { margin-bottom: 15px; }
+        .layui-table th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 500;
+        }
+        .layui-btn-group { margin-bottom: 15px; }
+        .status-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .status-on { background: #e6f7e6; color: #52c41a; }
+        .status-off { background: #fff1f0; color: #ff4d4f; }
+        .form-section {
+            background: #fafafa;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            padding: 12px 15px 2px;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .tip-text {
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+</head>
+<body>
+    <div class="search-bar">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-inline" style="width: 260px;">
+                        <input type="text" name="keyword" placeholder="采集源名称 / 编码 / 描述" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" class="layui-btn layui-btn-normal" id="searchBtn">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="resetBtn">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="layui-btn-group">
+            <button type="button" class="layui-btn layui-btn-normal" id="addBtn">
+                <i class="layui-icon layui-icon-add-1"></i> 新增采集源
+            </button>
+        </div>
+        <table class="layui-hide" id="sourceTable" lay-filter="sourceTable"></table>
+    </div>
+
+    <script type="text/html" id="statusTpl">
+        {{!# if(d.status === 1) { }}
+        <span class="status-tag status-on">启用</span>
+        {{!# } else { }}
+        <span class="status-tag status-off">停用</span>
+        {{!# } }}
+    </script>
+
+    <script type="text/html" id="toolbarTpl">
+        <div class="layui-btn-container">
+            <button type="button" class="layui-btn layui-btn-sm" lay-event="edit">编辑</button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">删除</button>
+        </div>
+    </script>
+
+    <script type="text/html" id="sourceFormTpl">
+        <form class="layui-form" style="padding:20px 18px 6px;" id="sourceForm">
+            <input type="hidden" name="id" value="{{!d.id || ''}}">
+            <div class="form-section">
+                <div class="section-title">基础信息</div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">采集源名称</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="name" value="{{!d.name || ''}}" placeholder="例如：百度新闻采集源" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">采集源编码</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="code" value="{{!d.code || ''}}" placeholder="例如：baidu_news" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">描述</label>
+                    <div class="layui-input-block">
+                        <textarea name="description" class="layui-textarea" placeholder="记录采集源用途、限制和适用场景">{{!d.description || ''}}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">请求配置</div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">首页URL模板</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="entry_url_template" value="{{!d.entry_url_template || ''}}" placeholder="支持 {keyword}/{关键字}" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">分页URL模板</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="page_url_template" value="{{!d.page_url_template || ''}}" placeholder="支持 {keyword}/{关键字} 与 {pn}" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md3">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">请求方式</label>
+                            <div class="layui-input-block">
+                                <select name="method">
+                                    <option value="GET" {{!d.method === 'GET' ? 'selected' : ''}}>GET</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">分页步进</label>
+                            <div class="layui-input-block">
+                                <input type="number" name="page_step" value="{{!d.page_step || 10}}" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">默认页数</label>
+                            <div class="layui-input-block">
+                                <input type="number" name="default_page_count" value="{{!d.default_page_count || 1}}" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md3">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">默认数量</label>
+                            <div class="layui-input-block">
+                                <input type="number" name="default_limit" value="{{!d.default_limit || 20}}" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">请求头JSON</label>
+                    <div class="layui-input-block">
+                        <textarea name="headers_json" class="layui-textarea" placeholder='{"User-Agent":"Mozilla/5.0", "Referer":"https://..."}'>{{!d.headers_json || (d.headers ? JSON.stringify(d.headers, null, 2) : '')}}</textarea>
+                        <div class="tip-text">支持动态参数占位，如 Referer 中使用 `{keyword}`。</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">解析规则</div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">结果列表选择器</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="list_selector" value="{{!d.selectors ? d.selectors.list_selector : ''}}" placeholder="#content_left > div.result" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">标题选择器</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="title_selector" value="{{!d.selectors ? d.selectors.title_selector : ''}}" placeholder="h3 a" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">摘要选择器</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="summary_selector" value="{{!d.selectors ? d.selectors.summary_selector : ''}}" placeholder=".c-summary" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">来源时间选择器</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="meta_selector" value="{{!d.selectors ? d.selectors.meta_selector : ''}}" placeholder=".c-title-author" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">状态</label>
+                    <div class="layui-input-block">
+                        <input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" {{!d.status === 1 || !d.id ? 'checked' : ''}}>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </script>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'layer', 'jquery', 'form', 'laytpl'], function(){
+            var table = layui.table;
+            var layer = layui.layer;
+            var $ = layui.jquery;
+            var form = layui.form;
+            var laytpl = layui.laytpl;
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.post(url, data, callback, 'json');
+            }
+
+            var tableIns = table.render({
+                elem: '#sourceTable',
+                url: '/admin/api/surveillance/source',
+                method: 'get',
+                page: {limit: 20, limits: [10, 20, 50]},
+                cols: [[
+                    {field: 'id', title: 'ID', width: 80, sort: true},
+                    {field: 'name', title: '采集源名称', minWidth: 180},
+                    {field: 'code', title: '编码', width: 150},
+                    {field: 'description', title: '描述', minWidth: 220},
+                    {field: 'page_step', title: '分页步进', width: 100},
+                    {field: 'default_page_count', title: '默认页数', width: 100},
+                    {field: 'default_limit', title: '默认数量', width: 100},
+                    {field: 'status', title: '状态', width: 90, templet: '#statusTpl'},
+                    {field: 'update_at', title: '更新时间', width: 180},
+                    {title: '操作', width: 160, fixed: 'right', toolbar: '#toolbarTpl'}
+                ]],
+                parseData: function(res){
+                    return {code: res.code, msg: res.msg, count: res.count, data: res.data};
+                }
+            });
+
+            function collectFormData(layero, action) {
+                var data = {
+                    action: action,
+                    id: layero.find('input[name="id"]').val(),
+                    name: $.trim(layero.find('input[name="name"]').val()),
+                    code: $.trim(layero.find('input[name="code"]').val()),
+                    description: $.trim(layero.find('textarea[name="description"]').val()),
+                    entry_url_template: $.trim(layero.find('input[name="entry_url_template"]').val()),
+                    page_url_template: $.trim(layero.find('input[name="page_url_template"]').val()),
+                    method: layero.find('select[name="method"]').val(),
+                    page_step: layero.find('input[name="page_step"]').val() || 10,
+                    default_page_count: layero.find('input[name="default_page_count"]').val() || 1,
+                    default_limit: layero.find('input[name="default_limit"]').val() || 20,
+                    headers_json: $.trim(layero.find('textarea[name="headers_json"]').val()),
+                    list_selector: $.trim(layero.find('input[name="list_selector"]').val()),
+                    title_selector: $.trim(layero.find('input[name="title_selector"]').val()),
+                    summary_selector: $.trim(layero.find('input[name="summary_selector"]').val()),
+                    meta_selector: $.trim(layero.find('input[name="meta_selector"]').val()),
+                    status: layero.find('input[name="status"]').is(':checked') ? 1 : 0
+                };
+                if (!data.name || !data.code || !data.entry_url_template || !data.page_url_template) {
+                    layer.msg('名称、编码和URL模板不能为空', {icon: 2});
+                    return null;
+                }
+                return data;
+            }
+
+            function openForm(data) {
+                data = data || {method: 'GET', page_step: 10, default_page_count: 2, default_limit: 20, status: 1, selectors: {}};
+                layer.open({
+                    type: 1,
+                        closeBtn: 1,
+                    title: data.id ? '编辑采集源' : '新增采集源',
+                    area: ['900px', '760px'],
+                    content: laytpl($('#sourceFormTpl').html()).render(data),
+                    btn: ['保存', '取消'],
+                    success: function(){ form.render(); },
+                    yes: function(index, layero){
+                        var formData = collectFormData(layero, data.id ? 'update' : 'add');
+                        if (!formData) { return; }
+                        postData('/admin/api/surveillance/source', formData, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '保存成功', {icon: 1});
+                                layer.close(index);
+                                tableIns.reload();
+                            } else {
+                                layer.msg(res.msg || '保存失败', {icon: 2});
+                            }
+                        });
+                    }
+                });
+            }
+
+            $('#searchBtn').on('click', function(){
+                tableIns.reload({where: {keyword: $('input[name="keyword"]').val()}, page: {curr: 1}});
+            });
+
+            $('#resetBtn').on('click', function(){
+                $('input[name="keyword"]').val('');
+                tableIns.reload({where: {}, page: {curr: 1}});
+            });
+
+            $('#addBtn').on('click', function(){ openForm(null); });
+
+            table.on('tool(sourceTable)', function(obj){
+                var data = obj.data;
+                if (obj.event === 'edit') {
+                    $.get('/admin/api/surveillance/source', {action: 'detail', id: data.id}, function(res){
+                        if (res.code !== 0) {
+                            layer.msg(res.msg || '采集源详情加载失败', {icon: 2});
+                            return;
+                        }
+                        openForm(res.data);
+                    }, 'json');
+                } else if (obj.event === 'delete') {
+                    layer.confirm('确定删除该采集源吗？对应采集结果也会一起删除。', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/surveillance/source', {action: 'delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                tableIns.reload();
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

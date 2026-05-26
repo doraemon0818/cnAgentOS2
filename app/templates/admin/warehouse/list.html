@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据仓库</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+    <style>
+        body {
+            padding: 15px;
+            background: transparent;
+        }
+        .search-bar, .table-container {
+            padding: 15px;
+            border-radius: 18px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 15px;
+        }
+        .summary-card {
+            padding: 18px;
+            border-radius: 18px;
+        }
+        .summary-label {
+            color: #96abd3;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .summary-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #f5f8ff;
+        }
+        .summary-sub {
+            margin-top: 8px;
+            color: #9fb5de;
+            font-size: 12px;
+        }
+        .source-tag, .origin-tag, .deep-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+        }
+        .source-tag {
+            background: rgba(88, 142, 255, 0.16);
+            color: #9fc0ff;
+        }
+        .origin-tag {
+            background: rgba(61, 208, 174, 0.16);
+            color: #8de6d4;
+        }
+        .deep-pending {
+            background: rgba(255, 188, 94, 0.16);
+            color: #ffd38b;
+        }
+        .deep-success {
+            background: rgba(87, 218, 149, 0.16);
+            color: #79efb0;
+        }
+        .deep-failed {
+            background: rgba(255, 107, 122, 0.16);
+            color: #ffb0ba;
+        }
+        .deep-running {
+            background: rgba(53, 214, 255, 0.16);
+            color: #90eeff;
+        }
+        .link-cell a {
+            color: #8fb1ff;
+        }
+        .link-cell a:hover {
+            text-decoration: underline;
+        }
+        .toolbar-actions .layui-btn {
+            margin-right: 6px;
+            margin-bottom: 4px;
+        }
+        .deep-console {
+            padding: 16px;
+            background: rgba(3, 8, 20, 0.94);
+            color: #eaf1ff;
+            min-height: 420px;
+            max-height: 64vh;
+            overflow: auto;
+            line-height: 1.85;
+            font-size: 13px;
+            white-space: pre-wrap;
+            border-radius: 12px;
+        }
+        .deep-console .log-info { color: #d8e6ff; }
+        .deep-console .log-success { color: #87efb8; }
+        .deep-console .log-error { color: #ffb0ba; }
+        .detail-wrap {
+            padding: 18px 20px 4px;
+        }
+        .detail-section {
+            margin-bottom: 14px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(18, 29, 56, 0.7);
+            border: 1px solid rgba(111, 132, 255, 0.12);
+        }
+        .detail-title {
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #e6efff;
+        }
+        .detail-text {
+            color: #c8d8f5;
+            line-height: 1.85;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .detail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .detail-tag {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(88, 142, 255, 0.14);
+            color: #a7c4ff;
+            font-size: 12px;
+        }
+        .detail-list {
+            margin: 0;
+            padding-left: 18px;
+            color: #c8d8f5;
+            line-height: 1.9;
+        }
+        @media (max-width: 1200px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">仓库总记录</div>
+            <div class="summary-value" id="totalRecords">0</div>
+            <div class="summary-sub">当前入库的浅采数据总量</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">深采成功</div>
+            <div class="summary-value" id="deepSuccessCount">0</div>
+            <div class="summary-sub">已完成 AI 深度采集</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">深采失败</div>
+            <div class="summary-value" id="deepFailedCount">0</div>
+            <div class="summary-sub">可重新发起深度采集</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">累计 Token / 均分</div>
+            <div class="summary-value" id="totalTokens">0</div>
+            <div class="summary-sub">平均质量分 <span id="avgScore">0</span></div>
+        </div>
+    </div>
+
+    <div class="search-bar">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">采集源</label>
+                    <div class="layui-input-inline" style="width: 220px;">
+                        <select name="source_id" id="sourceSelect">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-inline" style="width: 260px;">
+                        <input type="text" name="keyword" placeholder="标题 / 关键字 / 来源站点" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button type="button" class="layui-btn layui-btn-normal" id="searchBtn">
+                        <i class="layui-icon layui-icon-search"></i> 搜索
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="resetBtn">
+                        <i class="layui-icon layui-icon-refresh"></i> 重置
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="refreshSummaryBtn">
+                        <i class="layui-icon layui-icon-chart-screen"></i> 刷新统计
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <div class="layui-btn-group" style="margin-bottom: 15px;">
+            <button type="button" class="layui-btn" id="batchDeepCollectBtn">
+                <i class="layui-icon layui-icon-engine"></i> AI深度采集
+            </button>
+            <button type="button" class="layui-btn layui-btn-danger" id="batchDeleteBtn">
+                <i class="layui-icon layui-icon-delete"></i> 批量删除
+            </button>
+        </div>
+        <table class="layui-hide" id="warehouseTable" lay-filter="warehouseTable"></table>
+    </div>
+
+    <script type="text/html" id="sourceTpl">
+        <span class="source-tag">{{!d.source_name}}</span>
+    </script>
+
+    <script type="text/html" id="originTpl">
+        <span class="origin-tag">{{!d.origin_site || '未知来源'}}</span>
+    </script>
+
+    <script type="text/html" id="titleTpl">
+        <div class="link-cell">
+            <a href="{{!d.url}}" target="_blank">{{!d.title}}</a>
+        </div>
+    </script>
+
+    <script type="text/html" id="deepStatusTpl">
+        {{!# if(d.deep_status === 1) { }}
+        <span class="deep-badge deep-success">已深采</span>
+        {{!# } else if (d.deep_status === 2) { }}
+        <span class="deep-badge deep-failed" title="{{!d.deep_error_message || ''}}">失败</span>
+        {{!# } else if (d.deep_status === 3) { }}
+        <span class="deep-badge deep-running">进行中</span>
+        {{!# } else { }}
+        <span class="deep-badge deep-pending">未深采</span>
+        {{!# } }}
+    </script>
+
+    <script type="text/html" id="toolbarTpl">
+        <div class="toolbar-actions">
+            <button type="button" class="layui-btn layui-btn-sm" lay-event="deep">深采</button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-primary" lay-event="detail">详情</button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" lay-event="delete">删除</button>
+        </div>
+    </script>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['table', 'form', 'jquery', 'layer'], function(){
+            var table = layui.table;
+            var form = layui.form;
+            var $ = layui.jquery;
+            var layer = layui.layer;
+            var deepCollectSource = null;
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.post(url, data, callback, 'json');
+            }
+
+            function loadSources() {
+                $.get('/admin/api/warehouse', {action: 'source_options'}, function(res){
+                    if (res.code === 0 && res.data) {
+                        var html = '<option value="">全部</option>';
+                        res.data.forEach(function(item){
+                            html += '<option value="' + item.id + '">' + item.name + '</option>';
+                        });
+                        $('#sourceSelect').html(html);
+                        form.render('select');
+                    }
+                }, 'json');
+            }
+
+            function loadSummary() {
+                $.get('/admin/api/warehouse', {action: 'summary'}, function(res){
+                    if (res.code !== 0 || !res.data) {
+                        return;
+                    }
+                    $('#totalRecords').text(res.data.total_records || 0);
+                    $('#deepSuccessCount').text(res.data.deep_success_count || 0);
+                    $('#deepFailedCount').text(res.data.deep_failed_count || 0);
+                    $('#totalTokens').text(res.data.total_tokens || 0);
+                    $('#avgScore').text(res.data.avg_score || 0);
+                }, 'json');
+            }
+
+            function appendConsoleLine(container, level, text) {
+                var line = $('<div class="log-' + level + '"></div>').text(text);
+                container.append(line);
+                container.scrollTop(container[0].scrollHeight);
+            }
+
+            function buildDetailHtml(payload) {
+                var record = payload.record || {};
+                var detail = payload.detail || null;
+                var html = '<div class="detail-wrap">';
+                html += '<div class="detail-section"><div class="detail-title">基础信息</div>';
+                html += '<div class="detail-text">标题：' + (record.title || '无') + '\n';
+                html += '采集源：' + (record.source_name || '无') + '\n';
+                html += '关键字：' + (record.keyword || '无') + '\n';
+                html += '链接：' + (record.url || '无') + '\n';
+                html += '深采状态：' + (record.deep_status === 1 ? '已深采' : (record.deep_status === 2 ? '失败' : (record.deep_status === 3 ? '进行中' : '未深采'))) + '</div></div>';
+                if (!detail) {
+                    html += '<div class="detail-section"><div class="detail-title">深采详情</div><div class="detail-text">当前暂无深度采集详情，请先执行 AI 深度采集。</div></div>';
+                    html += '</div>';
+                    return html;
+                }
+
+                html += '<div class="detail-section"><div class="detail-title">AI 摘要</div><div class="detail-text">' + (detail.ai_summary || '暂无摘要') + '</div></div>';
+                html += '<div class="detail-section"><div class="detail-title">关键词</div><div class="detail-tags">';
+                (detail.ai_keywords || []).forEach(function(item){
+                    html += '<span class="detail-tag">' + item + '</span>';
+                });
+                if (!(detail.ai_keywords || []).length) {
+                    html += '<span class="detail-text">暂无关键词</span>';
+                }
+                html += '</div></div>';
+
+                html += '<div class="detail-section"><div class="detail-title">关键信息</div><ul class="detail-list">';
+                (detail.ai_key_points || []).forEach(function(item){
+                    html += '<li>' + item + '</li>';
+                });
+                if (!(detail.ai_key_points || []).length) {
+                    html += '<li>暂无关键信息</li>';
+                }
+                html += '</ul></div>';
+
+                html += '<div class="detail-section"><div class="detail-title">抽取信息</div><div class="detail-text">页面标题：' + (detail.page_title || '无') + '\n';
+                html += '抽取引擎：' + (detail.extract_engine || '未知') + '\n';
+                html += '情绪判断：' + (detail.ai_sentiment || '中性') + '\n';
+                html += '质量评分：' + (detail.ai_score || 0) + '\n';
+                html += '模型：' + (detail.model_name || '无') + '\n';
+                html += 'Token：' + (detail.total_tokens || 0) + '</div></div>';
+
+                html += '<div class="detail-section"><div class="detail-title">正文预览</div><div class="detail-text">' + ((detail.content_text || '暂无正文').slice(0, 4000)) + '</div></div>';
+                html += '</div>';
+                return html;
+            }
+
+            function openDetail(recordId) {
+                $.get('/admin/api/warehouse', {action: 'detail', id: recordId}, function(res){
+                    if (res.code !== 0) {
+                        layer.msg(res.msg || '详情加载失败', {icon: 2});
+                        return;
+                    }
+                    layer.open({
+                        type: 1,
+                        closeBtn: 1,
+                        title: '深采详情',
+                        area: ['980px', '760px'],
+                        content: buildDetailHtml(res.data),
+                        btn: ['关闭']
+                    });
+                }, 'json');
+            }
+
+            function closeDeepCollectSource() {
+                if (deepCollectSource) {
+                    deepCollectSource.close();
+                    deepCollectSource = null;
+                }
+            }
+
+            function startDeepCollect(ids) {
+                if (!ids || !ids.length) {
+                    layer.msg('请先选择要深度采集的数据', {icon: 0});
+                    return;
+                }
+                closeDeepCollectSource();
+                var consoleHtml = '<div class="deep-console" id="deepCollectConsole">正在连接深度采集服务...</div>';
+                var layerIndex = layer.open({
+                    type: 1,
+                        closeBtn: 1,
+                    title: 'AI深度采集日志',
+                    area: ['900px', '680px'],
+                    content: consoleHtml,
+                    btn: ['关闭'],
+                    cancel: function(){
+                        closeDeepCollectSource();
+                    },
+                    end: function(){
+                        closeDeepCollectSource();
+                    }
+                });
+                var consoleBox = $('#deepCollectConsole');
+                deepCollectSource = new EventSource('/admin/api/warehouse/deep/stream?ids=' + encodeURIComponent(ids.join(',')));
+                deepCollectSource.onmessage = function(event) {
+                    var data = JSON.parse(event.data || '{}');
+                    if (data.type === 'log') {
+                        appendConsoleLine(consoleBox, data.level || 'info', data.message || '');
+                    } else if (data.type === 'done') {
+                        appendConsoleLine(
+                            consoleBox,
+                            'success',
+                            '任务完成：成功 ' + (data.stats.success_count || 0) + ' 条，失败 ' + (data.stats.failed_count || 0) +
+                            ' 条，累计 Token ' + (data.stats.total_tokens || 0) + '，平均质量分 ' + (data.stats.avg_score || 0)
+                        );
+                        closeDeepCollectSource();
+                        loadSummary();
+                        tableIns.reload();
+                    } else if (data.type === 'error') {
+                        appendConsoleLine(consoleBox, 'error', data.message || '深度采集失败');
+                        closeDeepCollectSource();
+                    }
+                };
+                deepCollectSource.onerror = function() {
+                    appendConsoleLine(consoleBox, 'error', '日志连接中断，请稍后重试。');
+                    closeDeepCollectSource();
+                };
+            }
+
+            var tableIns = table.render({
+                elem: '#warehouseTable',
+                id: 'warehouseTable',
+                url: '/admin/api/warehouse',
+                method: 'get',
+                page: {limit: 20, limits: [20, 50, 100]},
+                cols: [[
+                    {type: 'checkbox', fixed: 'left'},
+                    {field: 'id', title: 'ID', width: 70, sort: true},
+                    {field: 'source_name', title: '采集源', width: 140, templet: '#sourceTpl'},
+                    {field: 'keyword', title: '关键字', width: 120},
+                    {field: 'title', title: '标题', minWidth: 280, templet: '#titleTpl'},
+                    {field: 'origin_site', title: '来源站点', width: 130, templet: '#originTpl'},
+                    {field: 'deep_status', title: '深采状态', width: 100, templet: '#deepStatusTpl'},
+                    {field: 'deep_collect_at', title: '深采时间', width: 170},
+                    {field: 'publish_time', title: '发布时间', width: 120},
+                    {field: 'create_at', title: '采集时间', width: 170},
+                    {title: '操作', width: 220, fixed: 'right', toolbar: '#toolbarTpl'}
+                ]],
+                parseData: function(res){
+                    return {code: res.code, msg: res.msg, count: res.count, data: res.data};
+                }
+            });
+
+            $('#searchBtn').on('click', function(){
+                tableIns.reload({
+                    where: {
+                        keyword: $('input[name="keyword"]').val(),
+                        source_id: $('#sourceSelect').val()
+                    },
+                    page: {curr: 1}
+                });
+            });
+
+            $('#resetBtn').on('click', function(){
+                $('input[name="keyword"]').val('');
+                $('#sourceSelect').val('');
+                form.render('select');
+                tableIns.reload({where: {}, page: {curr: 1}});
+            });
+
+            $('#refreshSummaryBtn').on('click', function(){
+                loadSummary();
+            });
+
+            $('#batchDeleteBtn').on('click', function(){
+                var checkStatus = table.checkStatus('warehouseTable');
+                var ids = checkStatus.data.map(function(item){ return item.id; });
+                if (!ids.length) {
+                    layer.msg('请先选择要删除的数据', {icon: 0});
+                    return;
+                }
+                layer.confirm('确定批量删除选中的仓库数据吗？', {icon: 3, title: '提示'}, function(index){
+                    postData('/admin/api/warehouse', {action: 'batch_delete', ids: ids.join(',')}, function(res){
+                        if (res.code === 0) {
+                            layer.msg(res.msg || '删除成功', {icon: 1});
+                            tableIns.reload();
+                            loadSummary();
+                        } else {
+                            layer.msg(res.msg || '删除失败', {icon: 2});
+                        }
+                    });
+                    layer.close(index);
+                });
+            });
+
+            $('#batchDeepCollectBtn').on('click', function(){
+                var checkStatus = table.checkStatus('warehouseTable');
+                var ids = checkStatus.data.map(function(item){ return item.id; });
+                startDeepCollect(ids);
+            });
+
+            table.on('tool(warehouseTable)', function(obj){
+                var data = obj.data;
+                if (obj.event === 'delete') {
+                    layer.confirm('确定删除这条采集数据吗？', {icon: 3, title: '提示'}, function(index){
+                        postData('/admin/api/warehouse', {action: 'delete', id: data.id}, function(res){
+                            if (res.code === 0) {
+                                layer.msg(res.msg || '删除成功', {icon: 1});
+                                tableIns.reload();
+                                loadSummary();
+                            } else {
+                                layer.msg(res.msg || '删除失败', {icon: 2});
+                            }
+                        });
+                        layer.close(index);
+                    });
+                } else if (obj.event === 'deep') {
+                    startDeepCollect([data.id]);
+                } else if (obj.event === 'detail') {
+                    openDetail(data.id);
+                }
+            });
+
+            loadSources();
+            loadSummary();
+        });
+    </script>
+</body>
+</html>
