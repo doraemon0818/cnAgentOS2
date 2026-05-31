@@ -344,5 +344,237 @@
             });
         });
     </script>
+    
+    <!-- 手势控制按钮 -->
+    <style>
+        .admin-gesture-controls {
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 9999;
+        }
+        .admin-gesture-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            border: 2px solid rgba(0, 247, 255, 0.3);
+            background: rgba(57, 61, 73, 0.9);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        .admin-gesture-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 247, 255, 0.4);
+        }
+        .admin-gesture-btn.running {
+            border-color: rgba(0, 255, 100, 0.6);
+            box-shadow: 0 0 20px rgba(0, 255, 100, 0.4);
+        }
+    </style>
+    
+    <div class="admin-gesture-controls">
+        <button id="admin-gesture-toggle" class="admin-gesture-btn" title="手势识别">🖐️</button>
+        <button id="admin-speech-btn" class="admin-gesture-btn" title="语音播报">🔊</button>
+        <button id="admin-help-btn" class="admin-gesture-btn" title="使用说明">❓</button>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="{{ static_url('js/gesture-controller.js') }}"></script>
+    <script>
+        (function() {
+            'use strict';
+            
+            let adminGestureController = null;
+            let isAdminGestureRunning = false;
+            
+            // 语音播报功能
+            let adminSpeechController = null;
+            let adminAutoSpeak = false;
+            
+            function initAdminSpeechController() {
+                if (adminSpeechController) return;
+                adminSpeechController = {
+                    synth: window.speechSynthesis,
+                    speak: function(text) {
+                        if (!this.synth) return;
+                        this.synth.cancel();
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.lang = 'zh-CN';
+                        utterance.rate = 0.9;
+                        utterance.pitch = 1;
+                        utterance.volume = 1;
+                        this.synth.speak(utterance);
+                    },
+                    toggle: function() {
+                        adminAutoSpeak = !adminAutoSpeak;
+                        const btn = document.getElementById('admin-speech-btn');
+                        if (adminAutoSpeak) {
+                            btn.innerHTML = '🔇';
+                            btn.title = '关闭语音播报';
+                            layer.msg('语音播报已开启', {icon: 1});
+                            this.speak('语音播报已开启');
+                            this.speak('当前页面为管理员后台，左侧为功能菜单');
+                        } else {
+                            btn.innerHTML = '🔊';
+                            btn.title = '开启语音播报';
+                        }
+                    }
+                };
+            }
+            
+            document.getElementById('admin-speech-btn').onclick = function() {
+                if (!adminSpeechController) {
+                    initAdminSpeechController();
+                }
+                adminSpeechController.toggle();
+            };
+            
+            // 右键点击：关闭语音播报，不显示任何提示
+            document.getElementById('admin-speech-btn').oncontextmenu = function(e) {
+                e.preventDefault();
+                if (!adminSpeechController) return;
+                
+                adminAutoSpeak = false;
+                const btn = document.getElementById('admin-speech-btn');
+                btn.innerHTML = '🔊';
+                btn.title = '开启语音播报';
+            };
+            
+            // 初始化手势控制器
+            function initAdminGestureController() {
+                if (adminGestureController) return;
+                
+                adminGestureController = new GestureController({
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.7,
+                    gestureDelay: 1500,
+                    autoExecuteActions: false,  // 禁用自动执行用户端动作
+                    showGestureTips: false      // 禁用手势反馈提示
+                });
+                
+                adminGestureController.on('gesture', function(data) {
+                    console.log('识别到手势:', data.gestureName);
+                    handleAdminGesture(data.gesture);
+                });
+            }
+            
+            // 播报消息
+            function speakMessage(msg) {
+                if (adminAutoSpeak && adminSpeechController) {
+                    adminSpeechController.speak(msg);
+                }
+            }
+            
+            // 处理后台手势
+            function handleAdminGesture(gesture) {
+                var msg = '';
+                switch(gesture) {
+                    case 'victory':
+                        openAdminTab('/admin/data/screen', '数智大屏');
+                        msg = '已切换到数智大屏';
+                        layer.msg(msg, {icon: 6});
+                        speakMessage(msg);
+                        break;
+                    case 'double_fist':
+                    case 'open_palm':
+                        html2canvas(document.body).then(canvas => {
+                            const link = document.createElement('a');
+                            link.download = 'admin_screenshot_' + Date.now() + '.png';
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                            msg = '截图已保存';
+                            layer.msg(msg, {icon: 1});
+                            speakMessage(msg);
+                        }).catch(err => {
+                            msg = '截图失败';
+                            layer.msg(msg, {icon: 2});
+                            speakMessage(msg);
+                        });
+                        break;
+                    case 'ok':
+                        openAdminTab('/admin/surveillance/collect', '瞭望采集');
+                        msg = '已切换到瞭望采集';
+                        layer.msg(msg, {icon: 6});
+                        speakMessage(msg);
+                        break;
+                    case 'call':
+                        openAdminTab('/admin/model/list', '模型引擎');
+                        msg = '已切换到模型引擎';
+                        layer.msg(msg, {icon: 6});
+                        speakMessage(msg);
+                        break;
+                    default:
+                        console.log('管理员端忽略手势:', gesture);
+                        return;
+                }
+            }
+            
+            // 切换手势识别
+            document.getElementById('admin-gesture-toggle').onclick = async function() {
+                if (!adminGestureController) {
+                    initAdminGestureController();
+                    await adminGestureController.init();
+                }
+                
+                if (adminGestureController.isRunning) {
+                    adminGestureController.stop();
+                    isAdminGestureRunning = false;
+                    this.innerHTML = '🖐️';
+                    this.classList.remove('running');
+                    layer.msg('手势识别已关闭', {icon: 0});
+                } else {
+                    try {
+                        await adminGestureController.start();
+                        isAdminGestureRunning = true;
+                        this.innerHTML = '📹';
+                        this.classList.add('running');
+                        layer.msg('手势识别已启动', {icon: 1});
+                    } catch (err) {
+                        layer.msg('启动失败：' + err.message, {icon: 2});
+                    }
+                }
+            };
+            
+            // 显示帮助面板
+            document.getElementById('admin-help-btn').onclick = function() {
+                layer.open({
+                    type: 1,
+                    title: '🎮 后台手势操作说明',
+                    area: ['500px', '400px'],
+                    btn: ['关闭'],
+                    yes: function(index, layero){
+                        layer.close(index);
+                    },
+                    content: '<div style="padding: 20px; color: #333;">' +
+                        '<h3 style="color: #009688; margin: 15px 0 10px 0;">手势操作：</h3>' +
+                        '<ul style="line-height: 2; padding-left: 20px;">' +
+                        '<li>✌️ <strong>剪刀手</strong> - 切换到数智大屏</li>' +
+                        '<li>🖐️️ <strong>两个手掌</strong> - 截图</li>' +
+                        '<li> <strong>OK手势</strong> - 切换到瞭望采集</li>' +
+                        '<li>🤙 <strong>呼叫手势</strong> - 切换到模型引擎</li>' +
+                        '</ul>' +
+                        '<h3 style="color: #009688; margin: 15px 0 10px 0;">按钮说明：</h3>' +
+                        '<ul style="line-height: 2; padding-left: 20px;">' +
+                        '<li>🖐️ - 开启/关闭手势识别</li>' +
+                        '<li>🔊 - 开启/关闭语音播报</li>' +
+                        '<li>❓ - 显示本帮助</li>' +
+                        '</ul>' +
+                        '<h3 style="color: #009688; margin: 15px 0 10px 0;">提示：</h3>' +
+                        '<ul style="line-height: 2; padding-left: 20px;">' +
+                        '<li>开启语音播报后，会播报左侧菜单等重要信息</li>' +
+                        '</ul>' +
+                        '</div>'
+                });
+            };
+        })();
+    </script>
 </body>
 </html>

@@ -14,7 +14,7 @@ from app.controllers.chat import UserChatBootstrapHandler,UserChatSessionHandler
 from app.controllers.im import IMApiHandler, IMIndexHandler, IMStreamHandler, IMUploadHandler
 from app.controllers.home import IndexHandler
 # 引入admin-controller层
-from app.controllers.admin import AdminLoginHandler,AdminLogoutHandler,AdminIndexHandler,AdminWelcomeHandler
+from app.controllers.admin import AdminLoginHandler,AdminLogoutHandler,AdminIndexHandler,AdminWelcomeHandler,AdminStatsHandler
 from app.controllers.admin_im import AdminIMApiHandler, AdminIMListHandler
 from app.controllers.admin_user import AdminUserListHandler,AdminUserApiHandler
 from app.controllers.admin_function import AdminFunctionListHandler,AdminFunctionApiHandler
@@ -45,6 +45,10 @@ from app.controllers.admin_data_screen import (
 	AdminOpinionAnalyzeStreamHandler,
 )
 from app.controllers.employee import EmployeeOptionsHandler,EmployeeChatHandler,EmployeeStreamHandler,WeatherImageHandler
+from app.controllers.database import DatabaseConfigHandler, DatabaseTestHandler, DatabaseMigrateHandler, AdminDatabaseHandler
+from app.controllers.admin_scheduler import AdminSchedulerListHandler, AdminSchedulerApiHandler
+from app.controllers.admin_workflow import AdminWorkflowListHandler, AdminWorkflowApiHandler, AdminWorkflowStatsHandler
+from app.controllers.admin_monitor import AdminMonitorDashboardHandler, AdminMonitorStatsHandler, AdminReportDownloadHandler, AdminReportDeleteHandler
 # 引入db-auth层
 from app.models.db import init_db
 
@@ -116,10 +120,24 @@ def make_app():
 		(r"/api/employee/stream",EmployeeStreamHandler),
 		(r"/api/weather/image",WeatherImageHandler),
 		(r"/api/image/proxy",ImageProxyHandler),
+		(r"/api/database/config",DatabaseConfigHandler),
+		(r"/api/database/test",DatabaseTestHandler),
+		(r"/api/database/migrate",DatabaseMigrateHandler),
+		(r"/admin/scheduler/list",AdminSchedulerListHandler),
+		(r"/admin/scheduler/api",AdminSchedulerApiHandler),
+		(r"/admin/workflow/list",AdminWorkflowListHandler),
+		(r"/admin/workflow/api",AdminWorkflowApiHandler),
+		(r"/admin/workflow/stats",AdminWorkflowStatsHandler),
+		(r"/admin/monitor",AdminMonitorDashboardHandler),
+		(r"/admin/monitor/api",AdminMonitorStatsHandler),
+		(r"/admin/monitor/download",AdminReportDownloadHandler),
+		(r"/admin/monitor/delete",AdminReportDeleteHandler),
+		(r"/admin/database",AdminDatabaseHandler),
 		(r"/admin/login",AdminLoginHandler),
 		(r"/admin/logout",AdminLogoutHandler),
 		(r"/admin",AdminIndexHandler),
 		(r"/admin/welcome",AdminWelcomeHandler),
+		(r"/admin/api/stats",AdminStatsHandler),
 		(r"/admin/user/list",AdminUserListHandler),
 		(r"/admin/api/user",AdminUserApiHandler),
 		(r"/admin/function/list",AdminFunctionListHandler),

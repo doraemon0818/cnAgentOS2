@@ -1,7 +1,9 @@
+import json
 import tornado.web
 from app.controllers.base import BaseHandler
 from app.models.function import FunctionRepository
 from app.models.user import UserRepository
+from app.models.db import get_connection
 
 class AdminLoginHandler(BaseHandler):
     def get(self):
@@ -55,3 +57,26 @@ class AdminWelcomeHandler(AdminBaseHandler):
     @tornado.web.authenticated
     def get(self):
         self.render("admin/welcome.html", title="欢迎页")
+
+class AdminStatsHandler(AdminBaseHandler):
+    @tornado.web.authenticated
+    def get(self):
+        with get_connection() as conn:
+            user_count = conn.execute("select count(*) as total from users").fetchone()["total"]
+            employee_count = conn.execute("select count(*) as total from digital_employees where status=1").fetchone()["total"]
+            source_count = conn.execute("select count(*) as total from surveillance_sources where status=1").fetchone()["total"]
+            model_usage = conn.execute(
+                "select coalesce(sum(total_tokens),0) as total_tokens, count(*) as total_calls from model_usage_logs"
+            ).fetchone()
+        
+        self.set_header("Content-Type", "application/json")
+        self.write(json.dumps({
+            "code": 0,
+            "msg": "",
+            "data": {
+                "user_count": user_count,
+                "employee_count": employee_count,
+                "model_calls": model_usage["total_calls"],
+                "source_count": source_count
+            }
+        }, ensure_ascii=False))

@@ -789,6 +789,7 @@
                         '    <button type="button" class="layui-btn layui-btn-normal" id="runNormalTest">普通测试</button>' +
                         '    <button type="button" class="layui-btn" id="runStreamTest"' + (Number(model.enable_sse) === 1 ? '' : ' disabled') + '>SSE流式测试</button>' +
                         '    <button type="button" class="layui-btn layui-btn-primary" id="clearTestConsole">清空输出</button>' +
+                        '    <button type="button" class="layui-btn layui-btn-danger" id="exitTestDialog">退出</button>' +
                         '  </div>' +
                         '  <div class="test-console" id="testConsole">等待测试...</div>' +
                         '  <div class="test-meta">' +
@@ -826,6 +827,13 @@
                             $('#clearTestConsole').on('click', function(){
                                 $('#testConsole').text('等待测试...');
                                 setMeta({});
+                            });
+
+                            $('#exitTestDialog').on('click', function(){
+                                if (source) {
+                                    source.close();
+                                }
+                                layer.close(index);
                             });
 
                             $('#runNormalTest').on('click', function(){

@@ -770,6 +770,50 @@
             padding: 8px 10px;
             border-radius: 12px;
             border: 1px solid rgba(55, 173, 222, 0.12);
+        }
+        .group-settings-popover {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 180px;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(56, 160, 201, 0.16);
+            background: rgba(7, 21, 33, 0.98);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.26);
+            display: none;
+            z-index: 30;
+        }
+        .group-settings-popover.active {
+            display: block;
+        }
+        .popover-title {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            color: rgba(255, 255, 255, 0.6);
+            border-bottom: 1px solid rgba(56, 160, 201, 0.12);
+        }
+        .popover-item {
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            text-align: left;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .popover-item:hover {
+            background: rgba(35, 154, 201, 0.16);
+        }
+        .member-popover-item {
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(55, 173, 222, 0.12);
             background: rgba(11, 35, 50, 0.96);
             color: #d5f4ff;
             font-size: 12px;
@@ -794,6 +838,7 @@
             display: flex;
             gap: 12px;
             align-items: flex-start;
+            position: relative;
         }
         .message-row.weather-card-row {
             justify-content: flex-start;
@@ -826,6 +871,14 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
+            position: relative;
+        }
+        .message-main .message-actions {
+            margin-top: 2px;
+            justify-content: flex-start;
+        }
+        .message-row.self .message-main .message-actions {
+            justify-content: flex-end;
         }
         .message-main:has(.music-card) {
             background: transparent !important;
@@ -886,6 +939,31 @@
             font-size: 32px;
             line-height: 1.3;
             padding: 10px 16px;
+        }
+        .message-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .message-action-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(5, 24, 37, 0.8);
+            color: rgba(255, 255, 255, 0.5);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .message-action-btn:hover {
+            background: rgba(10, 40, 58, 0.9);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .message-action-btn svg {
+            width: 13px;
+            height: 13px;
         }
         .weather-card-standalone {
             width: 100%;
@@ -1797,6 +1875,28 @@
                                 <div class="member-popover-title">群成员</div>
                                 <div class="member-popover-list" id="memberPopoverList"></div>
                             </div>
+                            <button class="chat-head-icon-btn" id="groupSettingsBtn" type="button" onclick="toggleGroupSettings()" title="群设置" aria-label="群设置" style="display:none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                            <div class="group-settings-popover" id="groupSettingsPopover">
+                                <div class="popover-title">群设置</div>
+                                <button class="popover-item" onclick="quitGroup(); closeGroupSettings();">
+                                    <span style="color: #ff4757;">🚪 退出群聊</span>
+                                </button>
+                                <button class="popover-item" onclick="deleteChatHistory(); closeGroupSettings();">
+                                    <span>🗑️ 删除聊天记录</span>
+                                </button>
+                            </div>
+                            <button class="chat-head-icon-btn" id="deleteChatBtn" type="button" onclick="deleteChatHistory()" title="删除聊天记录" aria-label="删除聊天记录" style="display:none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1890,6 +1990,27 @@
             return String(value || '').replace(/[&<>"']/g, function (s) {
                 return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s];
             });
+        }
+
+        function escapeAttr(value) {
+            return String(value || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function copyMessage(btn) {
+            var content = btn.getAttribute('data-content') || '';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(content).then(function(){
+                    btn.setAttribute('title', '已复制');
+                    setTimeout(function(){ btn.setAttribute('title', '复制'); }, 1500);
+                });
+            }
+        }
+
+        function deleteMessage(btn) {
+            var row = btn.closest('.message-row');
+            if (row) {
+                row.remove();
+            }
         }
 
         function getCookie(name) {
@@ -2146,6 +2267,86 @@
             var popover = document.getElementById('memberPopover');
             if (popover) {
                 popover.classList.remove('active');
+            }
+        }
+
+        function toggleGroupSettings() {
+            var button = document.getElementById('groupSettingsBtn');
+            var popover = document.getElementById('groupSettingsPopover');
+            if (!button || !popover || button.style.display === 'none') {
+                return;
+            }
+            popover.classList.toggle('active');
+            closeMemberPopover();
+        }
+
+        function closeGroupSettings() {
+            var popover = document.getElementById('groupSettingsPopover');
+            if (popover) {
+                popover.classList.remove('active');
+            }
+        }
+
+        function quitGroup() {
+            if (!state.currentConversation) {
+                return;
+            }
+            var groupName = state.currentConversation.display_name || '该群聊';
+            if (confirm('确定要退出 "' + groupName + '" 吗？退出后将不再接收该群消息。')) {
+                var convId = state.currentConversation.id;
+                
+                apiPost('delete_conversation', {
+                    conversation_id: convId
+                }).then(function(data) {
+                    if (data.code === 0) {
+                    // 从会话列表中移除
+                    state.conversations = state.conversations.filter(function(c) {
+                        return c.id !== convId;
+                    });
+                    renderConversations();
+                    
+                    // 清空聊天窗口
+                    document.getElementById('messageList').innerHTML = '<div class="empty-chat"><div style="font-size:20px;font-weight:800;margin-bottom:8px;">已退出群聊</div><div>您已退出该群聊，可重新加入或选择其他会话。</div></div>';
+                    state.currentConversation = null;
+                    state.messages = [];
+                    state.currentMembers = [];
+                    document.getElementById('chatTitle').textContent = '请选择一个会话';
+                    document.getElementById('groupSettingsBtn').style.display = 'none';
+                    document.getElementById('memberToggleBtn').style.display = 'none';
+                    closeGroupSettings();
+                    showToast('已退出群聊', 'success');
+                    } else {
+                        showToast('退出失败：' + data.msg, 'error');
+                    }
+                }).catch(function(err) {
+                    showToast('退出失败：' + (err.message || '网络错误'), 'error');
+                });
+            }
+        }
+
+        function deleteChatHistory() {
+            if (!state.currentConversation) {
+                return;
+            }
+            var convName = state.currentConversation.display_name || '该会话';
+            if (confirm('确定要删除 "' + convName + '" 的所有聊天记录吗？此操作不可恢复。')) {
+                var convId = state.currentConversation.id;
+                
+                apiPost('delete_conversation_history', {
+                    conversation_id: convId
+                }).then(function(data) {
+                    if (data.code === 0) {
+                        // 清空聊天窗口
+                        document.getElementById('messageList').innerHTML = '<div class="empty-chat"><div style="font-size:20px;font-weight:800;margin-bottom:8px;">聊天记录已清空</div><div>开始新的对话吧！</div></div>';
+                        state.messages = [];
+                        closeGroupSettings();
+                        showToast('聊天记录已删除', 'success');
+                    } else {
+                        showToast('删除失败：' + data.msg, 'error');
+                    }
+                }).catch(function(err) {
+                    showToast('删除失败：' + (err.message || '网络错误'), 'error');
+                });
             }
         }
 
@@ -3649,23 +3850,33 @@
         }
 
         function renderMembers(members) {
-            var button = document.getElementById('memberToggleBtn');
+            var memberButton = document.getElementById('memberToggleBtn');
+            var settingsButton = document.getElementById('groupSettingsBtn');
+            var deleteChatBtn = document.getElementById('deleteChatBtn');
             var list = document.getElementById('memberPopoverList');
             var title = document.querySelector('.member-popover-title');
             var isGroup = state.currentConversation && state.currentConversation.chat_type === 'group';
-            if (!button || !list || !title) {
+            var isEmployee = state.currentConversation && state.currentConversation.chat_type === 'employee';
+            var isPrivate = state.currentConversation && state.currentConversation.chat_type === 'private';
+            if (!memberButton || !list || !title) {
                 renderMentionTools();
                 return;
             }
             if (!isGroup || !members || !members.length) {
-                button.style.display = 'none';
+                memberButton.style.display = 'none';
+                settingsButton.style.display = 'none';
+                // 非群聊会话显示删除聊天记录按钮
+                deleteChatBtn.style.display = (isEmployee || isPrivate) ? 'inline-flex' : 'none';
                 list.innerHTML = '';
                 title.textContent = '群成员';
                 closeMemberPopover();
+                closeGroupSettings();
                 renderMentionTools();
                 return;
             }
-            button.style.display = 'inline-flex';
+            memberButton.style.display = 'inline-flex';
+            settingsButton.style.display = 'inline-flex';
+            deleteChatBtn.style.display = 'none'; // 群聊通过群设置弹窗删除
             title.textContent = '群成员（' + members.length + '）';
             list.innerHTML = members.map(function (item) {
                 var suffix = item.member_type === 'employee' ? ' · 数字员工' : '';
@@ -3741,12 +3952,21 @@
                 var divider = shouldShowMessageDivider(previous, item)
                     ? '<div class="message-time-divider">' + escapeHtml(formatMessageDividerTime(item.create_at || '')) + '</div>'
                     : '';
+                var messageContent = item.content_text || '';
                 var messageHtml = divider +
                     '<div class="message-row' + (isSelf ? ' self' : '') + (isMusic ? ' music-message' : '') + '">' +
                         (isSelf ? '' : otherAvatar) +
                         '<div class="message-main' + (isMusic ? ' music-message-main' : '') + '">' +
                             '<div class="sender-line' + (showSenderLine ? '' : ' hidden') + (isMusic ? ' music-sender-hidden' : '') + '">' + escapeHtml(item.sender_name || '未知') + '</div>' +
                             bubbleContent +
+                            '<div class="message-actions">' +
+                                '<button class="message-action-btn" title="复制" onclick="copyMessage(this)" data-content="' + escapeAttr(messageContent) + '">' +
+                                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>' +
+                                '</button>' +
+                                '<button class="message-action-btn" title="删除" onclick="deleteMessage(this)">' +
+                                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
+                                '</button>' +
+                            '</div>' +
                         '</div>' +
                         (isSelf ? selfAvatar : '') +
                     '</div>';
@@ -4175,5 +4395,11 @@
             }
         }, 4000);
     </script>
+    
+    <!-- 引入增强功能 -->
+    <script src="/static/js/gesture-controller.js"></script>
+    <script src="/static/js/speech-controller.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="/static/js/enhance.js"></script>
 </body>
 </html>

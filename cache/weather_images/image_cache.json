@@ -117,5 +117,12 @@
     "spot": "澳门博物馆",
     "image_url": "https://wxcz-aigc-space.oss-cn-beijing.aliyuncs.com/ai-images/20260526/8609106ff3564f4a990e29eedcbf7bb8.png",
     "created_at": 1779808029.1551242
+  },
+  "0caec825f39a27fa989e80b73c4d5408": {
+    "city": "南充",
+    "weather": "晴转多云",
+    "spot": "阆中古城",
+    "image_url": "https://wxcz-aigc-space.oss-cn-beijing.aliyuncs.com/ai-images/20260530/297c8651589e40f0a9ed5d1c2a9ebe80.png",
+    "created_at": 1780121535.6791136
   }
 }

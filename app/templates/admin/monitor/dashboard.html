@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <style>
+        :root {
+            --glow-green: #00f7ff;
+            --glow-cyan: #13d4ff;
+            --glow-green-soft: rgba(0, 247, 255, 0.15);
+            --glow-cyan-soft: rgba(19, 212, 255, 0.1);
+            --bg-primary: #02101d;
+            --bg-secondary: #041a2a;
+            --bg-panel: rgba(6, 24, 38, 0.82);
+            --border-color: rgba(30, 228, 255, 0.2);
+            --border-strong: rgba(34, 245, 255, 0.42);
+            --text-primary: #ecfcff;
+            --text-secondary: #b7dbe5;
+            --text-muted: #79aebb;
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(0, 247, 255, 0.16), transparent 24%),
+                radial-gradient(circle at top right, rgba(19, 212, 255, 0.1), transparent 22%),
+                radial-gradient(circle at bottom center, rgba(0, 180, 255, 0.08), transparent 20%),
+                linear-gradient(180deg, #02101d 0%, #031726 48%, #041a2a 100%) !important;
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(rgba(25, 236, 255, 0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(25, 236, 255, 0.045) 1px, transparent 1px);
+            background-size: 30px 30px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 86%);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            color: var(--text-primary);
+            font-size: 28px;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--glow-green), var(--glow-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(0, 247, 255, 0.2);
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 18px 48px rgba(0, 7, 15, 0.42), 0 0 0 1px rgba(20, 224, 255, 0.08);
+            backdrop-filter: blur(14px);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 247, 255, 0.15), 0 0 20px rgba(0, 247, 255, 0.08);
+            border-color: var(--border-strong);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--glow-green), var(--glow-cyan));
+            box-shadow: 0 0 12px rgba(0, 247, 255, 0.4);
+        }
+        
+        .stat-card.success::before { 
+            background: linear-gradient(90deg, #32d296, #37dc8a);
+            box-shadow: 0 0 12px rgba(50, 210, 150, 0.4);
+        }
+        .stat-card.warning::before { 
+            background: linear-gradient(90deg, #ffbc5e, #ff7a59);
+            box-shadow: 0 0 12px rgba(255, 188, 94, 0.4);
+        }
+        .stat-card.error::before { 
+            background: linear-gradient(90deg, #ff6b7a, #ff4f8b);
+            box-shadow: 0 0 12px rgba(255, 107, 122, 0.4);
+        }
+        .stat-card.info::before { 
+            background: linear-gradient(90deg, var(--glow-green), var(--glow-cyan));
+            box-shadow: 0 0 12px rgba(0, 247, 255, 0.4);
+        }
+        
+        .stat-card .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+        
+        .stat-card .stat-label {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card.success .stat-value { color: #32d296; }
+        .stat-card.warning .stat-value { color: #ffbc5e; }
+        .stat-card.error .stat-value { color: #ff6b7a; }
+        .stat-card.info .stat-value { color: var(--glow-cyan); }
+        
+        .section {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 18px 48px rgba(0, 7, 15, 0.42), 0 0 0 1px rgba(20, 224, 255, 0.08);
+            backdrop-filter: blur(14px);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-shadow: 0 0 8px rgba(0, 247, 255, 0.15);
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .table th {
+            background: rgba(6, 24, 38, 0.8);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table tr:hover td {
+            background: rgba(0, 247, 255, 0.05);
+        }
+        
+        .table td {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .status-success {
+            background: rgba(50, 210, 150, 0.25);
+            color: #32d296;
+            border: 1px solid rgba(50, 210, 150, 0.4);
+            box-shadow: 0 0 8px rgba(50, 210, 150, 0.1);
+        }
+        
+        .status-failed {
+            background: rgba(255, 107, 122, 0.25);
+            color: #ff6b7a;
+            border: 1px solid rgba(255, 107, 122, 0.4);
+            box-shadow: 0 0 8px rgba(255, 107, 122, 0.1);
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid;
+        }
+        
+        .alert-item.error { 
+            background: rgba(255, 107, 122, 0.08); 
+            border-color: rgba(255, 107, 122, 0.2); 
+        }
+        .alert-item.warning { 
+            background: rgba(255, 188, 94, 0.08); 
+            border-color: rgba(255, 188, 94, 0.2); 
+        }
+        .alert-item.info { 
+            background: rgba(0, 247, 255, 0.08); 
+            border-color: rgba(0, 247, 255, 0.2); 
+        }
+        
+        .alert-icon {
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .alert-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .alert-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        /* Glass-morphism buttons */
+        .download-btn, .delete-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .download-btn::before, .delete-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .download-btn:hover::before, .delete-btn:hover::before {
+            left: 100%;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.25), rgba(19, 212, 255, 0.15));
+            border: 1px solid rgba(0, 247, 255, 0.4);
+            color: var(--glow-green);
+            box-shadow: 0 4px 16px rgba(0, 247, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .download-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.35), rgba(19, 212, 255, 0.25));
+            border-color: var(--glow-green);
+            box-shadow: 0 8px 24px rgba(0, 247, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .delete-btn {
+            background: linear-gradient(135deg, rgba(255, 107, 122, 0.25), rgba(255, 79, 139, 0.15));
+            border: 1px solid rgba(255, 107, 122, 0.4);
+            color: #ff6b7a;
+            box-shadow: 0 4px 16px rgba(255, 107, 122, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            margin-left: 6px;
+        }
+        
+        .delete-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 122, 0.35), rgba(255, 79, 139, 0.25));
+            border-color: #ff6b7a;
+            box-shadow: 0 8px 24px rgba(255, 107, 122, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(6, 24, 38, 0.8);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-fill.success { 
+            background: linear-gradient(90deg, #32d296, #37dc8a);
+            box-shadow: 0 0 8px rgba(50, 210, 150, 0.3);
+        }
+        .progress-fill.warning { 
+            background: linear-gradient(90deg, #ffbc5e, #ff7a59);
+            box-shadow: 0 0 8px rgba(255, 188, 94, 0.3);
+        }
+        .progress-fill.error { 
+            background: linear-gradient(90deg, #ff6b7a, #ff4f8b);
+            box-shadow: 0 0 8px rgba(255, 107, 122, 0.3);
+        }
+        
+        .chart-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .chart-box {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(6, 24, 38, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .chart-box:hover {
+            border-color: var(--border-strong);
+            box-shadow: 0 0 12px rgba(0, 247, 255, 0.08);
+        }
+        
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+        
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .bar-label {
+            width: 100px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+        
+        .bar-track {
+            flex: 1;
+            height: 28px;
+            background: rgba(6, 24, 38, 0.8);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        
+        .bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 12px;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .bar-fill.color1 { background: linear-gradient(90deg, var(--glow-green), var(--glow-cyan)); }
+        .bar-fill.color2 { background: linear-gradient(90deg, #32d296, #37dc8a); }
+        .bar-fill.color3 { background: linear-gradient(90deg, #ffbc5e, #ff7a59); }
+        .bar-fill.color4 { background: linear-gradient(90deg, #ff6b7a, #ff4f8b); }
+        .bar-fill.color5 { background: linear-gradient(90deg, #6d7cff, #a78bfa); }
+        
+        .employee-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .employee-card {
+            background: rgba(6, 24, 38, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .employee-card:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-1px);
+            box-shadow: 0 0 12px rgba(0, 247, 255, 0.08);
+        }
+        
+        .employee-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--glow-green), var(--glow-cyan));
+            color: #02101d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            box-shadow: 0 0 12px rgba(0, 247, 255, 0.3);
+        }
+        
+        .employee-info {
+            flex: 1;
+        }
+        
+        .employee-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .employee-category {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        .employee-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .employee-status.online { 
+            background: #32d296; 
+            box-shadow: 0 0 8px rgba(50, 210, 150, 0.5);
+        }
+        .employee-status.offline { 
+            background: #ff6b7a; 
+            box-shadow: 0 0 8px rgba(255, 107, 122, 0.5);
+        }
+        
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .data-item {
+            background: rgba(6, 24, 38, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        
+        .data-item:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-1px);
+            box-shadow: 0 0 12px rgba(0, 247, 255, 0.08);
+        }
+        
+        .data-value {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--glow-green), var(--glow-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .data-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        
+        .btn-refresh {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.25), rgba(19, 212, 255, 0.15));
+            border: 1px solid rgba(0, 247, 255, 0.4);
+            color: var(--glow-green);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 247, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-refresh::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-refresh:hover::before {
+            left: 100%;
+        }
+        
+        .btn-refresh:hover {
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.35), rgba(19, 212, 255, 0.25));
+            border-color: var(--glow-green);
+            box-shadow: 0 8px 24px rgba(0, 247, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .btn-clear-all {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, rgba(255, 107, 122, 0.25), rgba(255, 79, 139, 0.15));
+            border: 1px solid rgba(255, 107, 122, 0.4);
+            color: #ff6b7a;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin-left: 10px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(255, 107, 122, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-clear-all::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-clear-all:hover::before {
+            left: 100%;
+        }
+        
+        .btn-clear-all:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 122, 0.35), rgba(255, 79, 139, 0.25));
+            border-color: #ff6b7a;
+            box-shadow: 0 8px 24px rgba(255, 107, 122, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header .section-title {
+            margin-bottom: 0;
+        }
+        
+        .file-icon {
+            margin-right: 8px;
+        }
+        
+        .file-icon.pdf { color: #ff6b7a; }
+        .file-icon.xlsx { color: #32d296; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>监控仪表盘</h1>
+        
+        <div class="dashboard-grid">
+            <div class="stat-card success">
+                <div class="stat-value" id="task-count">--</div>
+                <div class="stat-label">定时任务总数</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-value" id="wf-count">--</div>
+                <div class="stat-label">工作流总数</div>
+            </div>
+            <div class="stat-card info">
+                <div class="stat-value" id="today-runs">--</div>
+                <div class="stat-label">今日执行次数</div>
+            </div>
+            <div class="stat-card error">
+                <div class="stat-value" id="alerts-count">--</div>
+                <div class="stat-label">告警数量</div>
+            </div>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="stat-card" style="grid-column: span 2;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="stat-value" id="task-success-rate">--</div>
+                        <div class="stat-label">任务成功率</div>
+                    </div>
+                    <div style="width: 150px;">
+                        <div class="progress-bar">
+                            <div class="progress-fill success" id="task-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card" style="grid-column: span 2;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="stat-value" id="wf-success-rate">--</div>
+                        <div class="stat-label">工作流成功率</div>
+                    </div>
+                    <div style="width: 150px;">
+                        <div class="progress-bar">
+                            <div class="progress-fill success" id="wf-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title"> 系统数据总览</div>
+            <div class="data-grid" id="data-overview">
+                <div class="data-item">
+                    <div class="data-value" id="surveillance-total">--</div>
+                    <div class="data-label">瞭望数据条数</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="api-total">--</div>
+                    <div class="data-label">API接口数</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="employee-total">--</div>
+                    <div class="data-label">数字员工数</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="im-messages">--</div>
+                    <div class="data-label">IM消息数</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="opinion-total">--</div>
+                    <div class="data-label">舆情分析数</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-value" id="reports-total">--</div>
+                    <div class="data-label">生成报表数</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">📈 关键词采集分布</div>
+            <div class="chart-container">
+                <div class="chart-box" style="flex: 2;">
+                    <div class="chart-title">各关键词采集数据量</div>
+                    <div class="bar-chart" id="keyword-chart">
+                        <p style="color: #79aebb; text-align: center;">加载中...</p>
+                    </div>
+                </div>
+                <div class="chart-box" style="flex: 1;">
+                    <div class="chart-title">瞭望数据明细</div>
+                    <table class="table" style="font-size: 13px;">
+                        <thead>
+                            <tr>
+                                <th>项目</th>
+                                <th>数量</th>
+                            </tr>
+                        </thead>
+                        <tbody id="surveillance-table">
+                            <tr><td colspan="2" style="text-align: center; color: #79aebb;">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🤖 数字员工状态</div>
+            <div class="employee-grid" id="employee-grid">
+                <p style="color: #79aebb;">加载中...</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">🔔 系统告警</div>
+                <button class="btn-refresh" onclick="loadData()">刷新</button>
+            </div>
+            <div id="alerts-container">
+                <p style="text-align: center; color: #79aebb;">加载中...</p>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">⏱️ 最近任务执行</div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>任务名称</th>
+                        <th>状态</th>
+                        <th>消息</th>
+                        <th>开始时间</th>
+                        <th>耗时</th>
+                    </tr>
+                </thead>
+                <tbody id="task-logs-body">
+                    <tr><td colspan="5" style="text-align: center; color: #79aebb;">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🔄 最近工作流执行</div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>工作流名称</th>
+                        <th>状态</th>
+                        <th>消息</th>
+                        <th>开始时间</th>
+                        <th>耗时</th>
+                    </tr>
+                </thead>
+                <tbody id="wf-logs-body">
+                    <tr><td colspan="5" style="text-align: center; color: #79aebb;">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <div class="section-header">
+                <div class="section-title">📊 生成的报表</div>
+                <div>
+                    <button class="btn-clear-all" onclick="clearAllReports()">清空全部</button>
+                </div>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>文件名</th>
+                        <th>类型</th>
+                        <th>大小(KB)</th>
+                        <th>生成时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="reports-body">
+                    <tr><td colspan="5" style="text-align: center; color: #79aebb;">加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        function loadData() {
+            loadOverview();
+            loadRecentTasks();
+            loadRecentWorkflows();
+            loadReports();
+            loadAlerts();
+        }
+        
+        function loadOverview() {
+            fetch('/admin/monitor/api?action=overview')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        document.getElementById('task-count').textContent = data.data.tasks.total;
+                        document.getElementById('wf-count').textContent = data.data.workflows.total;
+                        document.getElementById('today-runs').textContent = 
+                            data.data.tasks.today_runs + data.data.workflows.today_runs;
+                        
+                        let taskRate = data.data.tasks.success_rate;
+                        document.getElementById('task-success-rate').textContent = taskRate + '%';
+                        document.getElementById('task-progress').style.width = taskRate + '%';
+                        
+                        let wfRate = data.data.workflows.success_rate;
+                        document.getElementById('wf-success-rate').textContent = wfRate + '%';
+                        document.getElementById('wf-progress').style.width = wfRate + '%';
+                        
+                        if (data.data.surveillance) {
+                            document.getElementById('surveillance-total').textContent = data.data.surveillance.total_records;
+                            document.getElementById('api-total').textContent = data.data.api.total;
+                            document.getElementById('employee-total').textContent = data.data.employees.total;
+                            document.getElementById('im-messages').textContent = data.data.im.messages;
+                            document.getElementById('opinion-total').textContent = data.data.opinion.total;
+                            document.getElementById('reports-total').textContent = data.data.reports.total;
+                            
+                            loadKeywordChart(data.data.surveillance.keywords, data.data.surveillance.total_records);
+                            loadSurveillanceTable(data.data.surveillance);
+                        }
+                        
+                        if (data.data.employees && data.data.employees.list) {
+                            loadEmployeeGrid(data.data.employees.list);
+                        }
+                    }
+                });
+        }
+        
+        function loadKeywordChart(keywords, total) {
+            let html = '';
+            let colors = ['color1', 'color2', 'color3', 'color4', 'color5'];
+            keywords.forEach((item, index) => {
+                let pct = total > 0 ? Math.round(item.count / total * 100) : 0;
+                html += `
+                    <div class="bar-item">
+                        <div class="bar-label">${item.keyword}</div>
+                        <div class="bar-track">
+                            <div class="bar-fill ${colors[index % 5]}" style="width: ${pct}%">${item.count}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('keyword-chart').innerHTML = html || '<p style="color: #79aebb; text-align: center;">暂无数据</p>';
+        }
+        
+        function loadSurveillanceTable(surv) {
+            let html = `
+                <tr><td>采集源数量</td><td>${surv.sources}</td></tr>
+                <tr><td>深度采集任务</td><td>${surv.deep_tasks}</td></tr>
+                <tr><td>总采集记录</td><td>${surv.total_records}</td></tr>
+            `;
+            document.getElementById('surveillance-table').innerHTML = html;
+        }
+        
+        function loadEmployeeGrid(employees) {
+            let html = '';
+            employees.forEach(emp => {
+                let statusClass = emp.status ? 'online' : 'offline';
+                let initial = emp.name.charAt(0);
+                html += `
+                    <div class="employee-card">
+                        <div class="employee-avatar">${initial}</div>
+                        <div class="employee-info">
+                            <div class="employee-name">${emp.name}</div>
+                            <div class="employee-category">${emp.category}</div>
+                        </div>
+                        <div class="employee-status ${statusClass}"></div>
+                    </div>
+                `;
+            });
+            document.getElementById('employee-grid').innerHTML = html || '<p style="color: #79aebb;">暂无数字员工</p>';
+        }
+        
+        function loadRecentTasks() {
+            fetch('/admin/monitor/api?action=recent_tasks')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        let html = '';
+                        data.data.logs.forEach(log => {
+                            let statusClass = log.status === 'success' ? 'status-success' : 'status-failed';
+                            html += `
+                                <tr>
+                                    <td>${log.task_name}</td>
+                                    <td><span class="status-badge ${statusClass}">${log.status}</span></td>
+                                    <td>${log.message}</td>
+                                    <td>${log.start_time}</td>
+                                    <td>${log.duration_seconds ? log.duration_seconds.toFixed(2) + 's' : '-'}</td>
+                                </tr>
+                            `;
+                        });
+                        document.getElementById('task-logs-body').innerHTML = html || 
+                            '<tr><td colspan="5" style="text-align: center; color: #79aebb;">暂无数据</td></tr>';
+                    }
+                });
+        }
+        
+        function loadRecentWorkflows() {
+            fetch('/admin/monitor/api?action=recent_workflows')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        let html = '';
+                        data.data.logs.forEach(log => {
+                            let statusClass = log.status === 'success' ? 'status-success' : 'status-failed';
+                            html += `
+                                <tr>
+                                    <td>${log.workflow_name}</td>
+                                    <td><span class="status-badge ${statusClass}">${log.status}</span></td>
+                                    <td>${log.message}</td>
+                                    <td>${log.start_time}</td>
+                                    <td>${log.duration_seconds ? log.duration_seconds.toFixed(2) + 's' : '-'}</td>
+                                </tr>
+                            `;
+                        });
+                        document.getElementById('wf-logs-body').innerHTML = html || 
+                            '<tr><td colspan="5" style="text-align: center; color: #79aebb;">暂无数据</td></tr>';
+                    }
+                });
+        }
+        
+        function loadReports() {
+            fetch('/admin/monitor/api?action=reports')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        let html = '';
+                        data.data.reports.forEach(report => {
+                            let isPdf = report.filename.endsWith('.pdf');
+                            let icon = isPdf ? '📄' : '📊';
+                            let iconClass = isPdf ? 'pdf' : 'xlsx';
+                            let sizeKB = (report.size / 1024).toFixed(1);
+                            html += `
+                                <tr>
+                                    <td><span class="file-icon ${iconClass}">${icon}</span>${report.filename}</td>
+                                    <td>${isPdf ? 'PDF' : 'Excel'}</td>
+                                    <td>${sizeKB} KB</td>
+                                    <td>${report.created_time}</td>
+                                    <td>
+                                        <button class="download-btn" onclick="downloadReport('${report.filename}')">
+                                            下载
+                                        </button>
+                                        <button class="delete-btn" onclick="deleteReport('${report.filename}')">
+                                            删除
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        document.getElementById('reports-body').innerHTML = html || 
+                            '<tr><td colspan="5" style="text-align: center; color: #79aebb;">暂无报表</td></tr>';
+                    }
+                });
+        }
+        
+        function loadAlerts() {
+            fetch('/admin/monitor/api?action=alerts')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        let html = '';
+                        document.getElementById('alerts-count').textContent = data.data.alerts.length;
+                        
+                        data.data.alerts.forEach(alert => {
+                            let icon = alert.type === 'error' ? '❌' : alert.type === 'warning' ? '⚠️' : '️';
+                            html += `
+                                <div class="alert-item ${alert.type}">
+                                    <div class="alert-icon">${icon}</div>
+                                    <div class="alert-content">
+                                        <div class="alert-title">${alert.title}</div>
+                                        <div class="alert-message">${alert.message}</div>
+                                    </div>
+                                    <div class="alert-time">${alert.time}</div>
+                                </div>
+                            `;
+                        });
+                        document.getElementById('alerts-container').innerHTML = html || 
+                            '<p style="text-align: center; color: #34d399;">✓ 系统运行正常，暂无告警</p>';
+                    }
+                });
+        }
+        
+        function downloadReport(filename) {
+            window.location.href = `/admin/monitor/download?filename=${encodeURIComponent(filename)}`;
+        }
+        
+        function deleteReport(filename) {
+            if (!confirm(`确定要删除报表 "${filename}" 吗？`)) return;
+            
+            fetch('/admin/monitor/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `filename=${encodeURIComponent(filename)}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 0) {
+                    alert('删除成功');
+                    loadReports();
+                    loadOverview();
+                } else {
+                    alert('删除失败：' + data.msg);
+                }
+            });
+        }
+        
+        function clearAllReports() {
+            if (!confirm('确定要清空所有报表文件吗？此操作不可恢复！')) return;
+            
+            fetch('/admin/monitor/api?action=reports')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 0 && data.data.reports.length > 0) {
+                        let promises = data.data.reports.map(report => 
+                            fetch('/admin/monitor/delete', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: `filename=${encodeURIComponent(report.filename)}`
+                            })
+                        );
+                        Promise.all(promises).then(() => {
+                            alert('已清空所有报表');
+                            loadReports();
+                            loadOverview();
+                        });
+                    } else {
+                        alert('没有可清空的报表');
+                    }
+                });
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadData);
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>

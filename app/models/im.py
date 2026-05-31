@@ -1430,6 +1430,63 @@ class IMRepository:
         return True, f"已删除 {deleted_count} 个文件"
 
     @staticmethod
+    def delete_conversation_history(user_id: int, conversation_id: int):
+        with get_connection() as conn:
+            row = IMRepository._load_conversation_row(conn, conversation_id)
+            if not row:
+                return False, "会话不存在"
+            if not IMRepository._conversation_member_exists(conn, conversation_id, user_id):
+                return False, "无权操作该会话"
+            
+            chat_type = row["chat_type"]
+            deleted_count = 0
+            
+            if chat_type == IMRepository.CHAT_PRIVATE:
+                conn.execute("delete from im_private_messages where conversation_id=?", (conversation_id,))
+                deleted_count = conn.total_changes
+            elif chat_type == IMRepository.CHAT_EMPLOYEE:
+                conn.execute("delete from im_private_messages where conversation_id=?", (conversation_id,))
+                deleted_count = conn.total_changes
+            elif chat_type == IMRepository.CHAT_GROUP:
+                conn.execute("delete from im_group_messages where conversation_id=?", (conversation_id,))
+                deleted_count = conn.total_changes
+            
+            # 重置会话的最后消息预览
+            conn.execute(
+                "update im_conversations set last_message_preview=null, last_sender_name=null, last_message_at=null where id=?",
+                (conversation_id,)
+            )
+            
+            return True, f"已删除 {deleted_count} 条消息"
+
+    @staticmethod
+    def delete_conversation(user_id: int, conversation_id: int):
+        with get_connection() as conn:
+            row = IMRepository._load_conversation_row(conn, conversation_id)
+            if not row:
+                return False, "会话不存在"
+            if not IMRepository._conversation_member_exists(conn, conversation_id, user_id):
+                return False, "无权操作该会话"
+            
+            chat_type = row["chat_type"]
+            
+            # 删除消息
+            if chat_type == IMRepository.CHAT_PRIVATE:
+                conn.execute("delete from im_private_messages where conversation_id=?", (conversation_id,))
+            elif chat_type == IMRepository.CHAT_EMPLOYEE:
+                conn.execute("delete from im_private_messages where conversation_id=?", (conversation_id,))
+            elif chat_type == IMRepository.CHAT_GROUP:
+                conn.execute("delete from im_group_messages where conversation_id=?", (conversation_id,))
+            
+            # 删除会话成员
+            conn.execute("delete from im_conversation_members where conversation_id=?", (conversation_id,))
+            
+            # 删除会话
+            conn.execute("delete from im_conversations where id=?", (conversation_id,))
+            
+            return True, "已删除会话"
+
+    @staticmethod
     def list_servers(page: int = 1, page_size: int = 20, keyword: str = ""):
         offset = (page - 1) * page_size
         params: List = []

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库配置</title>
+    <link rel="stylesheet" href="{{ static_url('layui/layui-v2.13.6/layui/css/layui.css') }}">
+    <link rel="stylesheet" href="{{ static_url('fontawesome/fontawesome-free-5.15.4-web/css/all.min.css') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f2f2f2;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .container {
+            background: var(--admin-bg-panel);
+            padding: 24px;
+            border-radius: 18px;
+            border: 1px solid var(--admin-border);
+            box-shadow: var(--admin-shadow);
+            backdrop-filter: blur(14px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::after {
+            content: "";
+            position: absolute;
+            inset: 10px;
+            border: 1px solid rgba(0, 247, 255, 0.06);
+            border-radius: inherit;
+            pointer-events: none;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(30, 228, 255, 0.16);
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-header h2 {
+            font-size: 20px;
+            color: var(--admin-text-primary);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-header h2 i {
+            color: var(--admin-accent);
+            font-size: 22px;
+        }
+
+        .current-db {
+            display: inline-block;
+            margin-left: 12px;
+            padding: 3px 14px;
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.16), rgba(19, 212, 255, 0.08));
+            color: var(--admin-accent);
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: normal;
+            border: 1px solid rgba(0, 247, 255, 0.24);
+        }
+
+        .form-section {
+            background: var(--admin-bg-soft);
+            border: 1px solid var(--admin-border);
+            border-radius: 14px;
+            padding: 20px 22px 6px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-title {
+            font-size: 15px;
+            color: var(--admin-text-primary);
+            margin-bottom: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: var(--admin-accent-2);
+            font-size: 17px;
+        }
+
+        .tip-text {
+            font-size: 12px;
+            color: var(--admin-text-muted);
+            line-height: 1.8;
+            margin-top: 8px;
+        }
+
+        .tip-text strong {
+            color: var(--admin-accent);
+        }
+
+        .db-type-switcher {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .db-type-btn {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 2px solid var(--admin-border);
+            background: var(--admin-bg-soft);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .db-type-btn::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.08), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .db-type-btn:hover::before {
+            opacity: 1;
+        }
+
+        .db-type-btn:hover {
+            border-color: rgba(0, 247, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 247, 255, 0.15);
+        }
+
+        .db-type-btn.active {
+            border-color: var(--admin-accent);
+            background: linear-gradient(135deg, rgba(0, 247, 255, 0.15), rgba(19, 212, 255, 0.08));
+            box-shadow: 0 0 20px rgba(0, 247, 255, 0.2), inset 0 0 20px rgba(0, 247, 255, 0.08);
+        }
+
+        .db-type-btn.active::after {
+            content: "✓";
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 22px;
+            height: 22px;
+            background: var(--admin-accent);
+            color: #041321;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 0 12px var(--admin-accent);
+        }
+
+        .db-type-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .db-type-btn.active .db-type-icon {
+            color: var(--admin-accent);
+            filter: drop-shadow(0 0 8px var(--admin-accent));
+        }
+
+        .db-type-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--admin-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .db-type-desc {
+            font-size: 12px;
+            color: var(--admin-text-muted);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-ok {
+            background: linear-gradient(135deg, rgba(50, 210, 150, 0.12), rgba(50, 210, 150, 0.06));
+            border: 1px solid rgba(50, 210, 150, 0.28);
+        }
+
+        .status-error {
+            background: linear-gradient(135deg, rgba(255, 107, 122, 0.12), rgba(255, 107, 122, 0.06));
+            border: 1px solid rgba(255, 107, 122, 0.28);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .status-dot.ok {
+            background: var(--admin-success);
+            color: var(--admin-success);
+        }
+
+        .status-dot.error {
+            background: var(--admin-danger);
+            color: var(--admin-danger);
+        }
+
+        #statusText {
+            color: var(--admin-text-secondary);
+            font-size: 14px;
+        }
+
+        .btn-group {
+            text-align: center;
+            margin-top: 28px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-group .layui-btn {
+            min-width: 130px;
+            margin: 0 8px;
+            height: 42px;
+            line-height: 42px;
+            font-size: 14px;
+        }
+
+        .btn-group .layui-btn i {
+            margin-right: 6px;
+        }
+
+        #migrateResult {
+            margin-top: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .layui-table[lay-skin="line"] {
+            background: transparent !important;
+        }
+
+        .layui-table[lay-skin="line"] th,
+        .layui-table[lay-skin="line"] td {
+            color: var(--admin-text-primary) !important;
+            border-color: rgba(111, 132, 255, 0.08) !important;
+        }
+
+        .layui-table[lay-skin="line"] th {
+            background: rgba(4, 18, 30, 0.96) !important;
+            color: #dffcff !important;
+        }
+
+        .layui-table[lay-skin="line"] tbody tr:nth-child(even) {
+            background: rgba(5, 19, 31, 0.82) !important;
+        }
+
+        .layui-table[lay-skin="line"] tbody tr:hover {
+            background: rgba(109, 124, 255, 0.08) !important;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ static_url('css/admin-premium-dark.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h2><i class="layui-icon layui-icon-set-fill"></i> 数据库配置<span class="current-db" id="currentDbType">当前：SQLite</span></h2>
+        </div>
+
+        <form class="layui-form" id="dbForm">
+            <div class="form-section">
+                <div class="section-title"><i class="layui-icon layui-icon-database"></i> 数据库类型</div>
+                <div class="db-type-switcher">
+                    <div class="db-type-btn active" data-type="sqlite" onclick="switchDbType('sqlite')">
+                        <span class="db-type-icon">🗄️</span>
+                        <div class="db-type-name">SQLite</div>
+                        <div class="db-type-desc">默认，轻量级本地数据库</div>
+                    </div>
+                    <div class="db-type-btn" data-type="mysql" onclick="switchDbType('mysql')">
+                        <span class="db-type-icon">🐬</span>
+                        <div class="db-type-name">MySQL</div>
+                        <div class="db-type-desc">企业级，高性能数据库</div>
+                    </div>
+                </div>
+                <input type="hidden" name="type" id="dbTypeSelect" value="sqlite">
+                <div class="tip-text">点击上方卡片切换数据库类型。当前使用：<strong id="dbTypeLabel">SQLite</strong></div>
+            </div>
+
+            <div id="sqliteSection" class="form-section">
+                <div class="section-title"><i class="layui-icon layui-icon-file"></i> SQLite 配置</div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">数据库路径</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="sqlite_path" id="sqlitePath" placeholder="SQLite 数据库文件路径" autocomplete="off" class="layui-input" readonly>
+                        <div class="tip-text">SQLite 数据库为本地文件，路径由系统自动管理。</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mysqlSection" class="form-section" style="display:none;">
+                <div class="section-title"><i class="layui-icon layui-icon-snowflake"></i> MySQL 连接参数</div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">主机地址</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="mysql_host" id="mysqlHost" placeholder="localhost" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">端口</label>
+                            <div class="layui-input-block">
+                                <input type="number" name="mysql_port" id="mysqlPort" placeholder="3306" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">用户名</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="mysql_user" id="mysqlUser" placeholder="root" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">密码</label>
+                            <div class="layui-input-block">
+                                <input type="password" name="mysql_password" id="mysqlPassword" placeholder="MySQL 密码" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-row layui-col-space12">
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">数据库名</label>
+                            <div class="layui-input-block">
+                                <input type="text" name="mysql_database" id="mysqlDatabase" placeholder="cnagentos" autocomplete="off" class="layui-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-col-md6">
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">字符集</label>
+                            <div class="layui-input-block">
+                                <select name="mysql_charset" id="mysqlCharset">
+                                    <option value="utf8mb4">utf8mb4（推荐）</option>
+                                    <option value="utf8">utf8</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-indicator status-ok" id="connectionStatus">
+                <span class="status-dot ok" id="statusDot"></span>
+                <span id="statusText">连接正常</span>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="layui-btn layui-btn-normal" id="testBtn">
+                    <i class="layui-icon layui-icon-search"></i> 测试连接
+                </button>
+                <button type="button" class="layui-btn layui-btn-warm" id="migrateBtn">
+                    <i class="layui-icon layui-icon-export"></i> 迁移数据
+                </button>
+                <button type="button" class="layui-btn" id="saveBtn">
+                    <i class="layui-icon layui-icon-ok"></i> 保存配置
+                </button>
+            </div>
+
+            <div id="migrateResult" style="display:none;">
+                <div class="form-section">
+                    <div class="section-title"><i class="layui-icon layui-icon-chart"></i> 迁移结果</div>
+                    <table class="layui-table" lay-skin="line" id="migrateTable">
+                        <thead>
+                            <tr><th>表名</th><th>数据量</th><th>状态</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
+    <script>
+        layui.use(['layer', 'jquery', 'form'], function(){
+            var layer = layui.layer;
+            var $ = layui.jquery;
+            var form = layui.form;
+
+            var currentConfig = null;
+
+            function getXsrfToken() {
+                var match = document.cookie.match(/(?:^|; )_xsrf=([^;]+)/);
+                return match ? decodeURIComponent(match[1]) : '';
+            }
+
+            function postData(url, data, callback) {
+                data._xsrf = getXsrfToken();
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    success: callback,
+                    error: function(){
+                        layer.msg('请求失败', {icon: 2});
+                    }
+                });
+            }
+
+            function loadConfig() {
+                $.get('/api/database/config', function(res){
+                    if (res.code === 0) {
+                        currentConfig = res.data;
+                        var currentType = res.current_type || 'sqlite';
+                        $('#dbTypeSelect').val(currentType);
+                        switchDbType(currentType);
+                        if (res.data.sqlite && res.data.sqlite.path) {
+                            $('#sqlitePath').val(res.data.sqlite.path);
+                        }
+                        if (res.data.mysql) {
+                            $('#mysqlHost').val(res.data.mysql.host || 'localhost');
+                            $('#mysqlPort').val(res.data.mysql.port || 3306);
+                            $('#mysqlUser').val(res.data.mysql.user || 'root');
+                            $('#mysqlPassword').val(res.data.mysql.password || '');
+                            $('#mysqlDatabase').val(res.data.mysql.database || 'cnagentos');
+                            $('#mysqlCharset').val(res.data.mysql.charset || 'utf8mb4');
+                        }
+                        form.render();
+                    } else {
+                        layer.msg('加载配置失败', {icon: 2});
+                    }
+                }, 'json');
+            }
+
+            function toggleSection(type) {
+                if (type === 'mysql') {
+                    $('#sqliteSection').hide();
+                    $('#mysqlSection').show();
+                } else {
+                    $('#sqliteSection').show();
+                    $('#mysqlSection').hide();
+                }
+            }
+
+            function updateStatusLabel(type) {
+                var label = type === 'mysql' ? 'MySQL' : 'SQLite';
+                $('#dbTypeLabel').text(label);
+                $('#currentDbType').text('当前：' + label);
+            }
+
+            function switchDbType(type) {
+                $('.db-type-btn').removeClass('active');
+                $('.db-type-btn[data-type="' + type + '"]').addClass('active');
+                $('#dbTypeSelect').val(type);
+                toggleSection(type);
+                updateStatusLabel(type);
+            }
+
+            window.switchDbType = switchDbType;
+            window.toggleSection = toggleSection;
+            window.updateStatusLabel = updateStatusLabel;
+
+            form.on('select(dbType)', function(data){
+                switchDbType(data.value);
+            });
+
+            $('#testBtn').on('click', function(){
+                var btn = $(this);
+                btn.addClass('layui-btn-disabled').prop('disabled', true);
+
+                var testData = {
+                    type: $('#dbTypeSelect').val(),
+                    sqlite: { path: $('#sqlitePath').val() },
+                    mysql: {
+                        host: $('#mysqlHost').val(),
+                        port: parseInt($('#mysqlPort').val()) || 3306,
+                        user: $('#mysqlUser').val(),
+                        password: $('#mysqlPassword').val(),
+                        database: $('#mysqlDatabase').val(),
+                        charset: $('#mysqlCharset').val()
+                    }
+                };
+
+                postData('/api/database/test', testData, function(res){
+                    btn.removeClass('layui-btn-disabled').prop('disabled', false);
+                    var $status = $('#connectionStatus');
+                    var $dot = $('#statusDot');
+                    var $text = $('#statusText');
+
+                    if (res.code === 0) {
+                        $status.removeClass('status-error').addClass('status-ok');
+                        $dot.removeClass('error').addClass('ok');
+                        $text.text('连接成功：' + res.msg);
+                        layer.msg('连接成功！', {icon: 1});
+                    } else {
+                        $status.removeClass('status-ok').addClass('status-error');
+                        $dot.removeClass('ok').addClass('error');
+                        $text.text('连接失败：' + res.msg);
+                        layer.msg('连接失败：' + res.msg, {icon: 2});
+                    }
+                });
+            });
+
+            $('#saveBtn').on('click', function(){
+                var data = {
+                    type: $('#dbTypeSelect').val()
+                };
+
+                if (data.type === 'mysql') {
+                    data.mysql = {
+                        host: $('#mysqlHost').val(),
+                        port: parseInt($('#mysqlPort').val()) || 3306,
+                        user: $('#mysqlUser').val(),
+                        password: $('#mysqlPassword').val(),
+                        database: $('#mysqlDatabase').val(),
+                        charset: $('#mysqlCharset').val()
+                    };
+
+                    if (!data.mysql.host) {
+                        layer.msg('请填写 MySQL 主机地址', {icon: 2});
+                        return;
+                    }
+                    if (!data.mysql.database) {
+                        layer.msg('请填写数据库名称', {icon: 2});
+                        return;
+                    }
+                }
+
+                var btn = $(this);
+                btn.addClass('layui-btn-disabled').prop('disabled', true);
+
+                postData('/api/database/config', data, function(res){
+                    btn.removeClass('layui-btn-disabled').prop('disabled', false);
+                    if (res.code === 0) {
+                        layer.alert('保存成功！<br><br><span style="color:#ffbc5e;font-weight:bold;">请重启服务器使配置生效。</span>', {
+                            icon: 1,
+                            title: '提示'
+                        });
+                    } else {
+                        layer.msg(res.msg || '保存失败', {icon: 2});
+                    }
+                });
+            });
+
+            $('#migrateBtn').on('click', function(){
+                var currentType = $('#dbTypeSelect').val();
+                if (currentType === 'sqlite') {
+                    var mysqlHost = $('#mysqlHost').val();
+                    var mysqlDatabase = $('#mysqlDatabase').val();
+                    if (!mysqlHost || !mysqlDatabase) {
+                        layer.alert('请先填写 MySQL 连接参数并测试连接！<br><br>迁移说明：<br>• 将从 SQLite 数据库读取数据<br>• 导入到指定的 MySQL 数据库<br>• 目标表结构会自动创建', {
+                            icon: 0,
+                            title: '提示'
+                        });
+                        return;
+                    }
+                    layer.confirm(
+                        '<b>数据迁移确认</b><br><br>' +
+                        '<b style="color:#35d6ff;">源数据库：</b>SQLite（本地 app.db）<br>' +
+                        '<b style="color:#35d6ff;">目标数据库：</b>MySQL (' + mysqlHost + '/' + mysqlDatabase + ')<br><br>' +
+                        '<span style="color:#ffbc5e;font-weight:bold;">⚠️ 注意：</span><br>' +
+                        '• 将从 SQLite 读取所有表和数据<br>' +
+                        '• 导入到 MySQL 数据库（表不存在会自动创建）<br>' +
+                        '• 已存在的数据将被跳过<br><br>' +
+                        '确定要开始迁移吗？',
+                        {icon: 3, title:'确认迁移'},
+                        function(index){
+                            layer.close(index);
+                            doMigrate('sqlite', 'mysql');
+                        }
+                    );
+                } else {
+                    var mysqlHost = $('#mysqlHost').val();
+                    var mysqlDatabase = $('#mysqlDatabase').val();
+                    if (!mysqlHost || !mysqlDatabase) {
+                        layer.alert('请先填写 MySQL 连接参数！<br><br>迁移说明：<br>• 将从 MySQL 数据库读取数据<br>• 导入到本地 SQLite 数据库<br>• 目标表结构会自动创建', {
+                            icon: 0,
+                            title: '提示'
+                        });
+                        return;
+                    }
+                    layer.confirm(
+                        '<b>数据迁移确认</b><br><br>' +
+                        '<b style="color:#35d6ff;">源数据库：</b>MySQL (' + mysqlHost + '/' + mysqlDatabase + ')<br>' +
+                        '<b style="color:#35d6ff;">目标数据库：</b>SQLite（本地 app.db）<br><br>' +
+                        '<span style="color:#ffbc5e;font-weight:bold;">⚠️ 注意：</span><br>' +
+                        '• 将从 MySQL 读取所有表和数据<br>' +
+                        '• 导入到本地 SQLite 数据库（表不存在会自动创建）<br>' +
+                        '• 已存在的数据将被跳过<br><br>' +
+                        '确定要开始迁移吗？',
+                        {icon: 3, title:'确认迁移'},
+                        function(index){
+                            layer.close(index);
+                            doMigrate('mysql', 'sqlite');
+                        }
+                    );
+                }
+            });
+
+            function doMigrate(sourceType, targetType) {
+                var btn = $('#migrateBtn');
+                btn.addClass('layui-btn-disabled').prop('disabled', true);
+                var migrateData = {
+                    source_type: sourceType,
+                    target_type: targetType,
+                    mysql: {
+                        host: $('#mysqlHost').val(),
+                        port: parseInt($('#mysqlPort').val()) || 3306,
+                        user: $('#mysqlUser').val(),
+                        password: $('#mysqlPassword').val(),
+                        database: $('#mysqlDatabase').val(),
+                        charset: $('#mysqlCharset').val()
+                    }
+                };
+                postData('/api/database/migrate', migrateData, function(res){
+                    btn.removeClass('layui-btn-disabled').prop('disabled', false);
+                    if (res.code === 0) {
+                        var $result = $('#migrateResult');
+                        var $tbody = $result.find('#migrateTable tbody');
+                        $tbody.empty();
+                        if (res.data && res.data.tables) {
+                            res.data.tables.forEach(function(t){
+                                var statusClass = t.status.indexOf('成功') > -1 ? '' : (t.status.indexOf('跳过') > -1 ? 'style="color:var(--admin-text-muted)"' : 'style="color:var(--admin-danger)"');
+                                $tbody.append('<tr><td>' + t.table + '</td><td>' + t.rows + '</td><td ' + statusClass + '>' + t.status + '</td></tr>');
+                            });
+                        }
+                        $result.show();
+                        layer.alert(res.msg, {icon: 1, title: '迁移完成'});
+                    } else {
+                        layer.msg(res.msg || '迁移失败', {icon: 2});
+                    }
+                });
+            }
+
+            $(document).ready(function(){
+                loadConfig();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -8,6 +8,11 @@ def _rows_to_tree(rows):
 	for row in rows:
 		item = dict(row)
 		item["children"] = []
+		if item.get("parent_id") is not None:
+			try:
+				item["parent_id"] = int(item["parent_id"])
+			except (ValueError, TypeError):
+				pass
 		items.append(item)
 
 	item_map = {item["id"]: item for item in items}
@@ -15,8 +20,8 @@ def _rows_to_tree(rows):
 
 	for item in items:
 		parent_id = item["parent_id"]
-		if parent_id and parent_id in item_map:
-			item_map[parent_id]["children"].append(item)
+		if parent_id and int(parent_id) in item_map:
+			item_map[int(parent_id)]["children"].append(item)
 		else:
 			tree.append(item)
 

@@ -1,0 +1,14 @@
+{
+  "type": "sqlite",
+  "sqlite": {
+    "path": "d:\\Projects\\shixun\\day4\\aiAgentOS\\database\\app.db"
+  },
+  "mysql": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "root",
+    "password": "912419",
+    "database": "cnagentos",
+    "charset": "utf8mb4"
+  }
+}
