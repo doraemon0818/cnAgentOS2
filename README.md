@@ -48,7 +48,9 @@
 
 ### 数据与基础设施
 
+- **双数据库支持**：SQLite（默认）+ MySQL（可选，后台一键切换）
 - SQLite 自动初始化与增量迁移
+- MySQL 支持自动建表、数据迁移、连接测试
 - 用户、角色、功能、模型、接口、采集、仓库、深采、问数会话、IM 会话等表结构
 - Secure Cookie、XSRF 防护、密码哈希加密
 
@@ -60,7 +62,7 @@
 |------|------|-----------|
 | 后端框架 | Tornado | 6.5.5 |
 | 编程语言 | Python | 3.11+ |
-| 数据库 | SQLite3 | 当前主存储 |
+| 数据库 | SQLite3 / MySQL | SQLite 默认，MySQL 可选（后台切换） |
 | 前端 UI | Layui | 2.13.6，本地化 |
 | 响应式样式 | Bootstrap | 5.3.8，本地化 |
 | 图标库 | FontAwesome | 5.15.4，本地化 |
@@ -77,6 +79,158 @@
 | FontAwesome | `app/static/dist/fontawesome-free-5.15.4-web.zip` | `app/static/fontawesome/fontawesome-free-5.15.4-web/` |
 
 > 所有前端依赖均采用本地静态资源，不使用 CDN。
+
+---
+
+## 快速开始（推荐）
+
+本项目默认使用 **SQLite** 数据库，已包含完整的表结构和初始数据，**无需安装任何数据库软件即可运行！**
+
+### 方式一：使用现有虚拟环境
+
+```powershell
+# 1. 克隆项目
+git clone <your-repo-url>
+cd aiAgentOS
+
+# 2. 激活虚拟环境
+.\venv\Scripts\Activate.ps1
+
+# 3. 启动项目
+python app.py
+
+# 4. 访问系统
+# 浏览器打开 http://localhost:10086
+```
+
+### 方式二：重新创建环境
+
+```powershell
+# 1. 创建虚拟环境
+python -m venv venv
+
+# 2. 激活虚拟环境
+.\venv\Scripts\Activate.ps1
+
+# 3. 安装依赖
+pip install -r requirements.txt
+
+# 4. 启动项目
+python app.py
+```
+
+> **提示**: `database/app.db` 已包含完整的表结构和初始数据，
+> 系统启动时会自动检测并初始化/迁移数据库结构。
+
+---
+
+## 数据库配置（可选）
+
+### 默认：SQLite（推荐用于开发和测试）
+
+- **存储位置**: `database/app.db`
+- **优点**: 零配置、开箱即用、可随项目分发
+- **适用场景**: 个人开发、快速体验、小型部署
+
+### 可选：MySQL（生产环境推荐）
+
+如需使用 MySQL 数据库以获得更好的并发性能和企业级特性：
+
+#### 前置条件
+
+1. 安装 [MySQL Server](https://dev.mysql.com/downloads/installer/)（8.0+ 版本）
+2. 确保 MySQL 服务正在运行
+3. 创建数据库（或使用自动初始化功能）
+
+#### 快速初始化 MySQL（Windows）
+
+如果已安装 MySQL 但尚未初始化，可以运行提供的脚本：
+
+```bash
+# 以管理员身份运行此批处理文件
+setup_mysql.bat
+```
+
+该脚本会自动完成：
+- ✅ 初始化 MySQL 数据目录
+- ✅ 安装并启动 Windows 服务
+- ✅ 设置 root 密码为 `912419`（可在脚本中修改）
+- ✅ 创建 `cnagentos` 数据库
+
+#### 或手动初始化 MySQL
+
+```bash
+# 1. 以管理员身份打开命令提示符
+
+# 2. 初始化数据目录（首次安装时需要）
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe" --initialize-insecure
+
+# 3. 安装为 Windows 服务
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe" --install MySQL80
+
+# 4. 启动服务
+net start MySQL80
+
+# 5. 设置 root 密码
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '你的密码'; FLUSH PRIVILEGES;"
+
+# 6. 创建数据库
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p你的密码 -e "CREATE DATABASE cnagentos CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+#### 在后台切换到 MySQL
+
+1. 启动系统后访问管理后台：http://localhost:10086/admin
+2. 使用管理员账号登录（默认：`admin / admin888`）
+3. 进入 **系统设置 → 数据库配置**
+4. 选择 **MySQL** 并填写连接参数：
+   ```
+   主机地址：localhost
+   端口：3306
+   用户名：root
+   密码：（你设置的密码）
+   数据库名：cnagentos
+   字符集：utf8mb4
+   ```
+5. 点击 **[测试连接]** 确认连接成功
+6. 点击 **[保存配置]**
+7. （可选）点击 **[迁移数据]** 将现有 SQLite 数据导入 MySQL
+8. 重启服务使配置生效
+
+#### 一键数据迁移
+
+系统支持在 SQLite 和 MySQL 之间一键迁移数据：
+
+- **位置**: 后台 → 系统设置 → 数据库配置 → [迁移数据] 按钮
+- **功能**:
+  - 自动检测源数据库和目标数据库
+  - 迁移所有表的数据（跳过空表）
+  - 显示详细的迁移进度和结果
+  - 支持双向迁移（SQLite ↔ MySQL）
+
+> **注意**: 迁移前请确保目标数据库已创建且表结构一致。
+> 系统首次使用新数据库时会自动初始化表结构。
+
+### 数据库配置文件
+
+配置文件位于：`app/models/config/database.json`
+
+```json
+{
+  "type": "sqlite",
+  "sqlite": {
+    "path": "database/app.db"
+  },
+  "mysql": {
+    "host": "localhost",
+    "port": 3306,
+    "user": "root",
+    "password": "",
+    "database": "cnagentos",
+    "charset": "utf8mb4"
+  }
+}
+```
 
 ---
 

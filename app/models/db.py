@@ -856,7 +856,21 @@ def _seed_roles(conn):
 
 
 def init_db():
+	from app.models.scheduler import ScheduledTask, TaskLog
+	from app.models.workflow import Workflow, WorkflowLog, GestureRecord
+	
 	with get_connection() as conn:
+		# 初始化定时任务表
+		ScheduledTask.init_table()
+		TaskLog.init_table()
+		
+		# 初始化工作流表
+		Workflow.init_table()
+		WorkflowLog.init_table()
+		
+		# 初始化手势记录表
+		GestureRecord.init_table()
+		
 		conn.execute(
 			"""
 			CREATE TABLE IF NOT EXISTS users(
@@ -1566,6 +1580,8 @@ def init_db():
 		_seed_roles(conn)
 		_seed_surveillance_sources(conn)
 		_seed_api_endpoints(conn)
+		_seed_digital_employees(conn)
+		_seed_im_defaults(conn)
 		if "endpoint_code" in employee_columns:
 			conn.execute(
 				"""
@@ -1576,5 +1592,221 @@ def init_db():
 				where endpoint_id is null and coalesce(endpoint_code,'')<>''
 				"""
 			)
-		_seed_digital_employees(conn)
-		_seed_im_defaults(conn)
+
+
+class MySQLConnectionWrapper:
+	def __init__(self, connection):
+		self._conn = connection
+		self._cursor = None
+
+	def execute(self, sql, params=None):
+		if self._cursor is None:
+			self._cursor = self._conn.cursor()
+		converted_sql = self._adapt_sql(sql)
+		try:
+			if params:
+				return self._cursor.execute(converted_sql, params)
+			else:
+				return self._cursor.execute(converted_sql)
+		except Exception as e:
+			raise RuntimeError(f"MySQL执行错误: {e}\nSQL: {converted_sql}")
+
+	def executemany(self, sql, params_list):
+		if self._cursor is None:
+			self._cursor = self._conn.cursor()
+		converted_sql = self._adapt_sql(sql)
+		try:
+			return self._cursor.executemany(converted_sql, params_list)
+		except Exception as e:
+			raise RuntimeError(f"MySQL批量执行错误: {e}\nSQL: {converted_sql}")
+
+	def fetchall(self):
+		if self._cursor:
+			return self._cursor.fetchall()
+		return []
+
+	def fetchone(self):
+		if self._cursor:
+			return self._cursor.fetchone()
+		return None
+
+	def lastrowid(self):
+		if self._cursor:
+			return self._cursor.lastrowid
+		return None
+
+	def rowcount(self):
+		if self._cursor:
+			return self._cursor.rowcount
+		return 0
+
+	def close(self):
+		if self._cursor:
+			self._cursor.close()
+			self._cursor = None
+
+	def _adapt_sql(self, sql):
+		import re
+		sql = re.sub(r'\bAUTOINCREMENT\b', 'AUTO_INCREMENT', sql, flags=re.IGNORECASE)
+		sql = re.sub(r"datetime\('now','localtime'\)", 'NOW()', sql, flags=re.IGNORECASE)
+		sql = re.sub(r"datetime\('now'\)", 'NOW()', sql, flags=re.IGNORECASE)
+		sql = re.sub(r'\bTEXT\b(?=.*DEFAULT\s)', 'VARCHAR(255)', sql, flags=re.IGNORECASE | re.DOTALL)
+		sql = re.sub(r'pragma table_info\((\w+)\)', r'SHOW COLUMNS FROM \1', sql, flags=re.IGNORECASE)
+		return sql
+
+
+class DatabaseAdapter:
+	def __init__(self, config=None):
+		from app.models.database_config import load as load_config
+		self.config = config or load_config()
+		self.db_type = self.config.get("type", "sqlite")
+		self._connection = None
+
+	def get_connection(self):
+		if self.db_type == "mysql":
+			return self._get_mysql_connection()
+		else:
+			return get_connection()
+
+	def _get_mysql_connection(self):
+		try:
+			import pymysql
+			mysql_cfg = self.config.get("mysql", {})
+			conn = pymysql.connect(
+				host=mysql_cfg.get("host", "localhost"),
+				port=int(mysql_cfg.get("port", 3306)),
+				user=mysql_cfg.get("user", "root"),
+				password=mysql_cfg.get("password", ""),
+				database=mysql_cfg.get("database", "cnagentos"),
+				charset=mysql_cfg.get("charset", "utf8mb4"),
+				cursorclass=pymysql.cursors.DictCursor
+			)
+			return MySQLConnectionWrapper(conn)
+		except ImportError:
+			raise RuntimeError("未安装pymysql库，请运行: pip install pymysql")
+		except Exception as e:
+			raise RuntimeError(f"MySQL连接失败: {e}")
+
+	def test_connection(self):
+		try:
+			conn = self.get_connection()
+			if self.db_type == "mysql":
+				conn.execute("SELECT 1")
+				conn.fetchone()
+				conn.close()
+			else:
+				conn.execute("SELECT 1")
+				conn.close()
+			return True, "连接成功"
+		except Exception as e:
+			return False, str(e)
+
+	def migrate_data(self, source_type, target_config):
+		from app.models.database_config import load
+		if source_type == "sqlite":
+			source_config = {"type": "sqlite", "sqlite": {}}
+		else:
+			source_config = load()
+
+		source_adapter = DatabaseAdapter(source_config)
+		target_adapter = DatabaseAdapter(target_config)
+
+		source_conn = source_adapter.get_connection()
+		target_conn = target_adapter.get_connection()
+
+		result = {"tables": [], "total_rows": 0, "errors": []}
+		source_cur = None
+
+		try:
+			if source_type == "sqlite":
+				tables = [row[0] for row in source_conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchall()]
+			else:
+				source_cur = source_conn.cursor() if hasattr(source_conn, 'cursor') else source_conn._conn.cursor()
+				source_cur.execute("SHOW TABLES")
+				tables = [row[list(row.keys())[0]] for row in source_cur.fetchall()]
+
+			skip_tables = ['alembic_version', 'migrations']
+
+			for table_name in tables:
+				if table_name in skip_tables:
+					continue
+
+				try:
+					if source_type == "sqlite":
+						rows = source_conn.execute(f"SELECT * FROM [{table_name}]").fetchall()
+					else:
+						if not source_cur:
+							source_cur = source_conn.cursor() if hasattr(source_conn, 'cursor') else source_conn._conn.cursor()
+						source_cur.execute(f"SELECT * FROM `{table_name}`")
+						rows = source_cur.fetchall()
+
+					row_count = len(rows) if rows else 0
+
+					if row_count > 0:
+						if target_config["type"] == "mysql":
+							columns = list(rows[0].keys()) if isinstance(rows[0], dict) else rows[0].keys()
+							placeholders = ", ".join(["%s"] * len(columns))
+							column_names = ", ".join([f"`{col}`" for col in columns])
+							insert_sql = f"INSERT INTO `{table_name}` ({column_names}) VALUES ({placeholders})"
+							target_cur = target_conn.cursor() if hasattr(target_conn, 'cursor') else target_conn._conn.cursor()
+							for row in rows:
+								values = tuple(row[col] for col in columns) if isinstance(row, dict) else tuple(row)
+								try:
+									target_cur.execute(insert_sql.replace('INSERT INTO', 'INSERT IGNORE INTO'), values)
+								except:
+									pass
+							target_conn._conn.commit() if hasattr(target_conn, '_conn') else None
+						else:
+							columns = list(rows[0].keys()) if isinstance(rows[0], dict) else rows[0].keys()
+							placeholders = ", ".join(["?"] * len(columns))
+							column_names = ", ".join([f"[{col}]" for col in columns])
+							insert_sql = f"INSERT OR IGNORE INTO [{table_name}] ({column_names}) VALUES ({placeholders})"
+							for row in rows:
+								values = tuple(row[col] for col in columns) if isinstance(row, dict) else tuple(row)
+								try:
+									target_conn.execute(insert_sql, values)
+								except:
+									pass
+							target_conn.commit() if hasattr(target_conn, 'commit') else None
+
+					result["tables"].append({
+						"name": table_name,
+						"rows": row_count,
+						"status": "success"
+					})
+					result["total_rows"] += row_count
+
+				except Exception as e:
+					result["tables"].append({
+						"name": table_name,
+						"rows": 0,
+						"status": "error",
+						"error": str(e)
+					})
+					result["errors"].append(f"{table_name}: {e}")
+
+		finally:
+			if source_cur and hasattr(source_cur, 'close'):
+				source_cur.close()
+			if source_type == "mysql" and source_conn:
+				try:
+					source_conn._conn.close()
+				except:
+					pass
+
+		return True, result
+
+
+_adapter_instance = None
+
+def get_adapter(config=None):
+	global _adapter_instance
+	if _adapter_instance is None:
+		_adapter_instance = DatabaseAdapter(config)
+	return _adapter_instance
+
+def reload_adapter(config=None):
+	global _adapter_instance
+	_adapter_instance = DatabaseAdapter(config)
+	return _adapter_instance
+

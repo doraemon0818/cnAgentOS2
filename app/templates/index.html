@@ -363,6 +363,106 @@
         .select-wrap {
             position: relative;
         }
+
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-trigger {
+            width: 100%;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid var(--ui-border);
+            background: linear-gradient(135deg, rgba(4, 19, 31, 0.98), rgba(6, 24, 38, 0.96));
+            color: var(--ui-text);
+            padding: 0 32px 0 12px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.25s ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 247, 255, 0.05);
+            user-select: none;
+            position: relative;
+            z-index: 10;
+        }
+        .custom-select-trigger:hover {
+            border-color: rgba(0, 247, 255, 0.25);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(0, 247, 255, 0.08);
+            transform: translateY(-1px);
+        }
+        .custom-select-trigger.active {
+            border-color: #00f7ff;
+            box-shadow: 0 0 20px rgba(0, 247, 255, 0.15), inset 0 1px 3px rgba(0, 0, 0, 0.3);
+            border-radius: 10px 10px 0 0;
+        }
+        .custom-select-value {
+            flex: 1;
+            white-space: nowrap;
+            overflow: visible;
+            text-overflow: initial;
+            line-height: 1.4;
+        }
+        .custom-select-arrow {
+            width: 16px;
+            height: 16px;
+            transition: all 0.3s ease;
+            color: rgba(214, 246, 255, 0.5);
+            flex-shrink: 0;
+        }
+        .custom-select-trigger.active .custom-select-arrow {
+            transform: rotate(180deg);
+            color: #00f7ff;
+        }
+        .custom-select-dropdown {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            background: linear-gradient(180deg, rgba(8, 22, 35, 0.99) 0%, rgba(4, 14, 25, 0.98) 100%);
+            border: 1px solid rgba(0, 247, 255, 0.2);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 247, 255, 0.08);
+            max-height: 300px;
+            overflow-y: auto;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.25s ease;
+        }
+        .custom-select-dropdown.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .custom-select-options {
+            padding: 6px 0;
+        }
+        .custom-select-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ui-text-muted);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 2px solid transparent;
+        }
+        .custom-select-option:hover {
+            background: linear-gradient(90deg, rgba(0, 247, 255, 0.08), transparent);
+            color: #00f7ff;
+            border-left-color: #00f7ff;
+            padding-left: 18px;
+        }
+        .custom-select-option.selected {
+            background: linear-gradient(90deg, rgba(0, 247, 255, 0.12), transparent);
+            color: #00f7ff;
+            font-weight: 600;
+            border-left-color: #00f7ff;
+        }
         .history-list {
             display: flex;
             flex-direction: column;
@@ -1250,7 +1350,18 @@
                     <div class="sidebar-card compact-card">
                         <div class="section-title">模型服务</div>
                         <div class="select-wrap">
-                            <select class="model-select" id="modelSelect"></select>
+                            <div class="custom-select-wrapper" id="customModelSelectWrapper">
+                                <div class="custom-select-trigger" id="customModelSelectTrigger" onclick="toggleCustomSelect()">
+                                    <span class="custom-select-value" id="customModelSelectValue">加载中...</span>
+                                    <svg class="custom-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <path d="M6 9l6 6 6-6"/>
+                                    </svg>
+                                </div>
+                                <div class="custom-select-dropdown" id="customModelSelectDropdown">
+                                    <div class="custom-select-options" id="customModelSelectOptions"></div>
+                                </div>
+                            </div>
+                            <select class="model-select" id="modelSelect" style="display:none;"></select>
                         </div>
                     </div>
 
@@ -1286,6 +1397,7 @@
                         </div>
                         <div class="composer-side">
                             <button class="primary-btn" id="sendBtn" type="button">发送</button>
+                            <button class="ghost-btn" id="stopBtn" type="button" style="display:none;">停止</button>
                             <button class="ghost-btn" type="button" onclick="clearComposer()">清空输入</button>
                         </div>
                     </div>
@@ -2662,10 +2774,115 @@
                 '</option>';
             });
             select.innerHTML = html || '<option value="">暂无可用模型</option>';
+
+            var customOptions = document.getElementById('customModelSelectOptions');
+            var customHtml = '';
+            state.models.forEach(function(item){
+                var isSelected = Number(state.currentModelId) === Number(item.id);
+                customHtml += '<div class="custom-select-option' + (isSelected ? ' selected' : '') + '" data-value="' + item.id + '" onclick="selectCustomOption(' + item.id + ')">' +
+                    '<span>' + escapeHtml(item.name + ' / ' + item.model_name) + '</span>' +
+                    (item.is_default ? '<span style="font-size:10px;color:#00f7ff;margin-left:auto;">默认</span>' : '') +
+                '</div>';
+            });
+            customOptions.innerHTML = customHtml || '<div class="custom-select-option" style="cursor:default;">暂无可用模型</div>';
+
+            updateCustomSelectValue();
+
             if (!state.currentModelId && state.models.length) {
                 state.currentModelId = Number(state.models[0].id);
             }
         }
+
+        var dropdownPortal = null;
+        window.toggleCustomSelect = function() {
+            var trigger = document.getElementById('customModelSelectTrigger');
+            var isActive = trigger.classList.contains('active');
+            if (isActive) {
+                trigger.classList.remove('active');
+                if (dropdownPortal) {
+                    dropdownPortal.classList.remove('show');
+                    setTimeout(function(){
+                        if (dropdownPortal && dropdownPortal.parentNode) {
+                            dropdownPortal.parentNode.removeChild(dropdownPortal);
+                            dropdownPortal = null;
+                        }
+                    }, 250);
+                }
+            } else {
+                if (!dropdownPortal) {
+                    dropdownPortal = document.createElement('div');
+                    dropdownPortal.className = 'custom-select-dropdown';
+                    dropdownPortal.id = 'customModelSelectDropdownPortal';
+                    dropdownPortal.innerHTML = document.getElementById('customModelSelectOptions').innerHTML;
+                    document.body.appendChild(dropdownPortal);
+                    dropdownPortal.querySelectorAll('.custom-select-option').forEach(function(opt){
+                        opt.onclick = function(){
+                            selectCustomOption(Number(this.dataset.value));
+                        };
+                    });
+                }
+                var rect = trigger.getBoundingClientRect();
+                dropdownPortal.style.top = (rect.bottom + window.scrollY + 6) + 'px';
+                dropdownPortal.style.left = rect.left + window.scrollX + 'px';
+                dropdownPortal.style.width = rect.width + 'px';
+                trigger.classList.add('active');
+                requestAnimationFrame(function(){
+                    dropdownPortal.classList.add('show');
+                });
+            }
+        };
+
+        window.selectCustomOption = function(value) {
+            state.currentModelId = value;
+            var select = document.getElementById('modelSelect');
+            select.value = value;
+            var options = document.querySelectorAll('#customModelSelectOptions .custom-select-option');
+            options.forEach(function(opt){
+                opt.classList.toggle('selected', Number(opt.dataset.value) === value);
+            });
+            if (dropdownPortal) {
+                dropdownPortal.querySelectorAll('.custom-select-option').forEach(function(opt){
+                    opt.classList.toggle('selected', Number(opt.dataset.value) === value);
+                });
+            }
+            updateCustomSelectValue();
+            var trigger = document.getElementById('customModelSelectTrigger');
+            trigger.classList.remove('active');
+            if (dropdownPortal) {
+                dropdownPortal.classList.remove('show');
+                setTimeout(function(){
+                    if (dropdownPortal && dropdownPortal.parentNode) {
+                        dropdownPortal.parentNode.removeChild(dropdownPortal);
+                        dropdownPortal = null;
+                    }
+                }, 250);
+            }
+        };
+
+        function updateCustomSelectValue() {
+            var valueEl = document.getElementById('customModelSelectValue');
+            var model = state.models.find(function(m){ return Number(m.id) === Number(state.currentModelId); });
+            valueEl.textContent = model ? (model.name + ' / ' + model.model_name) : '请选择模型';
+        }
+
+        document.addEventListener('click', function(e) {
+            var wrapper = document.getElementById('customModelSelectWrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                var trigger = document.getElementById('customModelSelectTrigger');
+                if (trigger && trigger.classList.contains('active')) {
+                    trigger.classList.remove('active');
+                    if (dropdownPortal) {
+                        dropdownPortal.classList.remove('show');
+                        setTimeout(function(){
+                            if (dropdownPortal && dropdownPortal.parentNode) {
+                                dropdownPortal.parentNode.removeChild(dropdownPortal);
+                                dropdownPortal = null;
+                            }
+                        }, 250);
+                    }
+                }
+            }
+        });
 
         function renderSessions(list) {
             state.sessions = list || [];
@@ -2826,6 +3043,10 @@
             createMessageElement('assistant', ['处理中'], '', assistantId, true, null);
             setMessageStatus(assistantId, '正在初始化对话...');
             input.value = '';
+            
+            // 显示停止按钮
+            var stopBtn = document.getElementById('stopBtn');
+            if (stopBtn) stopBtn.style.display = '';
 
             var params = new URLSearchParams();
             params.set('message', message);
@@ -2871,6 +3092,9 @@
                     syncCurrentSession(true);
                     state.eventSource.close();
                     state.eventSource = null;
+                    // 隐藏停止按钮
+                    var stopBtn = document.getElementById('stopBtn');
+                    if (stopBtn) stopBtn.style.display = 'none';
                 } else if (data.type === 'error') {
                     streamFinished = true;
                     setMessageMeta(assistantId, ['错误']);
@@ -2882,6 +3106,9 @@
                     }
                     refreshSessions();
                     syncCurrentSession(true);
+                    // 隐藏停止按钮
+                    var stopBtn = document.getElementById('stopBtn');
+                    if (stopBtn) stopBtn.style.display = 'none';
                 }
             };
 
@@ -2899,8 +3126,22 @@
                 }
                 refreshSessions();
                 syncCurrentSession(true);
+                // 隐藏停止按钮
+                var stopBtn = document.getElementById('stopBtn');
+                if (stopBtn) stopBtn.style.display = 'none';
             };
         }
+        
+        // 停止按钮点击事件
+        document.getElementById('stopBtn').addEventListener('click', function() {
+            if (state.eventSource) {
+                state.eventSource.close();
+                state.eventSource = null;
+            }
+            var stopBtn = document.getElementById('stopBtn');
+            if (stopBtn) stopBtn.style.display = 'none';
+            showToast('已停止 AI 响应');
+        });
 
         document.getElementById('sendBtn').addEventListener('click', sendMessage);
         document.getElementById('messageInput').addEventListener('keydown', function(event){
@@ -2916,5 +3157,11 @@
 
         bootstrap();
     </script>
+    
+    <!-- 引入增强功能：手势识别和语音播报 -->
+    <script src="/static/js/gesture-controller.js"></script>
+    <script src="/static/js/speech-controller.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="/static/js/enhance.js"></script>
 </body>
 </html>

@@ -13,3 +13,31 @@ html,body {
     color:red;
 
 }
+
+/* 滚动条样式 */
+html,
+body,
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(35, 154, 201, 0.72) rgba(7, 21, 33, 0.96);
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: rgba(7, 21, 33, 0.96);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(23, 144, 194, 0.92), rgba(13, 92, 128, 0.96));
+    border-radius: 999px;
+    border: 2px solid rgba(7, 21, 33, 0.96);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(34, 186, 240, 0.96), rgba(15, 109, 150, 0.98));
+}

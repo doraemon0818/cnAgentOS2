@@ -171,7 +171,7 @@
                 <i class="fas fa-users"></i>
             </div>
             <div class="stat-info">
-                <h3>--</h3>
+                <h3 id="stat-user-count">--</h3>
                 <p>用户总数</p>
             </div>
         </div>
@@ -180,7 +180,7 @@
                 <i class="fas fa-robot"></i>
             </div>
             <div class="stat-info">
-                <h3>--</h3>
+                <h3 id="stat-employee-count">--</h3>
                 <p>数字员工</p>
             </div>
         </div>
@@ -189,7 +189,7 @@
                 <i class="fas fa-brain"></i>
             </div>
             <div class="stat-info">
-                <h3>--</h3>
+                <h3 id="stat-model-calls">--</h3>
                 <p>模型调用次数</p>
             </div>
         </div>
@@ -198,7 +198,7 @@
                 <i class="fas fa-database"></i>
             </div>
             <div class="stat-info">
-                <h3>--</h3>
+                <h3 id="stat-source-count">--</h3>
                 <p>数据源数量</p>
             </div>
         </div>
@@ -287,6 +287,63 @@
         </div>
     </div>
 
+    <!-- 自动化监控看板 -->
+    <div class="info-card" style="margin-top: 20px;">
+        <h3><i class="layui-icon layui-icon-engine"></i> 自动化监控</h3>
+        <div class="stat-row" style="margin-top: 20px;">
+            <div class="stat-card">
+                <div class="stat-icon bg-blue">
+                    <i class="layui-icon layui-icon-time"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="task-count">0</h3>
+                    <p>定时任务</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-green">
+                    <i class="layui-icon layui-icon-release"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="workflow-count">0</h3>
+                    <p>工作流</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-orange">
+                    <i class="layui-icon layui-icon-chart"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="task-success-rate">0%</h3>
+                    <p>任务成功率</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-purple">
+                    <i class="layui-icon layui-icon-log"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="today-runs">0</h3>
+                    <p>今日执行</p>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 20px; text-align: center;">
+            <button class="layui-btn layui-btn-normal" onclick="openScheduler()">
+                <i class="layui-icon layui-icon-time"></i> 定时任务管理
+            </button>
+            <button class="layui-btn layui-btn-warm" onclick="openWorkflow()">
+                <i class="layui-icon layui-icon-engine"></i> 工作流管理
+            </button>
+            <button class="layui-btn layui-btn-danger" onclick="openMonitor()">
+                <i class="layui-icon layui-icon-chart"></i> 监控仪表盘
+            </button>
+            <button class="layui-btn layui-btn-primary" onclick="refreshStats()">
+                <i class="layui-icon layui-icon-refresh"></i> 刷新数据
+            </button>
+        </div>
+    </div>
+
     <script src="{{ static_url('layui/layui-v2.13.6/layui/layui.js') }}"></script>
     <script>
         layui.use(['layer', 'jquery'], function(){
@@ -304,7 +361,67 @@
                     layer.msg('功能开发中，敬请期待', {icon: 0});
                 }
             });
+            
+            // 加载首页统计数据
+            loadHomeStats();
+            // 加载自动化监控数据
+            loadAutomationStats();
         });
+        
+        function loadHomeStats() {
+            layui.$.get('/admin/api/stats', function(res) {
+                if (res && res.code === 0) {
+                    layui.$('#stat-user-count').text(res.data.user_count || 0);
+                    layui.$('#stat-employee-count').text(res.data.employee_count || 0);
+                    layui.$('#stat-model-calls').text(res.data.model_calls || 0);
+                    layui.$('#stat-source-count').text(res.data.source_count || 0);
+                }
+            });
+        }
+        
+        function loadAutomationStats() {
+            layui.$.get('/admin/workflow/stats?action=dashboard', function(res) {
+                if (res && res.code === 0) {
+                    layui.$('#workflow-count').text(res.data.total_workflows || 0);
+                    layui.$('#task-success-rate').text(res.data.success_rate || 0 + '%');
+                }
+            });
+            
+            layui.$.get('/admin/scheduler/api?action=list', function(res) {
+                if (res && res.code === 0) {
+                    var tasks = res.data.tasks || [];
+                    layui.$('#task-count').text(tasks.length);
+                    var runs = tasks.reduce((sum, t) => sum + t.run_count, 0);
+                    layui.$('#today-runs').text(runs);
+                    var success = tasks.reduce((sum, t) => sum + t.success_count, 0);
+                    var rate = runs > 0 ? Math.round(success / runs * 100) : 0;
+                    layui.$('#task-success-rate').text(rate + '%');
+                }
+            });
+        }
+        
+        function refreshStats() {
+            loadAutomationStats();
+            layui.layer.msg('数据已刷新', {icon: 1});
+        }
+        
+        function openScheduler() {
+            if (parent.openAdminTab) {
+                parent.openAdminTab('/admin/scheduler/list', '定时任务管理');
+            }
+        }
+        
+        function openWorkflow() {
+            if (parent.openAdminTab) {
+                parent.openAdminTab('/admin/workflow/list', '工作流管理');
+            }
+        }
+        
+        function openMonitor() {
+            if (parent.openAdminTab) {
+                parent.openAdminTab('/admin/monitor', '监控仪表盘');
+            }
+        }
     </script>
 </body>
 </html>

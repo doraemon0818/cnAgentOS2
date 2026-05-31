@@ -160,10 +160,21 @@ class IMApiHandler(IMBaseHandler):
                 self._write_json({"code": 0, "msg": "ok", "data": data})
                 return
 
+            if action == "delete_conversation_history":
+                conversation_id = int(self.get_body_argument("conversation_id", 0) or 0)
+                success, message = IMRepository.delete_conversation_history(user_row["id"], conversation_id)
+                self._write_json({"code": 0 if success else 1, "msg": message})
+                return
+
+            if action == "delete_conversation":
+                conversation_id = int(self.get_body_argument("conversation_id", 0) or 0)
+                success, message = IMRepository.delete_conversation(user_row["id"], conversation_id)
+                self._write_json({"code": 0 if success else 1, "msg": message})
+                return
+
             self._write_json({"code": 1, "msg": "未知操作"})
         except Exception as exc:
             self._write_json({"code": 1, "msg": str(exc)})
-
 
 class IMUploadHandler(IMBaseHandler):
     @tornado.web.authenticated
